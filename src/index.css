@@ -1,9 +1,2 @@
 * { box-sizing: border-box; margin: 0; }
 body { margin: 0; }
-```
-
-4. Salva
-
-Depois, volta no Terminal e roda:
-```
-npm run dev
