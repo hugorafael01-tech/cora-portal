@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ProductCard from "./components/ProductCard";
 
 /* ═══════════════════════════════════════════════════════════════
    CORA — Onboarding v3
@@ -110,25 +111,13 @@ const Step2=({cesta,setCesta})=>{
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
         {CESTAS.map(c=>{
           const qty=cesta[c.id]||0;
-          const isSelected=qty>0;
-          return(
-            <div key={c.id} style={{background:W[100],border:`1px solid ${isSelected?B[200]:W[200]}`,borderRadius:12,overflow:"hidden",transition:"all 200ms"}}>
-              <div style={{display:"flex",alignItems:"stretch"}}>
-                <img src={c.img} alt={c.nome} style={{width:88,objectFit:"cover",display:"block",borderRadius:"12px 0 0 12px"}}/>
-                <div style={{flex:1,padding:"12px",display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{flex:1}}>
-                    <div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800]}}>{c.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>({c.peso})</span></div>
-                    <div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:4,lineHeight:1.4}}>{c.desc}</div>
-                    <div style={{fontFamily:fb,fontSize:12,color:W[600],marginTop:4}}>{fmt(c.mensal)}/mês</div>
-                  </div>
-                  {qty===0?
-                    <button onClick={()=>setQty(c.id,1)} style={{padding:"8px 16px",borderRadius:8,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:12,fontWeight:500,cursor:"pointer",flexShrink:0,minHeight:40}}>Quero</button>
-                    :<QtyBtn qty={qty} onAdd={()=>setQty(c.id,qty+1)} onRemove={()=>setQty(c.id,qty-1)}/>
-                  }
-                </div>
-              </div>
-            </div>
-          );
+          return<ProductCard key={c.id}
+            product={{...c, preco:`R$ ${c.mensal.toFixed(2).replace(".",",")}/mês`}}
+            qty={qty}
+            onAdd={()=>setQty(c.id,qty+1)}
+            onRemove={()=>setQty(c.id,qty-1)}
+            ctaLabel="Quero"
+          />;
         })}
       </div>
 

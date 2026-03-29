@@ -1,6 +1,7 @@
 import { useState } from "react";
 import CoraOnboarding from "./Onboarding";
 import PreCadastro from "./pages/PreCadastro";
+import ProductCard from "./components/ProductCard";
 
 /* CORA — Portal do Assinante — v3.2.7
    + Onboarding com splash, gênero, fotos reais, pattern
@@ -255,7 +256,7 @@ const Assinatura=({onNav,hasPending})=>{
 
 // ═══ CARDÁPIO ═══
 const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending})=>{
-  const[exp,setExp]=useState(null);const[modal,setModal]=useState(null);
+  const[modal,setModal]=useState(null);
   const[toastC,setToastC]=useState(false);
   const allItems=[...confirmed,...pending];const cntAll=n=>cntIn(allItems,n);
   const addItem=p=>{setPending(prev=>addTo(prev,p));};
@@ -282,16 +283,13 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending})=>{
     <div style={{height:1,background:W[200],margin:"4px 0 20px"}}/>
     <div style={{fontFamily:fd,fontSize:16,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",marginBottom:12}}>Nossos pães</div>
 
-    {D.pães.map((p,i)=>{const q=cntAll(p.nome);const isExp=exp===i;return<Card key={i} style={{marginBottom:8,padding:0,overflow:"hidden"}}>
-      <div style={{display:"flex",alignItems:"stretch"}}>
-        <img src={p.img} alt={p.nome} onClick={()=>setExp(isExp?null:i)} style={{width:88,objectFit:"cover",cursor:"pointer",borderRadius:"12px 0 0 12px",display:"block"}}/>
-        <div style={{flex:1,padding:"12px 12px 12px 12px",display:"flex",alignItems:"center",gap:8}}>
-          <div onClick={()=>setExp(isExp?null:i)} style={{flex:1,cursor:"pointer"}}><div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800]}}>{p.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>({p.peso})</span></div><div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:4,lineHeight:1.4}}>{p.desc}</div><div style={{display:"flex",alignItems:"center",gap:8,marginTop:4}}><span style={{fontFamily:fb,fontSize:12,color:W[600]}}>{p.preco}/un</span><I d={ic.chevDown} size={14} color={W[400]}/></div></div>
-          {q===0?<button onClick={()=>addItem(p)} className="bp" style={{padding:"8px 16px",borderRadius:8,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:12,fontWeight:500,cursor:"pointer",flexShrink:0,minHeight:40}}>Pedir</button>:<QtyBtn qty={q} onAdd={()=>addItem(p)} onRemove={()=>removeItem(p.nome)} name={p.nome}/>}
-        </div>
-      </div>
-      {isExp&&<div style={{padding:"12px 16px 16px",borderTop:`1px solid ${W[200]}`,animation:"fadeUp 200ms ease"}}><div style={{fontFamily:fd,fontSize:12,textTransform:"uppercase",color:W[400],letterSpacing:"0.04em",marginBottom:4}}>Ingredientes</div><div style={{fontFamily:fb,fontSize:13,color:W[600],lineHeight:1.5,marginBottom:12}}>{p.ingredientes}</div><div style={{fontFamily:fd,fontSize:12,textTransform:"uppercase",color:W[400],letterSpacing:"0.04em",marginBottom:4}}>Sobre este pão</div><div style={{fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.6}}>{p.detalhe}</div></div>}
-    </Card>;})}
+    {D.pães.map((p,i)=>{const q=cntAll(p.nome);return<ProductCard key={i}
+  product={{...p, preco:`${p.preco}/un`}}
+  qty={q}
+  onAdd={()=>addItem(p)}
+  onRemove={()=>removeItem(p.nome)}
+  ctaLabel="Pedir"
+/>;})}
 
     {modal&&<Modal product={modal} onClose={()=>setModal(null)} onAction={()=>{addItem(modal);setModal(null);}} actionLabel="Adicionar à cesta" hint="Cobrado na próxima fatura" qty={cntAll(modal.nome)} onAdd={()=>addItem(modal)} onRemove={()=>removeItem(modal.nome)}/>}
     <Toast msg="Pedido removido." vis={toastC}/>

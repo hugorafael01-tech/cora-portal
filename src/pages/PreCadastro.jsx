@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ProductCard from "./components/ProductCard";
 
 /* ──────────────────────────────────────────
    TOKENS — idênticos ao portal do assinante
@@ -190,10 +191,10 @@ const SplashScreen = ({ onNext }) => (
    TELA 2 — FORMULÁRIO
    ────────────────────────────────────────── */
 const PRODUTOS = [
-  { id: "original",   label: "Pão Original — 580g" },
-  { id: "integral",   label: "Pão Integral — 614g" },
-  { id: "multigraos", label: "Multi Grãos — 631g" },
-  { id: "brioche",    label: "Brioche — 400g" },
+  {id:"original", nome:"Pão Original", peso:"580g", img:"/images/_original.jpg", preco:"R$ 98,00/mês", desc:"Fermentação natural, casca crocante, miolo macio.", ingredientes:"Farinha de trigo, água, sal, levain da Cora.", detalhe:"Fermentação longa de 36h. Crosta firme, miolo aberto com alvéolos irregulares."},
+  {id:"integral", nome:"Pão Integral", peso:"614g", img:"/images/_integral.jpg", preco:"R$ 110,00/mês", desc:"100% integral com linhaça e girassol.", ingredientes:"Farinha integral, água, sal, levain, linhaça, girassol.", detalhe:"Mesma fermentação longa, com sementes tostadas que dão crocância."},
+  {id:"multigraos", nome:"Multi Grãos", peso:"631g", img:"/images/_multigraos.jpg", preco:"R$ 126,00/mês", desc:"Aveia, centeio, gergelim e mel.", ingredientes:"Farinha de trigo, centeio, aveia, água, mel, sal, levain, gergelim.", detalhe:"Cinco grãos na massa, mel na fermentação. Miolo denso, casca com gergelim tostado."},
+  {id:"brioche", nome:"Brioche", peso:"400g", img:"/images/_brioche.jpg", preco:"R$ 128,00/mês", desc:"Manteiga, ovos e levain. Fermentação 18h.", ingredientes:"Farinha, manteiga, ovos, açúcar, sal, levain, leite.", detalhe:"Massa enriquecida com manteiga. Miolo dourado, textura que desfia."},
 ];
 
 const FormScreen = ({ onSubmit }) => {
@@ -310,21 +311,22 @@ const FormScreen = ({ onSubmit }) => {
       </div>
 
       {/* Campo: Produtos */}
-      <div>
-        <Label>Qual pão te interessa mais?</Label>
-        <div style={{ fontSize: 12, color: W[400], marginBottom: 10, fontFamily: "'Montagu Slab', Georgia, serif" }}>
-          Opcional — pode marcar quantos quiser
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {PRODUTOS.map(p => (
-            <Checkbox
-              key={p.id}
-              label={p.label}
-              checked={produtos.includes(p.id)}
-              onChange={() => toggleProduto(p.id)}
-            />
-          ))}
-        </div>
+      {/* Campo: Produtos */}
+<div>
+  <Label>Qual pão te interessa mais?</Label>
+  <div style={{fontSize:12,color:W[400],marginBottom:10,fontFamily:"'Montagu Slab',Georgia,serif"}}>
+    Opcional — pode marcar quantos quiser
+  </div>
+  {PRODUTOS.map(p=>{
+    const qty=produtos[p.id]||0;
+    return<ProductCard key={p.id}
+      product={p}
+      qty={qty}
+      onAdd={()=>setProdutos(prev=>({...prev,[p.id]:(prev[p.id]||0)+1}))}
+      onRemove={()=>setProdutos(prev=>{const q=(prev[p.id]||0)-1;if(q<=0){const n={...prev};delete n[p.id];return n;}return{...prev,[p.id]:q};})}
+      ctaLabel="Tenho interesse"
+    />;
+  })} 
       </div>
 
       {/* Botão */}
