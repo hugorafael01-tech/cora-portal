@@ -263,7 +263,8 @@ export default function CoraOnboarding({onComplete}){
   const[step,setStep]=useState(1);
   const[termos,setTermos]=useState(false);
   const[data,setData]=useState({nome:"",whatsapp:"",email:"",endereco:"",complemento:"",genero:""});
-  const[cesta,setCesta]=useState({}); // {id: qty}
+  const cestaDaURL=(()=>{const p=new URLSearchParams(window.location.search);const id=p.get("cesta");return id?{[id]:1}:{};})();
+  const[cesta,setCesta]=useState(cestaDaURL); // {id: qty}
   const[qtd,setQtd]=useState(1);
 
   const canNext1=data.nome&&data.whatsapp&&data.email&&data.endereco&&data.genero;
