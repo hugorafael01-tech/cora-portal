@@ -1,10 +1,10 @@
 import { useState } from "react";
 import CoraOnboarding from "./Onboarding";
 
-/* CORA — Portal do Assinante — Protótipo v3.2.6
-   + Fotos edge-to-edge (sem padding lateral)
-   + "Sua cesta desta semana" no card de entrega
-   + Rodapé de pedido pendente persistente em TODAS as telas */
+/* CORA — Portal do Assinante — v3.2.7
+   + Onboarding com splash, gênero, fotos reais, pattern
+   + Saudação "Boas-vindas" no primeiro acesso
+   + Nav oculta durante onboarding */
 
 const B={50:"#EBEEFB",100:"#C4CDF4",200:"#8B9BE6",400:"#5670D8",500:"#2E55CD",600:"#2545A8",700:"#1D3787",800:"#172E6E",900:"#0F1E49"};
 const W={50:"#FAFAF8",100:"#F5F4F0",200:"#E8E6E1",300:"#D4D1CA",400:"#A8A49C",500:"#7A766E",600:"#5C5850",700:"#3D3A34",800:"#2A2723"};
@@ -35,7 +35,7 @@ const D={
     {nome:"Pão Original",peso:"580g",preco:"R$ 25,00",precoNum:25,img:IMG.original,desc:"Fermentação natural, casca crocante, miolo macio.",ingredientes:"Farinha de trigo, água, sal, levain da Cora.",detalhe:"Fermentação longa de 36h. Apenas 4 ingredientes. Crosta firme, miolo aberto com alvéolos irregulares.",qtd:1},
     {nome:"Pão Integral",peso:"614g",preco:"R$ 28,00",precoNum:28,img:IMG.integral,desc:"100% integral, sementes de linhaça e girassol.",ingredientes:"Farinha integral, água, sal, levain, linhaça, girassol.",detalhe:"100% farinha integral. Mesma fermentação longa, com sementes tostadas que dão crocância.",qtd:0},
     {nome:"Multi Grãos",peso:"631g",preco:"R$ 32,00",precoNum:32,img:IMG.multigraos,desc:"Aveia, centeio, gergelim e mel.",ingredientes:"Farinha de trigo, centeio, aveia, água, mel, sal, levain, gergelim.",detalhe:"Cinco grãos na massa, mel na fermentação. Miolo denso, casca com gergelim tostado.",qtd:0},
-    {nome:"Brioche",peso:"400g",preco:"R$ 34,00",precoNum:34,img:IMG.brioche,desc:"Manteiga francesa, textura amanteigada.",ingredientes:"Farinha, manteiga, ovos, açúcar, sal, levain, leite.",detalhe:"Massa enriquecida com manteiga. Fermentação 18h. Miolo dourado, textura que desfia.",qtd:0},
+    {nome:"Brioche",peso:"258g",preco:"R$ 34,00",precoNum:34,img:IMG.brioche,desc:"Manteiga francesa, textura amanteigada.",ingredientes:"Farinha, manteiga, ovos, açúcar, sal, levain, leite.",detalhe:"Massa enriquecida com manteiga. Fermentação 18h. Miolo dourado, textura que desfia.",qtd:0},
   ],
   hist:[
     {sem:"Semana 28/03",itens:"1 Pão Original (580g)",st:"Pendente",extra:null},
@@ -154,7 +154,7 @@ const removeFrom=(list,nome)=>{const i=list.findIndex(p=>p.nome===nome);if(i===-
 const totalOf=list=>list.reduce((s,p)=>s+p.precoNum,0);
 
 // ═══ HOME ═══
-const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed})=>{
+const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,userData,isFirstVisit,onSeen})=>{
   const[modal,setModal]=useState(null);
   const[toast,setToast]=useState(false);
   const[toastMsg,setToastMsg]=useState("");
@@ -175,9 +175,15 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed})=
     }
   };
   const confirmedTotal=totalOf(confirmed);
+  const nome=userData?.nome?userData.nome.split(" ")[0]:D.nome;
+  const saudacao=isFirstVisit?(userData?.genero==="f"?"Bem-vinda":"Bem-vindo"):greet();
+  const prefix=isFirstVisit?`${saudacao}, ${nome}!`:`Oi, ${nome}, ${saudacao}!`;
+
+  // Mark first visit as seen after render
+  if(isFirstVisit&&onSeen) setTimeout(onSeen,5000);
 
   return<div style={{padding:"24px 16px 16px",paddingBottom:pending.length>0?80:16}}>
-    <h1 style={{fontFamily:fd,fontSize:30,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",margin:"0 0 20px",lineHeight:1.1}}>Oi, {D.nome}, {greet()}!</h1>
+    <h1 style={{fontFamily:fd,fontSize:30,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",margin:"0 0 20px",lineHeight:1.1}}>{prefix}</h1>
 
     {/* Entrega compacta — foto edge-to-edge esquerda */}
     <Card style={{marginBottom:16,padding:0,overflow:"hidden"}} ariaLabel={`Cesta desta semana: ${D.entrega.dia}`}>
@@ -317,18 +323,27 @@ export default function CoraPortal(){
   const[pending,setPending]=useState([]);
   const[confirmed,setConfirmed]=useState([]);
   const[justConfirmed,setJustConfirmed]=useState(false);
+  const[userData,setUserData]=useState(null);
+  const[isFirstVisit,setIsFirstVisit]=useState(true);
   const addPending=p=>setPending(prev=>addTo(prev,p));
   const removePending=n=>setPending(prev=>removeFrom(prev,n));
   const handleConfirm=()=>{setConfirmed(prev=>[...prev,...pending]);setPending([]);setJustConfirmed(true);setTimeout(()=>setJustConfirmed(false),4000);};
   const hasPending=pending.length>0;
+  const isOnboarding=scr==="onboarding";
+
+  const handleOnboardingComplete=(data)=>{
+    setUserData(data);
+    setScr("home");
+  };
+
+  if(isOnboarding) return <CoraOnboarding onComplete={handleOnboardingComplete}/>;
 
   return<div style={{fontFamily:fb,maxWidth:390,margin:"0 auto",background:W[50],minHeight:"100vh",display:"flex",flexDirection:"column"}}>
     <div style={{padding:"10px 16px",background:"#FFF",borderBottom:`1px solid ${W[200]}`,position:"sticky",top:0,zIndex:10}}>
       <img src={IMG.logo} alt="Cora" style={{height:28}}/>
     </div>
     <div style={{flex:1,overflowY:"auto"}}>
-      {scr==="onboarding"&&<CoraOnboarding onComplete={()=>setScr("home")}/>}
-      {scr==="home"&&<Home onNav={setScr} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed}/>}
+      {scr==="home"&&<Home onNav={setScr} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)}/>}
       {scr==="assinatura"&&<Assinatura onNav={setScr} hasPending={hasPending}/>}
       {scr==="cardapio"&&<Cardapio pending={pending} confirmed={confirmed} setPending={setPending} setConfirmed={setConfirmed} hasPending={hasPending}/>}
       {scr==="perfil"&&<Perfil confirmed={confirmed} hasPending={hasPending}/>}
