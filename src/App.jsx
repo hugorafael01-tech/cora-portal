@@ -1,6 +1,7 @@
 import { useState } from "react";
+import CoraOnboarding from "./Onboarding";
 
-/* CORA — Portal do Assinante — Protótipo v3.2.5
+/* CORA — Portal do Assinante — Protótipo v3.2.6
    + Fotos edge-to-edge (sem padding lateral)
    + "Sua cesta desta semana" no card de entrega
    + Rodapé de pedido pendente persistente em TODAS as telas */
@@ -312,7 +313,7 @@ const Perfil=({confirmed,hasPending})=>{
 
 // ═══ APP (rodapé persistente aqui) ═══
 export default function CoraPortal(){
-  const[scr,setScr]=useState("home");
+  const[scr,setScr]=useState("onboarding");
   const[pending,setPending]=useState([]);
   const[confirmed,setConfirmed]=useState([]);
   const[justConfirmed,setJustConfirmed]=useState(false);
@@ -326,6 +327,7 @@ export default function CoraPortal(){
       <img src={IMG.logo} alt="Cora" style={{height:28}}/>
     </div>
     <div style={{flex:1,overflowY:"auto"}}>
+      {scr==="onboarding"&&<CoraOnboarding onComplete={()=>setScr("home")}/>}
       {scr==="home"&&<Home onNav={setScr} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed}/>}
       {scr==="assinatura"&&<Assinatura onNav={setScr} hasPending={hasPending}/>}
       {scr==="cardapio"&&<Cardapio pending={pending} confirmed={confirmed} setPending={setPending} setConfirmed={setConfirmed} hasPending={hasPending}/>}
