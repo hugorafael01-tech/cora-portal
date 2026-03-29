@@ -36,7 +36,7 @@ const D={
     {nome:"Pão Original",peso:"580g",preco:"R$ 25,00",precoNum:25,img:IMG.original,desc:"Fermentação natural, casca crocante, miolo macio.",ingredientes:"Farinha de trigo, água, sal, levain da Cora.",detalhe:"Fermentação longa de 36h. Apenas 4 ingredientes. Crosta firme, miolo aberto com alvéolos irregulares.",qtd:1},
     {nome:"Pão Integral",peso:"614g",preco:"R$ 28,00",precoNum:28,img:IMG.integral,desc:"100% integral, sementes de linhaça e girassol.",ingredientes:"Farinha integral, água, sal, levain, linhaça, girassol.",detalhe:"100% farinha integral. Mesma fermentação longa, com sementes tostadas que dão crocância.",qtd:0},
     {nome:"Multi Grãos",peso:"631g",preco:"R$ 32,00",precoNum:32,img:IMG.multigraos,desc:"Aveia, centeio, gergelim e mel.",ingredientes:"Farinha de trigo, centeio, aveia, água, mel, sal, levain, gergelim.",detalhe:"Cinco grãos na massa, mel na fermentação. Miolo denso, casca com gergelim tostado.",qtd:0},
-    {nome:"Brioche",peso:"258g",preco:"R$ 34,00",precoNum:34,img:IMG.brioche,desc:"Manteiga francesa, textura amanteigada.",ingredientes:"Farinha, manteiga, ovos, açúcar, sal, levain, leite.",detalhe:"Massa enriquecida com manteiga. Fermentação 18h. Miolo dourado, textura que desfia.",qtd:0},
+    {nome:"Brioche",peso:"400g",preco:"R$ 34,00",precoNum:34,img:IMG.brioche,desc:"Manteiga francesa, textura amanteigada.",ingredientes:"Farinha, manteiga, ovos, açúcar, sal, levain, leite.",detalhe:"Massa enriquecida com manteiga. Fermentação 18h. Miolo dourado, textura que desfia.",qtd:0},
   ],
   hist:[
     {sem:"Semana 28/03",itens:"1 Pão Original (580g)",st:"Pendente",extra:null},
