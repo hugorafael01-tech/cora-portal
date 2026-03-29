@@ -1,5 +1,5 @@
 import { useState } from "react";
-import ProductCard from "./components/ProductCard";
+import ProductCard from "../components/ProductCard";
 
 /* ──────────────────────────────────────────
    TOKENS — idênticos ao portal do assinante
@@ -310,25 +310,24 @@ const FormScreen = ({ onSubmit }) => {
         {errors.bairro && <div style={{ fontSize: 12, color: "#EF4444", marginTop: 4, fontFamily: "'Montagu Slab', Georgia, serif" }}>Precisa do bairro</div>}
       </div>
 
-      {/* Campo: Produtos */}
-      {/* Campo: Produtos */}
-<div>
-  <Label>Qual pão te interessa mais?</Label>
-  <div style={{fontSize:12,color:W[400],marginBottom:10,fontFamily:"'Montagu Slab',Georgia,serif"}}>
-    Opcional — pode marcar quantos quiser
-  </div>
-  {PRODUTOS.map(p=>{
-    const qty=produtos[p.id]||0;
-    return<ProductCard key={p.id}
-      product={p}
-      qty={qty}
-      onAdd={()=>setProdutos(prev=>({...prev,[p.id]:(prev[p.id]||0)+1}))}
-      onRemove={()=>setProdutos(prev=>{const q=(prev[p.id]||0)-1;if(q<=0){const n={...prev};delete n[p.id];return n;}return{...prev,[p.id]:q};})}
-      ctaLabel="Tenho interesse"
-    />;
-  })} 
+{/* Campo: Produtos */}
+      <div>
+        <Label>Qual pão te interessa mais?</Label>
+        <div style={{ fontSize: 12, color: W[400], marginBottom: 10, fontFamily: "'Montagu Slab', Georgia, serif" }}>
+          Opcional — pode marcar quantos quiser
+        </div>
+        {PRODUTOS.map(p => {
+          const qty = produtos[p.id] || 0;
+          return <ProductCard key={p.id}
+            product={p}
+            qty={qty}
+            onAdd={() => setProdutos(prev => ({ ...prev, [p.id]: (prev[p.id] || 0) + 1 }))}
+            onRemove={() => setProdutos(prev => { const q = (prev[p.id] || 0) - 1; if (q <= 0) { const n = { ...prev }; delete n[p.id]; return n; } return { ...prev, [p.id]: q }; })}
+            ctaLabel="Tenho interesse"
+          />;
+        })}
       </div>
-
+      
       {/* Botão */}
       <button
         onClick={handleSubmit}
