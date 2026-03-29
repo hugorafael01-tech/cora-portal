@@ -320,7 +320,8 @@ const Perfil=({confirmed,hasPending})=>{
 
 // ═══ APP (rodapé persistente aqui) ═══
 export default function CoraPortal(){
-  const[scr,setScr]=useState("onboarding");
+  const skipOnboarding = window.location.search.includes("skip=true");
+  const [scr, setScr] = useState(skipOnboarding ? "home" : "onboarding");
   const[pending,setPending]=useState([]);
   const[confirmed,setConfirmed]=useState([]);
   const[justConfirmed,setJustConfirmed]=useState(false);
