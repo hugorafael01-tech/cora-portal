@@ -202,7 +202,7 @@ const FormScreen = ({ onSubmit }) => {
   const [whatsapp, setWhatsapp] = useState("");
   const [email,    setEmail]    = useState("");
   const [bairro,   setBairro]   = useState("");
-  const [produtos, setProdutos] = useState([]);
+  const [produtos, setProdutos] = useState({});
   const [errors,   setErrors]   = useState({});
   const [loading,  setLoading]  = useState(false);
 
@@ -239,7 +239,7 @@ const FormScreen = ({ onSubmit }) => {
           whatsapp: whatsapp.replace(/\D/g,""),
           email:    email.trim().toLowerCase(),
           bairro:   bairro.trim(),
-          produtos: produtos.join(", ") || "Não informado",
+          produtos: Object.entries(produtos).map(([id,qty])=>`${id}×${qty}`).join(", ") || "Não informado",
           data:     new Date().toLocaleDateString("pt-BR"),
         }),
       });
