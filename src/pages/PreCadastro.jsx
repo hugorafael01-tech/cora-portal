@@ -118,7 +118,7 @@ const SplashScreen = ({ onNext }) => (
     {/* Logo */}
     <div style={{ marginBottom: 40 }}>
       <img
-        src="/images/cora_logo_cor.svg"
+        src="/images/cora_logo_com_tag.svg"
         alt="Cora"
         style={{ height: 48 }}
         onError={e => {

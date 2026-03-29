@@ -14,7 +14,7 @@ const fd="'League Gothic',Impact,'Arial Narrow',sans-serif";
 const fb="'Montagu Slab',Georgia,Palatino,serif";
 
 const IMG={
-  logo:"/images/cora_logo_cor.svg",
+  logo:"/images/cora_logo_com_tag.svg",
   original:"/images/_original.jpg",
   integral:"/images/_integral.jpg",
   multigraos:"/images/_multigraos.jpg",

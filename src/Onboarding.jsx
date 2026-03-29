@@ -12,7 +12,7 @@ const fb="'Montagu Slab',Georgia,Palatino,serif";
 const fmt=v=>`R$ ${v.toFixed(2).replace(".",",")}`;
 
 const IMG={
-  logo:"/images/cora_logo_cor.svg",
+  logo:"/images/cora_logo_com_tag.svg",
   original:"/images/_original.jpg",
   integral:"/images/_integral.jpg",
   multigraos:"/images/_multigraos.jpg",
