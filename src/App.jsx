@@ -1,8 +1,6 @@
 import { useState } from "react";
 import CoraOnboarding from "./Onboarding";
 import PreCadastro from "./pages/PreCadastro";
-// dentro do Router:
-<Route path="/interesse" element={<PreCadastro />} />
 
 /* CORA — Portal do Assinante — v3.2.7
    + Onboarding com splash, gênero, fotos reais, pattern
@@ -339,6 +337,7 @@ export default function CoraPortal(){
     setScr("home");
   };
 
+  if(window.location.pathname==="/interesse") return <PreCadastro/>;
   if(isOnboarding) return <CoraOnboarding onComplete={handleOnboardingComplete}/>;
 
   return<div style={{fontFamily:fb,maxWidth:390,margin:"0 auto",background:W[50],minHeight:"100vh",display:"flex",flexDirection:"column"}}>
