@@ -55,13 +55,9 @@ const formatWpp=v=>{
 /* ══ SPLASH ══ */
 const SplashScreen=({onDentro,onFora})=>(
   <div style={{display:"flex",flexDirection:"column",padding:"40px 24px 32px",minHeight:"100%"}}>
-    <div style={{marginBottom:40}}>
-      <img src="/images/cora_logo_com_tag.svg" alt="Cora" style={{height:48}}
-        onError={e=>e.target.style.display="none"}/>
-    </div>
     <div style={{flex:1}}>
-      <H size={28} color={B[800]}>PÃO DE FERMENTAÇÃO NATURAL, TODA SEMANA NA SUA PORTA.</H>
-      <div style={{fontFamily:fb,fontSize:16,color:W[500],marginTop:10,lineHeight:1.6}}>
+      <H size={34} color={B[800]}>PÃO DE FERMENTAÇÃO NATURAL, TODA SEMANA NA SUA PORTA.</H>
+      <div style={{fontFamily:fb,fontSize:17,color:W[600],marginTop:14,lineHeight:1.6}}>
         Você escolhe, a gente assa. Sem loja física, sem sobra. Cada fornada feita sob medida.
       </div>
       <div style={{marginTop:32,padding:16,background:B[50],borderRadius:12,border:`1px solid ${B[100]}`}}>
@@ -150,7 +146,7 @@ const ForaScreen=({onSubmit})=>{
           {optin&&<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
         </div>
         <div style={{fontFamily:fb,fontSize:13,color:optin?B[700]:W[600],lineHeight:1.5}}>
-          Quero entrar na lista de avisos da Cora — vou receber novidades sobre o lançamento e quando as entregas chegarem na minha região.
+          Quero acompanhar o lançamento da Cora e ser avisado quando as entregas chegarem na minha região.
         </div>
       </div>
       <Btn primary disabled={!canSubmit||loading} onClick={handleSubmit}>
@@ -254,7 +250,7 @@ const FormScreen=({onSubmit})=>{
           Se você recebesse pão toda semana, qual escolheria?
         </div>
         <div style={{fontFamily:fb,fontSize:12,color:W[400],marginBottom:12,lineHeight:1.5}}>
-          Opcional — use a quantidade como referência do seu consumo semanal.
+          Sua cesta pode ser ajustada a qualquer momento. Você também pode pedir um pão extra em qualquer semana, sem mudar a assinatura.
         </div>
         {PRODUTOS.map(p=>{
           const qty=produtos[p.id]||0;
@@ -289,7 +285,7 @@ const FormScreen=({onSubmit})=>{
           {optin&&<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
         </div>
         <div style={{fontFamily:fb,fontSize:13,color:optin?B[700]:W[600],lineHeight:1.5}}>
-          Quero receber novidades da Cora — atualizações sobre o lançamento e quando as entregas começarem.
+          Quero acompanhar o lançamento da Cora e ser avisado quando as entregas começarem.
         </div>
       </div>
 
@@ -321,17 +317,17 @@ const ConfirmScreen=({nome,foraArea})=>(
       <div style={{fontFamily:fb,fontSize:15,color:W[600],marginTop:16,lineHeight:1.7}}>
         {foraArea
           ?"A gente avisa assim que a Cora chegar na sua região."
-          :"O Hugo entra em contato no seu WhatsApp em até 24h."}
+          :"Em breve entraremos em contato pelo seu WhatsApp."}
       </div>
       {!foraArea&&(
         <div style={{marginTop:24,padding:"14px 16px",background:B[50],borderRadius:10,border:`1px solid ${B[100]}`}}>
           <div style={{fontFamily:fb,fontSize:13,color:B[700],lineHeight:1.6}}>
-            Enquanto isso, o pão continua sendo feito toda semana. Com calma e sem pressa.
+            A Cora está sendo construída com cuidado. Cada detalhe no lugar antes da primeira fornada chegar.
           </div>
         </div>
       )}
 
-      <a href="https://instagram.com/padaria.cora" target="_blank" rel="noopener noreferrer"
+      <a href="https://instagram.com/cora.padaria" target="_blank" rel="noopener noreferrer"
         style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:24,
           padding:"12px 16px",borderRadius:10,border:`1.5px solid ${W[200]}`,
           background:"#FFF",textDecoration:"none",transition:"border-color 150ms"}}
@@ -343,7 +339,7 @@ const ConfirmScreen=({nome,foraArea})=>(
         </svg>
         <div>
           <div style={{fontFamily:fb,fontSize:13,fontWeight:500,color:W[700]}}>Acompanhe no Instagram</div>
-          <div style={{fontFamily:fb,fontSize:11,color:W[400],marginTop:1}}>@padaria.cora — bastidores da preparação</div>
+          <div style={{fontFamily:fb,fontSize:11,color:W[400],marginTop:1}}>@cora.padaria — acompanhe os bastidores</div>
         </div>
       </a>
     </div>
@@ -364,8 +360,9 @@ export default function PreCadastro(){
         boxShadow:"0 4px 24px rgba(26,24,21,0.12)"}}>
 
         <div style={{background:"#FFF",padding:"10px 20px",borderBottom:`1px solid ${W[200]}`,
-          display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
-          <div style={{fontFamily:fd,fontSize:22,color:B[500],textTransform:"uppercase",letterSpacing:"0.02em"}}>CORA</div>
+          display:"flex",alignItems:"center",flexShrink:0}}>
+          <img src="/images/cora_logo_cor.svg" alt="Cora" style={{height:28}}
+            onError={e=>{e.target.style.display="none";}}/>
         </div>
 
         {step==="form"&&(
