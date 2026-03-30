@@ -70,8 +70,7 @@ const SplashScreen=({onDentro,onFora})=>(
         </div>
         <div style={{fontFamily:fb,fontSize:14,color:B[800],lineHeight:1.8}}>
           📍 Niterói — Icaraí e região<br/>
-          📍 Rio de Janeiro — Zona Sul<br/>
-          <span style={{fontSize:12,color:B[600]}}>Botafogo, Humaitá, Copacabana</span>
+          📍 Rio de Janeiro — Zona Sul
         </div>
       </div>
       <div style={{fontFamily:fb,fontSize:15,color:W[700],fontWeight:500,marginTop:28,marginBottom:16}}>
@@ -89,6 +88,9 @@ const SplashScreen=({onDentro,onFora})=>(
 const ForaScreen=({onSubmit})=>{
   const[nome,setNome]=useState("");
   const[whatsapp,setWhatsapp]=useState("");
+  const[cidade,setCidade]=useState("");
+  const[bairro,setBairro]=useState("");
+  const[optin,setOptin]=useState(false);
   const[loading,setLoading]=useState(false);
   const canSubmit=nome.trim()&&whatsapp.replace(/\D/g,"").length>=10;
 
@@ -98,6 +100,8 @@ const ForaScreen=({onSubmit})=>{
     try{
       await fetch(WEBHOOK_URL,{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({nome:nome.trim(),whatsapp:whatsapp.replace(/\D/g,""),
+          cidade:cidade||"Não informado",bairro:bairro.trim()||"Não informado",
+          optin_mailing:optin?"Sim":"Não",
           tipo:"fora_da_area",data:new Date().toLocaleDateString("pt-BR")})});
     }catch(_){}
     setLoading(false);
@@ -120,6 +124,35 @@ const ForaScreen=({onSubmit})=>{
         <Label required>WhatsApp com DDD</Label>
         <Input value={whatsapp} onChange={e=>setWhatsapp(formatWpp(e.target.value))} placeholder="(21) 99999-0000" type="tel"/>
       </div>
+      <div>
+        <Label>Cidade</Label>
+        <select value={cidade} onChange={e=>setCidade(e.target.value)}
+          style={{width:"100%",padding:"12px 14px",fontSize:15,fontFamily:fb,color:cidade?W[800]:W[400],
+            background:"#FFF",border:`1.5px solid ${W[200]}`,borderRadius:8,outline:"none",
+            appearance:"none",backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23A8A49C' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`,
+            backgroundRepeat:"no-repeat",backgroundPosition:"right 14px center"}}>
+          <option value="">Selecione...</option>
+          <option value="Niterói">Niterói</option>
+          <option value="Rio de Janeiro">Rio de Janeiro</option>
+          <option value="Outra">Outra cidade</option>
+        </select>
+      </div>
+      <div>
+        <Label>Bairro</Label>
+        <Input value={bairro} onChange={e=>setBairro(e.target.value)} placeholder="Ex: Santa Rosa, Flamengo..."/>
+      </div>
+      <div onClick={()=>setOptin(!optin)}
+        style={{display:"flex",gap:12,alignItems:"flex-start",padding:"14px",cursor:"pointer",
+          background:optin?B[50]:"#FFF",borderRadius:10,border:`1.5px solid ${optin?B[400]:W[200]}`,transition:"all 150ms"}}>
+        <div style={{width:20,height:20,borderRadius:4,flexShrink:0,marginTop:1,
+          border:`2px solid ${optin?B[500]:W[300]}`,background:optin?B[500]:"#FFF",
+          display:"flex",alignItems:"center",justifyContent:"center",transition:"all 150ms"}}>
+          {optin&&<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+        </div>
+        <div style={{fontFamily:fb,fontSize:13,color:optin?B[700]:W[600],lineHeight:1.5}}>
+          Quero entrar na lista de avisos da Cora — vou receber novidades sobre o lançamento e quando as entregas chegarem na minha região.
+        </div>
+      </div>
       <Btn primary disabled={!canSubmit||loading} onClick={handleSubmit}>
         {loading?"Enviando...":"Me avisa quando chegar"}
       </Btn>
@@ -131,7 +164,10 @@ const ForaScreen=({onSubmit})=>{
 const FormScreen=({onSubmit})=>{
   const[nome,setNome]=useState("");
   const[whatsapp,setWhatsapp]=useState("");
+  const[cidade,setCidade]=useState("");
+  const[bairro,setBairro]=useState("");
   const[produtos,setProdutos]=useState({});
+  const[optin,setOptin]=useState(false);
   const[errors,setErrors]=useState({});
   const[loading,setLoading]=useState(false);
 
@@ -152,7 +188,9 @@ const FormScreen=({onSubmit})=>{
     try{
       await fetch(WEBHOOK_URL,{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({nome:nome.trim(),whatsapp:whatsapp.replace(/\D/g,""),
-          cesta:cestaSummary,tipo:"dentro_da_area",data:new Date().toLocaleDateString("pt-BR")})});
+          cidade:cidade||"Não informado",bairro:bairro.trim()||"Não informado",
+          cesta:cestaSummary,optin_mailing:optin?"Sim":"Não",
+          tipo:"dentro_da_area",data:new Date().toLocaleDateString("pt-BR")})});
     }catch(_){}
     setLoading(false);
     onSubmit(nome.trim().split(" ")[0]);
@@ -194,6 +232,24 @@ const FormScreen=({onSubmit})=>{
       </div>
 
       <div>
+        <Label>Cidade</Label>
+        <select value={cidade} onChange={e=>setCidade(e.target.value)}
+          style={{width:"100%",padding:"12px 14px",fontSize:15,fontFamily:fb,color:cidade?W[800]:W[400],
+            background:"#FFF",border:`1.5px solid ${W[200]}`,borderRadius:8,outline:"none",
+            appearance:"none",backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23A8A49C' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`,
+            backgroundRepeat:"no-repeat",backgroundPosition:"right 14px center"}}>
+          <option value="">Selecione...</option>
+          <option value="Niterói">Niterói</option>
+          <option value="Rio de Janeiro">Rio de Janeiro</option>
+        </select>
+      </div>
+
+      <div>
+        <Label>Bairro</Label>
+        <Input value={bairro} onChange={e=>setBairro(e.target.value)} placeholder="Ex: Icaraí, Botafogo..."/>
+      </div>
+
+      <div>
         <div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[700],marginBottom:4}}>
           Se você recebesse pão toda semana, qual escolheria?
         </div>
@@ -222,6 +278,19 @@ const FormScreen=({onSubmit})=>{
             {totalQty} {totalQty===1?"unidade":"unidades"} por semana selecionada{totalQty>1?"s":""}
           </div>
         )}
+      </div>
+
+      <div onClick={()=>setOptin(!optin)}
+        style={{display:"flex",gap:12,alignItems:"flex-start",padding:"14px",cursor:"pointer",
+          background:optin?B[50]:"#FFF",borderRadius:10,border:`1.5px solid ${optin?B[400]:W[200]}`,transition:"all 150ms"}}>
+        <div style={{width:20,height:20,borderRadius:4,flexShrink:0,marginTop:1,
+          border:`2px solid ${optin?B[500]:W[300]}`,background:optin?B[500]:"#FFF",
+          display:"flex",alignItems:"center",justifyContent:"center",transition:"all 150ms"}}>
+          {optin&&<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+        </div>
+        <div style={{fontFamily:fb,fontSize:13,color:optin?B[700]:W[600],lineHeight:1.5}}>
+          Quero receber novidades da Cora — atualizações sobre o lançamento e quando as entregas começarem.
+        </div>
       </div>
 
       <Btn primary disabled={loading} onClick={handleSubmit}>
@@ -261,6 +330,22 @@ const ConfirmScreen=({nome,foraArea})=>(
           </div>
         </div>
       )}
+
+      <a href="https://instagram.com/padaria.cora" target="_blank" rel="noopener noreferrer"
+        style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:24,
+          padding:"12px 16px",borderRadius:10,border:`1.5px solid ${W[200]}`,
+          background:"#FFF",textDecoration:"none",transition:"border-color 150ms"}}
+        onMouseEnter={e=>e.currentTarget.style.borderColor=W[400]}
+        onMouseLeave={e=>e.currentTarget.style.borderColor=W[200]}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={W[600]} strokeWidth="1.8">
+          <rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/>
+          <circle cx="17.5" cy="6.5" r="1" fill={W[600]} stroke="none"/>
+        </svg>
+        <div>
+          <div style={{fontFamily:fb,fontSize:13,fontWeight:500,color:W[700]}}>Acompanhe no Instagram</div>
+          <div style={{fontFamily:fb,fontSize:11,color:W[400],marginTop:1}}>@padaria.cora — bastidores da preparação</div>
+        </div>
+      </a>
     </div>
   </div>
 );
@@ -281,7 +366,6 @@ export default function PreCadastro(){
         <div style={{background:"#FFF",padding:"10px 20px",borderBottom:`1px solid ${W[200]}`,
           display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
           <div style={{fontFamily:fd,fontSize:22,color:B[500],textTransform:"uppercase",letterSpacing:"0.02em"}}>CORA</div>
-          <div style={{fontFamily:fb,fontSize:11,color:W[400],letterSpacing:"0.04em"}}>PADARIA POR ASSINATURA</div>
         </div>
 
         {step==="form"&&(
