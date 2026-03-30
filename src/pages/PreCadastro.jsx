@@ -361,7 +361,7 @@ export default function PreCadastro(){
 
         <div style={{background:"#FFF",padding:"10px 20px",borderBottom:`1px solid ${W[200]}`,
           display:"flex",alignItems:"center",flexShrink:0}}>
-          <img src="/images/cora_logo_com_tag.svg.svg" alt="Cora" style={{height:28}}
+          <img src="/images/cora_logo_com_tag.svg" alt="Cora" style={{height:28}}
             onError={e=>{e.target.style.display="none";}}/>
         </div>
 
