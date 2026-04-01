@@ -24,28 +24,28 @@ const PRODUCTS = [
     nome: "Pão Original",
     peso: "580g",
     img: "/images/_original.jpg",
-    desc: "Farinha, água, sal e o levain da Cora. Fermentação longa de 36h. Crosta firme, miolo aberto.",
+    desc: "Blend de farinhas italianas, água, sal e o levain da Cora. Fermentação lenta. Crosta firme, miolo aberto.",
   },
   {
     id: "integral",
     nome: "Pão Integral",
     peso: "580g",
     img: "/images/_integral.jpg",
-    desc: "Farinha 100% integral, azeite e sal. Fermentação natural. Miolo denso, sabor profundo.",
+    desc: "Farinha 100% integral, água, azeite, sal e o levain da Cora. Fermentação lenta. Miolo denso, sabor profundo.",
   },
   {
     id: "multigraos",
-    nome: "Multi Grãos",
+    nome: "Multigrãos",
     peso: "631g",
     img: "/images/_multigraos.jpg",
-    desc: "6 sementes, farinha italiana e levain. Crosta crocante, miolo repleto de textura.",
+    desc: "Farinha italiana, água, 6 sementes selecionadas e levain da Cora. Crosta crocante, miolo repleto de textura e sabor.",
   },
   {
     id: "brioche",
     nome: "Brioche",
     peso: "400g",
     img: "/images/_brioche.jpg",
-    desc: "Manteiga, ovos, mel e o levain da Cora. Massa amanteigada de fermentação natural.",
+    desc: "Farinha italiana, leite integral, manteiga, ovos, mel e o levain da Cora. Massa amanteigada de fermentação natural.",
   },
 ];
 
@@ -108,7 +108,7 @@ const SplashScreen = ({ onNext }) => (
       <img
         src="/images/cora_logo_com_tag.svg"
         alt="Cora — Padaria por assinatura"
-        style={{ width: "clamp(180px, 50vw, 240px)", height: "auto" }}
+        style={{ width: "clamp(180px, 65vw, 260px)", height: "auto" }}
       />
     </div>
 
@@ -124,7 +124,7 @@ const SplashScreen = ({ onNext }) => (
           fontWeight: 400,
         }}
       >
-        Pão fresco toda semana, feito sob medida.
+        Pães de fermentação natural, toda semana na sua casa.
       </p>
       <p
         style={{
@@ -137,7 +137,7 @@ const SplashScreen = ({ onNext }) => (
           fontWeight: 500,
         }}
       >
-        Quer fazer parte?
+        Tem interesse?
       </p>
     </div>
 
@@ -161,7 +161,7 @@ const SplashScreen = ({ onNext }) => (
       onMouseOver={(e) => (e.currentTarget.style.background = B[600])}
       onMouseOut={(e) => (e.currentTarget.style.background = B[500])}
     >
-      Quero
+      Muito!
     </button>
 
     {/* Grafismo decorativo rodapé */}
@@ -294,9 +294,9 @@ const FormScreen = ({ onSubmit }) => {
         }}
       >
         <img
-          src="/images/cora_logo_com_tag.svg"
+          src="/images/cora_logo_cor.svg"
           alt="Cora"
-          style={{ height: 28 }}
+          style={{ height: 22 }}
         />
       </div>
 
@@ -372,7 +372,7 @@ const FormScreen = ({ onSubmit }) => {
         {/* Pães — vitrine */}
         <div style={{ marginBottom: 24 }}>
           <label style={labelStyle}>
-            Qual pão te atrai mais? (até 2)
+            O que mais te atrai? (até 2 opções)
           </label>
           <div
             style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}
@@ -432,16 +432,6 @@ const FormScreen = ({ onSubmit }) => {
                           }}
                         >
                           {product.nome}
-                        </div>
-                        <div
-                          style={{
-                            fontFamily: "'Montagu Slab', Georgia, serif",
-                            fontSize: 13,
-                            color: W[400],
-                            marginTop: 2,
-                          }}
-                        >
-                          {product.peso}
                         </div>
                       </div>
 
@@ -721,41 +711,13 @@ const ConfirmScreen = ({ nome }) => (
         Quando as entregas começarem, você vai ser das primeiras pessoas a saber.
       </p>
 
-      {/* Instagram */}
-      <div
-        style={{
-          marginTop: 40,
-          fontFamily: "'Montagu Slab', Georgia, serif",
-          fontSize: "clamp(14px, 3.8vw, 16px)",
-          lineHeight: 1.6,
-        }}
-      >
-        <a
-          href="https://instagram.com/cora.padaria"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: B[500], textDecoration: "underline" }}
-        >
-          Acompanhe a Cora no Instagram
-        </a>
-        <br />
-        <a
-          href="https://instagram.com/cora.padaria"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: B[500], fontWeight: 600, textDecoration: "underline" }}
-        >
-          @cora.padaria
-        </a>
-      </div>
-
       {/* Privacy */}
       <p
         style={{
           fontFamily: "'Montagu Slab', Georgia, serif",
           fontSize: 13,
           color: W[400],
-          marginTop: 16,
+          marginTop: 40,
         }}
       >
         Seus dados ficam só com a Cora.
