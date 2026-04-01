@@ -682,7 +682,7 @@ const ConfirmScreen = ({ nome }) => (
       <h1
         style={{
           fontFamily: "'League Gothic', Impact, sans-serif",
-          fontSize: "clamp(26px, 7vw, 34px)",
+          fontSize: "clamp(32px, 8.5vw, 42px)",
           color: B[800],
           textTransform: "uppercase",
           letterSpacing: "0.02em",
