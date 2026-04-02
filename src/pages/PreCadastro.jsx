@@ -294,9 +294,9 @@ const FormScreen = ({ onSubmit }) => {
         }}
       >
         <img
-          src="/images/cora_logo_cor.svg"
+          src="/images/cora_logo_com_tag.svg"
           alt="Cora"
-          style={{ height: 22 }}
+          style={{ height: 28 }}
         />
       </div>
 

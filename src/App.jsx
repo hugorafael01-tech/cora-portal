@@ -336,7 +336,9 @@ export default function CoraPortal(){
     setScr("home");
   };
 
-  if(window.location.pathname==="/interesse") return <PreCadastro/>;
+const params = new URLSearchParams(window.location.search);
+  if (window.location.pathname === "/" && !params.get("dev")) return <PreCadastro />;
+  if (window.location.pathname === "/interesse") return <PreCadastro />;
   if(isOnboarding) return <CoraOnboarding onComplete={handleOnboardingComplete}/>;
 
   return<div style={{fontFamily:fb,maxWidth:390,margin:"0 auto",background:W[50],minHeight:"100vh",display:"flex",flexDirection:"column"}}>
