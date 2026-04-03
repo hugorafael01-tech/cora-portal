@@ -711,6 +711,20 @@ const ConfirmScreen = ({ nome }) => (
         Quando as entregas começarem, você vai ser das primeiras pessoas a saber.
       </p>
 
+      <p
+        style={{
+          fontFamily: "'Montagu Slab', Georgia, serif",
+          fontSize: "clamp(18px, 5vw, 24px)",
+          color: "#2E55CD",
+          lineHeight: 1.4,
+          margin: "8px 0 0",
+          maxWidth: "100%",
+          padding: "0 8px",
+        }}
+      >
+        Se curtiu a ideia, aproveita e compartilha com os seus amigos.
+      </p>
+
       {/* Privacy */}
       <p
         style={{
