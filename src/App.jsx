@@ -1,18 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CoraOnboarding from "./Onboarding";
 import PreCadastro from "./pages/PreCadastro";
 import ProductCard from "./components/ProductCard";
+import { isPastCutoff } from "./utils/cutoff";
+import { B, W, fd, fb, fmt } from "./tokens";
 
 /* CORA — Portal do Assinante — v3.2.7
    + Onboarding com splash, gênero, fotos reais, pattern
    + Saudação "Boas-vindas" no primeiro acesso
    + Nav oculta durante onboarding */
 
-const B={50:"#EBEEFB",100:"#C4CDF4",200:"#8B9BE6",400:"#5670D8",500:"#2E55CD",600:"#2545A8",700:"#1D3787",800:"#172E6E",900:"#0F1E49"};
-const W={50:"#FAFAF8",100:"#F5F4F0",200:"#E8E6E1",300:"#D4D1CA",400:"#A8A49C",500:"#7A766E",600:"#5C5850",700:"#3D3A34",800:"#2A2723"};
 const ST={success:{bg:"#D1FAE5",t:"#065F46",b:"#6EE7B7"},warning:{bg:"#FEF3C7",t:"#92400E",b:"#FCD34D"},info:{bg:"#DBEAFE",t:"#1E40AF",b:"#93C5FD"}};
-const fd="'League Gothic',Impact,'Arial Narrow',sans-serif";
-const fb="'Montagu Slab',Georgia,Palatino,serif";
 
 const IMG={
   logo:"/images/cora_logo_com_tag.svg",
@@ -32,12 +30,12 @@ const D={
   cartao:{band:"Visa",n:"6411",prox:"1º de abril"},
   cob:{mes:"Março",valor:"R$ 98,00",status:"Pago"},
   semanasRestantes:2,
-  extras:[{nome:"Focaccia Genovesa",peso:"400g",preco:"R$ 22,00",precoNum:22,img:IMG.focaccia,ingredientes:"Farinha, água, azeite extra-virgem, sal, levain, cebola roxa, alecrim fresco.",historia:"A receita veio de Gênova, onde a focaccia é assunto sério. Lá, cada padeiro tem sua versão — a da Cora leva fermentação longa de 24h e azeite generoso. A cebola roxa carameliza no forno e o alecrim perfuma a cozinha inteira."}],
+  extras:[{id:"focaccia",nome:"Focaccia Genovesa",peso:"400g",preco:"R$ 22,00",precoNum:22,img:IMG.focaccia,ingredientes:"Farinha, água, azeite extra-virgem, sal, levain, cebola roxa, alecrim fresco.",historia:"A receita veio de Gênova, onde a focaccia é assunto sério. Lá, cada padeiro tem sua versão — a da Cora leva fermentação longa de 24h e azeite generoso. A cebola roxa carameliza no forno e o alecrim perfuma a cozinha inteira."}],
   pães:[
-    {nome:"Pão Original",peso:"580g",preco:"R$ 25,00",precoNum:25,img:IMG.original,desc:"Fermentação natural, casca crocante, miolo macio.",ingredientes:"Farinha de trigo, água, sal, levain da Cora.",detalhe:"Fermentação longa de 36h. Apenas 4 ingredientes. Crosta firme, miolo aberto com alvéolos irregulares.",qtd:1},
-    {nome:"Pão Integral",peso:"614g",preco:"R$ 28,00",precoNum:28,img:IMG.integral,desc:"100% integral, sementes de linhaça e girassol.",ingredientes:"Farinha integral, água, sal, levain, linhaça, girassol.",detalhe:"100% farinha integral. Mesma fermentação longa, com sementes tostadas que dão crocância.",qtd:0},
-    {nome:"Multi Grãos",peso:"631g",preco:"R$ 32,00",precoNum:32,img:IMG.multigraos,desc:"Aveia, centeio, gergelim e mel.",ingredientes:"Farinha de trigo, centeio, aveia, água, mel, sal, levain, gergelim.",detalhe:"Cinco grãos na massa, mel na fermentação. Miolo denso, casca com gergelim tostado.",qtd:0},
-    {nome:"Brioche",peso:"400g",preco:"R$ 34,00",precoNum:34,img:IMG.brioche,desc:"Manteiga francesa, textura amanteigada.",ingredientes:"Farinha, manteiga, ovos, açúcar, sal, levain, leite.",detalhe:"Massa enriquecida com manteiga. Fermentação 18h. Miolo dourado, textura que desfia.",qtd:0},
+    {id:"original",nome:"Pão Original",peso:"580g",preco:"R$ 25,00",precoNum:25,img:IMG.original,desc:"Fermentação natural, casca crocante, miolo macio.",ingredientes:"Farinha de trigo, água, sal, levain da Cora.",detalhe:"Fermentação longa de 36h. Apenas 4 ingredientes. Crosta firme, miolo aberto com alvéolos irregulares.",qtd:1},
+    {id:"integral",nome:"Pão Integral",peso:"614g",preco:"R$ 28,00",precoNum:28,img:IMG.integral,desc:"100% integral, sementes de linhaça e girassol.",ingredientes:"Farinha integral, água, sal, levain, linhaça, girassol.",detalhe:"100% farinha integral. Mesma fermentação longa, com sementes tostadas que dão crocância.",qtd:0},
+    {id:"multigraos",nome:"Multi Grãos",peso:"631g",preco:"R$ 32,00",precoNum:32,img:IMG.multigraos,desc:"Aveia, centeio, gergelim e mel.",ingredientes:"Farinha de trigo, centeio, aveia, água, mel, sal, levain, gergelim.",detalhe:"Cinco grãos na massa, mel na fermentação. Miolo denso, casca com gergelim tostado.",qtd:0},
+    {id:"brioche",nome:"Brioche",peso:"400g",preco:"R$ 34,00",precoNum:34,img:IMG.brioche,desc:"Manteiga francesa, textura amanteigada.",ingredientes:"Farinha, manteiga, ovos, açúcar, sal, levain, leite.",detalhe:"Massa enriquecida com manteiga. Fermentação 18h. Miolo dourado, textura que desfia.",qtd:0},
   ],
   hist:[
     {sem:"Semana 28/03",itens:"1 Pão Original (580g)",st:"Pendente",extra:null},
@@ -46,7 +44,6 @@ const D={
     {sem:"Semana 07/03",itens:"1 Pão Original (580g)",st:"Entregue",extra:null},
   ],
 };
-const fmt=v=>`R$ ${v.toFixed(2).replace(".",",")}`;
 const greet=()=>{const h=new Date().getHours();return h<12?"bom dia":h<18?"boa tarde":"boa noite";};
 
 const I=({d,size=20,color=W[400],sw=1.5})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
@@ -82,9 +79,12 @@ const Btn=({children,primary,disabled,onClick,style:es,full,ariaLabel})=>{const[
 const QtyBtn=({qty,onAdd,onRemove,name})=><div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}><button aria-label={`Remover ${name}`} onClick={onRemove} className="qb" style={{width:32,height:32,borderRadius:8,border:`1px solid ${W[300]}`,background:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center"}}>−</button><span style={{fontFamily:fb,fontSize:16,fontWeight:600,color:B[500],width:24,textAlign:"center"}}>{qty}</span><button aria-label={`Adicionar ${name}`} onClick={onAdd} className="qb" style={{width:32,height:32,borderRadius:8,border:`1px solid ${B[500]}`,background:B[50],cursor:"pointer",fontSize:18,color:B[500],display:"flex",alignItems:"center",justifyContent:"center"}}>+</button></div>;
 const Toast=({msg,vis})=>vis?<div role="status" aria-live="polite" style={{position:"fixed",bottom:72,left:16,right:16,maxWidth:358,margin:"0 auto",background:W[800],color:"#FFF",borderRadius:8,padding:"12px 16px",zIndex:60,fontFamily:fb,fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8,animation:"fadeUp 300ms ease"}}><I d={ic.check} size={16} color="#6EE7B7"/>{msg}</div>:null;
 const DeadlineWarning=()=><div style={{fontFamily:fb,fontSize:12,color:ST.warning.t,background:ST.warning.bg,padding:"8px 12px",borderRadius:8,marginBottom:20,display:"inline-flex",alignItems:"center",gap:8,border:`1px solid ${ST.warning.b}`}}><I d={ic.clock} size={14} color={ST.warning.t}/>Pedidos até terça, 22h, para entrega na quinta</div>;
+const CutoffMsg=()=><div style={{fontFamily:fb,fontSize:13,color:"#7A766E",marginTop:6}}>Prazo encerrado. Alterações valem a partir da próxima semana.</div>;
+const simulate=()=>new Promise(r=>setTimeout(r,600));
+const ActionBtn=({children,loadingText,successText,onAction,onComplete,primary,disabled:extDisabled,full,style:es,ariaLabel})=>{const[st,setSt]=useState('idle');const[err,setErr]=useState('');const handle=async()=>{if(st!=='idle')return;setSt('loading');setErr('');try{await onAction();setSt('success');setTimeout(()=>{setSt('idle');onComplete?.();},1500);}catch(e){setErr(e.message||'Erro ao processar. Tente novamente.');setSt('idle');}};const busy=st==='loading'||st==='success';const label=st==='loading'?loadingText:st==='success'?successText:children;const stStyle=st==='success'?{background:'#D1FAE5',color:'#065F46',border:'1px solid #6EE7B7',opacity:1}:{};return<><Btn primary={st!=='success'&&primary} disabled={busy||extDisabled} onClick={handle} full={full} ariaLabel={ariaLabel} style={{...es,...stStyle}}>{label}</Btn>{err&&<div style={{fontFamily:fb,fontSize:13,color:'#9A3412',background:'#FFEDD5',padding:'8px 12px',borderRadius:8,marginTop:6}}>{err}</div>}</>;};
 
 // ─── MODAL ───
-const Modal=({product,onClose,onAction,actionLabel,hint,qty,onAdd,onRemove})=>{
+const Modal=({product,onClose,onAction,onComplete,actionLabel,hint,qty,onAdd,onRemove,cutoff})=>{
   if(!product)return null;
   return<>
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
@@ -102,7 +102,7 @@ const Modal=({product,onClose,onAction,actionLabel,hint,qty,onAdd,onRemove})=>{
         {product.historia&&<div style={{marginBottom:16,fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.7}}>{product.historia}</div>}
         {product.detalhe&&!product.historia&&<div style={{marginBottom:16}}><div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[400],letterSpacing:"0.04em",marginBottom:6}}>Sobre este pão</div><div style={{fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.6}}>{product.detalhe}</div></div>}
         <div style={{marginTop:4}}>
-          {qty>0?<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0"}}><div style={{fontFamily:fb,fontSize:14,color:ST.success.t,fontWeight:500,display:"flex",alignItems:"center",gap:6}}><I d={ic.check} size={16} color={ST.success.t}/>Na sua cesta</div><QtyBtn qty={qty} onAdd={onAdd} onRemove={onRemove} name={product.nome}/></div>:<>{onAction&&<Btn primary full onClick={onAction} ariaLabel={actionLabel}>{actionLabel}</Btn>}{hint&&<div style={{fontFamily:fb,fontSize:12,color:W[500],textAlign:"center",marginTop:8}}>{hint}</div>}</>}
+          {cutoff?<><Btn primary full disabled ariaLabel={actionLabel}>{actionLabel}</Btn><CutoffMsg/></>:qty>0?<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0"}}><div style={{fontFamily:fb,fontSize:14,color:ST.success.t,fontWeight:500,display:"flex",alignItems:"center",gap:6}}><I d={ic.check} size={16} color={ST.success.t}/>Na sua cesta</div><QtyBtn qty={qty} onAdd={onAdd} onRemove={onRemove} name={product.nome}/></div>:<>{onAction&&<ActionBtn primary full loadingText="Adicionando…" successText="Adicionado ✓" onAction={onAction} onComplete={onComplete} ariaLabel={actionLabel}>{actionLabel}</ActionBtn>}{hint&&<div style={{fontFamily:fb,fontSize:12,color:W[500],textAlign:"center",marginTop:8}}>{hint}</div>}</>}
         </div>
       </div>
     </div>
@@ -112,19 +112,20 @@ const Modal=({product,onClose,onAction,actionLabel,hint,qty,onAdd,onRemove})=>{
 const Nav=({active,onNav,badge})=>{const items=[{id:"home",label:"INÍCIO",icon:ic.home},{id:"assinatura",label:"ASSINATURA",icon:ic.wheat},{id:"cardapio",label:"CARDÁPIO",icon:ic.utensils},{id:"perfil",label:"PERFIL",icon:ic.user}];return<div style={{display:"flex",justifyContent:"space-around",alignItems:"center",padding:"8px 0 12px",borderTop:`1px solid ${W[200]}`,background:"#FFF",position:"sticky",bottom:0,zIndex:10,minHeight:56}}>{items.map(it=><button key={it.id} aria-label={`Ir para ${it.label}`} onClick={()=>onNav(it.id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,border:"none",background:"none",cursor:"pointer",minWidth:56,minHeight:44,padding:"4px 0",position:"relative"}}><I d={it.icon} size={22} color={active===it.id?B[500]:W[400]}/>{it.id==="cardapio"&&badge>0&&<span style={{position:"absolute",top:0,right:4,width:18,height:18,borderRadius:9999,background:B[500],color:"#FFF",fontFamily:fb,fontSize:10,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{badge}</span>}<span style={{fontFamily:fd,fontSize:11,letterSpacing:"0.02em",textTransform:"uppercase",color:active===it.id?B[500]:W[400]}}>{it.label}</span></button>)}</div>;};
 
 // ─── NOVIDADE CARD (edge-to-edge photo) ───
-const NovidadeCard=({extra,qty,onCardClick,onAdd,onRemove})=><Card style={{padding:0,overflow:"hidden",cursor:"pointer",marginBottom:16}} onClick={onCardClick} ariaLabel={`Novidade: ${extra.nome}`}>
+const NovidadeCard=({extra,qty,onCardClick,onAdd,onRemove,cutoff})=><Card style={{padding:0,overflow:"hidden",cursor:"pointer",marginBottom:16}} onClick={onCardClick} ariaLabel={`Novidade: ${extra.nome}`}>
   <ProductImg src={extra.img} h={200} alt={extra.nome} rounded={false}/>
   <div style={{padding:16}}>
     <SL t="Novidade da semana"/>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}>
       <div style={{flex:1}}><div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800]}}>{extra.nome}</div><div style={{fontFamily:fb,fontSize:14,color:W[600],marginTop:4}}>{extra.preco} — Só assinantes</div></div>
-      {qty===0?<button onClick={e=>{e.stopPropagation();onCardClick();}} className="bp" style={{padding:"10px 24px",borderRadius:8,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",minHeight:44,flexShrink:0}}>Quero</button>:<QtyBtn qty={qty} onAdd={()=>onAdd&&onAdd()} onRemove={()=>onRemove&&onRemove()} name={extra.nome}/>}
+      {cutoff?<button disabled className="bp" style={{padding:"10px 24px",borderRadius:8,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"default",minHeight:44,flexShrink:0,opacity:0.5}}>Quero</button>:qty===0?<button onClick={e=>{e.stopPropagation();onCardClick();}} className="bp" style={{padding:"10px 24px",borderRadius:8,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",minHeight:44,flexShrink:0}}>Quero</button>:<QtyBtn qty={qty} onAdd={()=>onAdd&&onAdd()} onRemove={()=>onRemove&&onRemove()} name={extra.nome}/>}
     </div>
+    {cutoff&&<CutoffMsg/>}
   </div>
 </Card>;
 
 // ─── PERSISTENT ORDER FOOTER (lives in App, visible on all screens) ───
-const OrderFooter=({pending,onConfirm,onNav})=>{
+const OrderFooter=({pending,onConfirm,onNav,cutoff})=>{
   const total=totalOf(pending);
   if(pending.length===0)return null;
   return<div style={{position:"fixed",bottom:56,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderTop:`1px solid ${W[200]}`,padding:"12px 16px",zIndex:8,animation:"fadeUp 200ms ease"}}>
@@ -135,9 +136,9 @@ const OrderFooter=({pending,onConfirm,onNav})=>{
         </div>
         <div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800]}}>{fmt(total)}</div>
       </div>
-      <Btn primary onClick={onConfirm}>Confirmar</Btn>
+      <ActionBtn primary disabled={cutoff} loadingText="Adicionando…" successText="Adicionado ✓" onAction={()=>simulate()} onComplete={onConfirm}>Confirmar</ActionBtn>
     </div>
-    <div style={{fontFamily:fb,fontSize:11,color:W[500],marginTop:4}}>Além da sua assinatura. Cobrado na próxima fatura.</div>
+    {cutoff?<CutoffMsg/>:<div style={{fontFamily:fb,fontSize:11,color:W[500],marginTop:4}}>Além da sua assinatura. Cobrado na próxima fatura.</div>}
   </div>;
 };
 
@@ -156,13 +157,13 @@ const removeFrom=(list,nome)=>{const i=list.findIndex(p=>p.nome===nome);if(i===-
 const totalOf=list=>list.reduce((s,p)=>s+p.precoNum,0);
 
 // ═══ HOME ═══
-const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,userData,isFirstVisit,onSeen})=>{
+const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,userData,isFirstVisit,onSeen,cutoff})=>{
   const[modal,setModal]=useState(null);
   const[toast,setToast]=useState(false);
   const[toastMsg,setToastMsg]=useState("");
   const allItems=[...confirmed,...pending];
   const cntAll=n=>cntIn(allItems,n);
-  const handleAdd=p=>{addPending(p);setModal(null);setToastMsg(`${p.nome} adicionada ao seu pedido.`);setToast(true);setTimeout(()=>setToast(false),5000);};
+  const handleAddComplete=p=>{addPending(p);setModal(null);setToastMsg(`${p.nome} adicionada ao seu pedido.`);setToast(true);setTimeout(()=>setToast(false),5000);};
   const handleQtyChange=(product,delta)=>{
     if(confirmed.length>0){
       if(delta>0) updateConfirmed(addTo(confirmed,product));
@@ -181,8 +182,7 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
   const saudacao=isFirstVisit?(userData?.genero==="f"?"Bem-vinda":"Bem-vindo"):greet();
   const prefix=isFirstVisit?`${saudacao}, ${nome}!`:`Oi, ${nome}, ${saudacao}!`;
 
-  // Mark first visit as seen after render
-  if(isFirstVisit&&onSeen) setTimeout(onSeen,5000);
+  useEffect(()=>{if(!isFirstVisit||!onSeen)return;const t=setTimeout(onSeen,5000);return()=>clearTimeout(t);},[isFirstVisit,onSeen]);
 
   return<div style={{padding:"24px 16px 16px",paddingBottom:pending.length>0?80:16}}>
     <h1 style={{fontFamily:fd,fontSize:30,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",margin:"0 0 20px",lineHeight:1.1}}>{prefix}</h1>
@@ -211,17 +211,18 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
     </Card>}
 
     {/* Novidade hero — edge-to-edge photo */}
-    {D.extras.length>0?<NovidadeCard extra={D.extras[0]} qty={cntAll(D.extras[0].nome)} onCardClick={()=>setModal(D.extras[0])} onAdd={()=>handleQtyChange(D.extras[0],1)} onRemove={()=>handleQtyChange(D.extras[0],-1)}/>:<Card style={{marginBottom:16,padding:20,textAlign:"center"}}><div style={{fontFamily:fd,fontSize:15,textTransform:"uppercase",color:W[400],marginBottom:8}}>Novidades da semana</div><div style={{fontFamily:fb,fontSize:14,color:W[500],lineHeight:1.6}}>Nenhuma novidade esta semana. Mas seu pão de sempre está garantido.</div></Card>}
+    {D.extras.length>0?<NovidadeCard extra={D.extras[0]} qty={cntAll(D.extras[0].nome)} onCardClick={()=>setModal(D.extras[0])} onAdd={()=>handleQtyChange(D.extras[0],1)} onRemove={()=>handleQtyChange(D.extras[0],-1)} cutoff={cutoff}/>:<Card style={{marginBottom:16,padding:20,textAlign:"center"}}><div style={{fontFamily:fd,fontSize:15,textTransform:"uppercase",color:W[400],marginBottom:8}}>Novidades da semana</div><div style={{fontFamily:fb,fontSize:14,color:W[500],lineHeight:1.6}}>Nenhuma novidade esta semana. Mas seu pão de sempre está garantido.</div></Card>}
 
     <div onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,textAlign:"center",padding:"8px 0",cursor:"pointer"}}>Ver cardápio completo ›</div>
-    {modal&&<Modal product={modal} onClose={()=>setModal(null)} onAction={()=>handleAdd(modal)} actionLabel="Adicionar à cesta" hint="Cobrado na próxima fatura" qty={cntAll(modal.nome)} onAdd={()=>handleQtyChange(modal,1)} onRemove={()=>handleQtyChange(modal,-1)}/>}
+    {modal&&<Modal product={modal} onClose={()=>setModal(null)} onAction={()=>simulate()} onComplete={()=>handleAddComplete(modal)} actionLabel="Adicionar à cesta" hint="Cobrado na próxima fatura" qty={cntAll(modal.nome)} onAdd={()=>handleQtyChange(modal,1)} onRemove={()=>handleQtyChange(modal,-1)} cutoff={cutoff}/>}
     <Toast msg={toastMsg} vis={toast}/>
   </div>;
 };
 
 // ═══ ASSINATURA ═══
-const Assinatura=({onNav,hasPending})=>{
+const Assinatura=({onNav,hasPending,cutoff})=>{
   const[editing,setEditing]=useState(false);const[qtds,setQtds]=useState(D.pães.map(p=>p.qtd));const[saved,setSaved]=useState(false);const[showCalc,setShowCalc]=useState(false);
+  const[addrSt,setAddrSt]=useState('idle');const[cardSt,setCardSt]=useState('idle');
   const total=qtds.reduce((s,q)=>s+q,0);const mensal=D.pães.reduce((s,p,i)=>s+qtds[i]*p.precoNum*4,0);const orig=D.pães.reduce((s,p)=>s+p.qtd*p.precoNum*4,0);const changed=qtds.some((q,i)=>q!==D.pães[i].qtd);const diff=mensal-orig;const prop=Math.abs(diff/4*D.semanasRestantes);
   const upd=(i,d)=>setQtds(p=>{const n=[...p];const v=n[i]+d;const t=total+d;if(v<0||t>3)return p;n[i]=v;return n;});
   const handleSave=()=>{setEditing(false);setSaved(true);setTimeout(()=>setSaved(false),5000);};
@@ -231,7 +232,7 @@ const Assinatura=({onNav,hasPending})=>{
     <div style={{background:B[50],borderRadius:12,padding:16,marginBottom:16,fontFamily:fb,fontSize:14,color:B[800],lineHeight:1.6}}>Toda semana você recebe pão fresco na porta da sua casa. O valor da assinatura é fixo — e em meses com 5 semanas, o pão extra é por nossa conta.</div>
     <Card style={{marginBottom:12}}><SL t="Minha cesta"/>
       <div style={{display:"flex",gap:12,alignItems:"center"}}><ProductThumb src={IMG.original} w={56} h={48} alt="Pão Original"/><div style={{flex:1}}><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800]}}>{D.cesta.nome}</div><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{D.cesta.itens}</div><div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:B[500],marginTop:4}}>{D.cesta.valor}</div></div></div>
-      {!editing&&<Btn full onClick={()=>setEditing(true)} style={{marginTop:12}}>Alterar minha cesta</Btn>}
+      {!editing&&<><Btn full disabled={cutoff} onClick={()=>setEditing(true)} style={{marginTop:12}}>Alterar minha cesta</Btn>{cutoff&&<CutoffMsg/>}</>}
       {editing&&<div style={{marginTop:16,borderTop:`1px solid ${W[200]}`,paddingTop:16}}>
         <DeadlineWarning/>
         <div style={{fontFamily:fb,fontSize:12,color:W[500],marginBottom:12}}>Limite: 3 pães/semana ({total}/3)</div>
@@ -244,18 +245,18 @@ const Assinatura=({onNav,hasPending})=>{
         {changed&&<><div style={{fontFamily:fb,fontSize:12,color:W[500],textAlign:"right",marginBottom:4}}>Antes: {fmt(orig)} → Depois: {fmt(mensal)}</div>
           <div onClick={()=>setShowCalc(!showCalc)} style={{background:B[50],borderRadius:8,padding:"10px 12px",marginBottom:12,cursor:"pointer",border:`1px solid ${B[100]}`}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontFamily:fb,fontSize:13,color:B[700]}}>Ajuste neste mês: <span style={{fontWeight:600}}>{diff>0?"+":""}{fmt(prop)}</span></div><I d={ic.chevDown} size={16} color={B[400]}/></div>{showCalc&&<div style={{marginTop:8,fontFamily:fb,fontSize:12,color:B[600],lineHeight:1.6,animation:"fadeUp 200ms ease"}}>Faltam {D.semanasRestantes} semanas neste mês.<br/>Diferença semanal: {diff>0?"+":""}{fmt(Math.abs(diff/4))}/semana<br/>Cobrado proporcionalmente na próxima fatura: {diff>0?"+":""}{fmt(prop)}</div>}</div>
         </>}
-        <div style={{display:"flex",gap:8}}><Btn onClick={()=>{setEditing(false);setQtds(D.pães.map(p=>p.qtd));setShowCalc(false);}} style={{flex:1}}>Cancelar</Btn><Btn primary disabled={!changed} onClick={handleSave} style={{flex:2}}>{changed?"Salvar":"Faça uma alteração"}</Btn></div>
+        <div style={{display:"flex",gap:8}}><Btn onClick={()=>{setEditing(false);setQtds(D.pães.map(p=>p.qtd));setShowCalc(false);}} style={{flex:1}}>Cancelar</Btn><ActionBtn primary disabled={!changed} loadingText="Atualizando…" successText="Atualizada ✓" onAction={()=>simulate()} onComplete={handleSave} style={{flex:2}}>{changed?"Salvar":"Faça uma alteração"}</ActionBtn></div>
       </div>}
     </Card>
     <Toast msg="Cesta atualizada! O novo valor começa a valer esta semana." vis={saved}/>
-    <Card style={{marginBottom:12}}><SL t="Entrega"/><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800],marginBottom:4}}>Entregas às {D.ent.dia.toLowerCase()}</div><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{D.ent.cond}, {D.ent.bloco}</div><div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:8}}>Frete: {D.ent.frete}</div><div style={{fontFamily:fb,fontSize:12,color:B[700],background:B[50],padding:"8px 12px",borderRadius:8,marginBottom:8,display:"flex",gap:8,alignItems:"flex-start"}}><I d={ic.users} size={16} color={B[500]}/><span>Traga 5 moradores do seu prédio e tenha entrega gratuita.</span></div><div className="lk" style={{fontFamily:fb,fontSize:13,color:B[500],fontWeight:500,cursor:"pointer"}}>Editar endereço ›</div></Card>
-    <Card style={{marginBottom:12}}><SL t="Cobrança"/><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800],marginBottom:4}}>Mensal no cartão</div><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{D.cartao.band} ••••{D.cartao.n}</div><div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:8}}>Próxima: {D.cartao.prox}</div><div className="lk" style={{fontFamily:fb,fontSize:13,color:B[500],fontWeight:500,cursor:"pointer"}}>Atualizar cartão ›</div></Card>
+    <Card style={{marginBottom:12}}><SL t="Entrega"/><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800],marginBottom:4}}>Entregas às {D.ent.dia.toLowerCase()}</div><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{D.ent.cond}, {D.ent.bloco}</div><div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:8}}>Frete: {D.ent.frete}</div><div style={{fontFamily:fb,fontSize:12,color:B[700],background:B[50],padding:"8px 12px",borderRadius:8,marginBottom:8,display:"flex",gap:8,alignItems:"flex-start"}}><I d={ic.users} size={16} color={B[500]}/><span>Traga 5 moradores do seu prédio e tenha entrega gratuita.</span></div><div onClick={async()=>{if(addrSt!=='idle')return;setAddrSt('loading');await simulate();setAddrSt('success');setTimeout(()=>setAddrSt('idle'),1500);}} className="lk" style={{fontFamily:fb,fontSize:13,color:addrSt==='success'?'#065F46':B[500],fontWeight:500,cursor:addrSt!=='idle'?'default':'pointer',background:addrSt==='success'?'#D1FAE5':'none',padding:addrSt==='success'?'4px 8px':0,borderRadius:6,display:'inline-block',transition:'all 150ms ease',opacity:addrSt==='loading'?0.5:1}}>{addrSt==='loading'?'Salvando…':addrSt==='success'?'Salvo ✓':'Editar endereço ›'}</div></Card>
+    <Card style={{marginBottom:12}}><SL t="Cobrança"/><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800],marginBottom:4}}>Mensal no cartão</div><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{D.cartao.band} ••••{D.cartao.n}</div><div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:8}}>Próxima: {D.cartao.prox}</div><div onClick={async()=>{if(cardSt!=='idle')return;setCardSt('loading');await simulate();setCardSt('success');setTimeout(()=>setCardSt('idle'),1500);}} className="lk" style={{fontFamily:fb,fontSize:13,color:cardSt==='success'?'#065F46':B[500],fontWeight:500,cursor:cardSt!=='idle'?'default':'pointer',background:cardSt==='success'?'#D1FAE5':'none',padding:cardSt==='success'?'4px 8px':0,borderRadius:6,display:'inline-block',transition:'all 150ms ease',opacity:cardSt==='loading'?0.5:1}}>{cardSt==='loading'?'Validando…':cardSt==='success'?'Atualizado ✓':'Atualizar cartão ›'}</div></Card>
     <Card onClick={()=>onNav("perfil")} style={{marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}} ariaLabel="Ver histórico"><div style={{display:"flex",alignItems:"center",gap:12}}><I d={ic.file} size={20} color={B[500]}/><div><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[700]}}>Histórico de entregas e cobranças</div><div style={{fontFamily:fb,fontSize:12,color:W[500]}}>{D.cob.mes} — {D.cob.valor} — {D.cob.status}</div></div></div><I d={ic.chev} size={16} color={W[400]}/></Card>
   </div>;
 };
 
 // ═══ CARDÁPIO ═══
-const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending})=>{
+const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff})=>{
   const[modal,setModal]=useState(null);
   const[toastC,setToastC]=useState(false);
   const allItems=[...confirmed,...pending];const cntAll=n=>cntIn(allItems,n);
@@ -278,7 +279,7 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending})=>{
 
     {confirmed.length>0&&<div style={{background:ST.success.bg,borderRadius:8,padding:"10px 12px",marginBottom:16,border:`1px solid ${ST.success.b}`,display:"flex",alignItems:"center",gap:8}}><I d={ic.check} size={16} color={ST.success.t}/><span style={{fontFamily:fb,fontSize:13,color:ST.success.t,fontWeight:500}}>{Object.entries(confirmed.reduce((a,p)=>{a[p.nome]=(a[p.nome]||0)+1;return a;},{})).map(([n,q])=>`${q}× ${n}`).join(", ")} — confirmado</span></div>}
 
-    {D.extras.length>0?D.extras.map((ex,i)=><NovidadeCard key={i} extra={ex} qty={cntAll(ex.nome)} onCardClick={()=>setModal(ex)} onAdd={()=>addItem(ex)} onRemove={()=>removeItem(ex.nome)}/>):<Card style={{marginBottom:16,padding:20,textAlign:"center"}}><div style={{fontFamily:fb,fontSize:14,color:W[500]}}>Nenhuma novidade esta semana.</div></Card>}
+    {D.extras.length>0?D.extras.map((ex,i)=><NovidadeCard key={i} extra={ex} qty={cntAll(ex.nome)} onCardClick={()=>setModal(ex)} onAdd={()=>addItem(ex)} onRemove={()=>removeItem(ex.nome)} cutoff={cutoff}/>):<Card style={{marginBottom:16,padding:20,textAlign:"center"}}><div style={{fontFamily:fb,fontSize:14,color:W[500]}}>Nenhuma novidade esta semana.</div></Card>}
 
     <div style={{height:1,background:W[200],margin:"4px 0 20px"}}/>
     <div style={{fontFamily:fd,fontSize:16,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",marginBottom:12}}>Nossos pães</div>
@@ -289,16 +290,20 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending})=>{
   onAdd={()=>addItem(p)}
   onRemove={()=>removeItem(p.nome)}
   ctaLabel="Pedir"
+  cutoff={cutoff}
+  basketIds={D.pães.filter(x=>x.qtd>0).map(x=>x.id)}
+  loadingText="Adicionando…"
+  successText="Adicionado ✓"
 />;})}
 
-    {modal&&<Modal product={modal} onClose={()=>setModal(null)} onAction={()=>{addItem(modal);setModal(null);}} actionLabel="Adicionar à cesta" hint="Cobrado na próxima fatura" qty={cntAll(modal.nome)} onAdd={()=>addItem(modal)} onRemove={()=>removeItem(modal.nome)}/>}
+    {modal&&<Modal product={modal} onClose={()=>setModal(null)} onAction={()=>simulate()} onComplete={()=>{addItem(modal);setModal(null);}} actionLabel="Adicionar à cesta" hint="Cobrado na próxima fatura" qty={cntAll(modal.nome)} onAdd={()=>addItem(modal)} onRemove={()=>removeItem(modal.nome)} cutoff={cutoff}/>}
     <Toast msg="Pedido removido." vis={toastC}/>
   </div>;
 };
 
 // ═══ PERFIL ═══
 const Perfil=({confirmed,hasPending})=>{
-  const[cpf,setCpf]=useState(false);const dados=[["Endereço","Ed. Boa Vista, Bl. A / 502"],["Dia de entrega","Quintas-feiras"],["WhatsApp","(21) 99876-5432"],["E-mail","beatriz@email.com"],["CPF",cpf?"123.456.789-00":"•••.•••.789-00"]];const confirmedTotal=totalOf(confirmed);
+  const[cpf,setCpf]=useState(false);const[pauseSt,setPauseSt]=useState('idle');const dados=[["Endereço","Ed. Boa Vista, Bl. A / 502"],["Dia de entrega","Quintas-feiras"],["WhatsApp","(21) 99876-5432"],["E-mail","beatriz@email.com"],["CPF",cpf?"123.456.789-00":"•••.•••.789-00"]];const confirmedTotal=totalOf(confirmed);
   return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
     <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[800],margin:"0 0 20px"}}>Perfil</h2>
     <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}><div style={{width:48,height:48,borderRadius:9999,background:B[50],display:"flex",alignItems:"center",justifyContent:"center",fontFamily:fd,fontSize:20,color:B[500],textTransform:"uppercase"}}>B</div><div><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800]}}>Beatriz Silva</div><div style={{fontFamily:fb,fontSize:12,color:W[500]}}>beatriz@email.com</div></div></div>
@@ -310,8 +315,8 @@ const Perfil=({confirmed,hasPending})=>{
       <div style={{marginTop:12,padding:12,borderRadius:8,background:W[50],border:`1px solid ${W[200]}`}}><div style={{fontFamily:fb,fontSize:12,color:W[400],marginBottom:4}}>Cobrança do mês</div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800]}}>{D.cob.mes} — {D.cob.valor}</span><Badge label="Pago"/></div></div>
       <div style={{marginTop:8,padding:12,borderRadius:8,background:B[50],border:`1px solid ${B[100]}`}}><div style={{fontFamily:fb,fontSize:12,color:B[700],marginBottom:4}}>Próxima fatura (abril)</div><div style={{fontFamily:fb,fontSize:13,color:B[800],lineHeight:1.6}}>Assinatura: R$ 98,00<br/>+ Extras: {fmt(confirmedTotal||22)}<br/>+ Frete: R$ 15,00<br/><span style={{fontWeight:600}}>= {fmt(98+15+(confirmedTotal||22))} (estimado)</span></div></div>
     </Card>
-    <Card style={{marginBottom:12}}><SL t="Cartão"/><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[800]}}>{D.cartao.band} ••••{D.cartao.n}</div><div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:4}}>Próxima: {D.cartao.prox}</div></div><Btn style={{padding:"8px 16px",fontSize:12}}>Atualizar</Btn></div></Card>
-    <Card style={{marginBottom:12}}><div style={{fontFamily:fb,fontSize:14,color:W[700],marginBottom:12,lineHeight:1.5}}>Precisa pausar ou cancelar? Fale pelo WhatsApp.</div><button className="bw" style={{width:"100%",padding:"12px 0",borderRadius:8,background:"#25D366",color:"#FFF",border:"none",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,minHeight:44}}><I d={ic.msg} size={18} color="#FFF"/>Falar pelo WhatsApp</button></Card>
+    <Card style={{marginBottom:12}}><SL t="Cartão"/><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[800]}}>{D.cartao.band} ••••{D.cartao.n}</div><div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:4}}>Próxima: {D.cartao.prox}</div></div><ActionBtn loadingText="Validando…" successText="Atualizado ✓" onAction={()=>simulate()} style={{padding:"8px 16px",fontSize:12}}>Atualizar</ActionBtn></div></Card>
+    <Card style={{marginBottom:12}}><div style={{fontFamily:fb,fontSize:14,color:W[700],marginBottom:12,lineHeight:1.5}}>Precisa pausar ou cancelar? Fale pelo WhatsApp.</div><button disabled={pauseSt!=='idle'} onClick={async()=>{if(pauseSt!=='idle')return;setPauseSt('loading');await simulate();setPauseSt('success');setTimeout(()=>setPauseSt('idle'),1500);}} className="bw" style={{width:"100%",padding:"12px 0",borderRadius:8,background:pauseSt==='success'?'#D1FAE5':'#25D366',color:pauseSt==='success'?'#065F46':'#FFF',border:pauseSt==='success'?'1px solid #6EE7B7':'none',fontFamily:fb,fontSize:14,fontWeight:500,cursor:pauseSt!=='idle'?'default':'pointer',display:"flex",alignItems:"center",justifyContent:"center",gap:8,minHeight:44,opacity:pauseSt==='loading'?0.5:1,transition:'all 150ms ease'}}>{pauseSt==='idle'&&<I d={ic.msg} size={18} color="#FFF"/>}{pauseSt==='loading'?'Processando…':pauseSt==='success'?'Confirmada ✓':'Falar pelo WhatsApp'}</button></Card>
     <button className="bl" style={{width:"100%",padding:"12px 0",borderRadius:8,background:"none",color:W[500],border:`1px solid ${W[300]}`,fontFamily:fb,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,minHeight:44}}><I d={ic.logout} size={16} color={W[500]}/>Sair da conta</button>
   </div>;
 };
@@ -329,6 +334,7 @@ export default function CoraPortal(){
   const removePending=n=>setPending(prev=>removeFrom(prev,n));
   const handleConfirm=()=>{setConfirmed(prev=>[...prev,...pending]);setPending([]);setJustConfirmed(true);setTimeout(()=>setJustConfirmed(false),4000);};
   const hasPending=pending.length>0;
+  const cutoff=isPastCutoff();
   const isOnboarding=scr==="onboarding";
 
   const handleOnboardingComplete=(data)=>{
@@ -337,8 +343,8 @@ export default function CoraPortal(){
   };
 
 const params = new URLSearchParams(window.location.search);
-  if (window.location.pathname === "/" && !params.get("dev")) return <PreCadastro />;
   if (window.location.pathname === "/interesse") return <PreCadastro />;
+  if (!params.get("dev")) return <PreCadastro />;
   if(isOnboarding) return <CoraOnboarding onComplete={handleOnboardingComplete}/>;
 
   return<div style={{fontFamily:fb,maxWidth:390,margin:"0 auto",background:W[50],minHeight:"100vh",display:"flex",flexDirection:"column"}}>
@@ -346,15 +352,15 @@ const params = new URLSearchParams(window.location.search);
       <img src={IMG.logo} alt="Cora" style={{height:28}}/>
     </div>
     <div style={{flex:1,overflowY:"auto"}}>
-      {scr==="home"&&<Home onNav={setScr} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)}/>}
-      {scr==="assinatura"&&<Assinatura onNav={setScr} hasPending={hasPending}/>}
-      {scr==="cardapio"&&<Cardapio pending={pending} confirmed={confirmed} setPending={setPending} setConfirmed={setConfirmed} hasPending={hasPending}/>}
+      {scr==="home"&&<Home onNav={setScr} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff}/>}
+      {scr==="assinatura"&&<Assinatura onNav={setScr} hasPending={hasPending} cutoff={cutoff}/>}
+      {scr==="cardapio"&&<Cardapio pending={pending} confirmed={confirmed} setPending={setPending} setConfirmed={setConfirmed} hasPending={hasPending} cutoff={cutoff}/>}
       {scr==="perfil"&&<Perfil confirmed={confirmed} hasPending={hasPending}/>}
     </div>
     {/* RODAPÉ PERSISTENTE — visível em TODAS as telas */}
-    <OrderFooter pending={pending} onConfirm={handleConfirm} onNav={setScr}/>
+    <OrderFooter pending={pending} onConfirm={handleConfirm} onNav={setScr} cutoff={cutoff}/>
     <ConfirmedFooter vis={justConfirmed}/>
     <Nav active={scr} onNav={setScr} badge={pending.length}/>
-    <style>{`@import url('https://fonts.googleapis.com/css2?family=League+Gothic&family=Montagu+Slab:wght@400;500;600;700&display=swap');*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior:none}img{max-width:100%}input,button{font-size:16px}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}.bp:hover{background:${B[600]}!important}.bw:hover{background:#1FAF54!important}.bl:hover{background:${W[100]}!important}.lk:hover{text-decoration:underline}.qb:hover:not(:disabled){background:${W[100]}!important}button:focus-visible{outline:none;box-shadow:0 0 0 3px ${B[50]},0 0 0 5px ${B[500]}}`}</style>
+    <style>{`*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior:none}img{max-width:100%}input,button{font-size:16px}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}.bp:hover{background:${B[600]}!important}.bw:hover{background:#1FAF54!important}.bl:hover{background:${W[100]}!important}.lk:hover{text-decoration:underline}.qb:hover:not(:disabled){background:${W[100]}!important}button:focus-visible{outline:none;box-shadow:0 0 0 3px ${B[50]},0 0 0 5px ${B[500]}}`}</style>
   </div>;
 }

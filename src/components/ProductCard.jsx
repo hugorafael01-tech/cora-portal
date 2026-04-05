@@ -1,9 +1,5 @@
 import { useState } from "react";
-
-const B={50:"#EBEEFB",100:"#C4CDF4",200:"#8B9BE6",400:"#5670D8",500:"#2E55CD",600:"#2545A8",700:"#1D3787",800:"#172E6E"};
-const W={50:"#FAFAF8",100:"#F5F4F0",200:"#E8E6E1",300:"#D4D1CA",400:"#A8A49C",500:"#7A766E",600:"#5C5850",700:"#3D3A34",800:"#2A2723"};
-const fb="'Montagu Slab',Georgia,Palatino,serif";
-const fd="'League Gothic',Impact,'Arial Narrow',sans-serif";
+import { B, W, fb, fd } from "../tokens";
 
 const QtyBtn=({qty,onAdd,onRemove,name})=>(
   <div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
@@ -24,9 +20,21 @@ const QtyBtn=({qty,onAdd,onRemove,name})=>(
     onRemove  — () => void
     ctaLabel  — string, ex: "Pedir", "Quero", "Tenho interesse"
 */
-export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel="Pedir" }) {
+export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel="Pedir", cutoff=false, basketIds=[], loadingText, successText }) {
   const [expanded, setExpanded] = useState(false);
+  const [ctaSt, setCtaSt] = useState('idle');
+  const [ctaErr, setCtaErr] = useState('');
   const hasDetails = product.ingredientes || product.detalhe;
+  const inBasket = product.id && basketIds.includes(product.id);
+  const regionId = product.id ? `product-details-${product.id}` : undefined;
+  const handleCta=async()=>{
+    if(!loadingText){onAdd?.();return;}
+    if(ctaSt!=='idle')return;
+    setCtaSt('loading');setCtaErr('');
+    try{await new Promise(r=>setTimeout(r,600));setCtaSt('success');setTimeout(()=>{setCtaSt('idle');onAdd?.();},1500);}
+    catch(e){setCtaErr(e.message||'Erro ao processar.');setCtaSt('idle');}
+  };
+  const showCta=qty===0||ctaSt!=='idle';
 
   return (
     <div style={{
@@ -41,6 +49,9 @@ export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel=
       <div style={{display:"flex",alignItems:"stretch"}}>
         <img
           src={product.img} alt={product.nome}
+          role={hasDetails?"button":undefined}
+          aria-expanded={hasDetails?expanded:undefined}
+          aria-controls={hasDetails?regionId:undefined}
           onClick={hasDetails?()=>setExpanded(e=>!e):undefined}
           style={{
             width:88, objectFit:"cover", display:"block", flexShrink:0,
@@ -50,12 +61,16 @@ export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel=
         />
         <div style={{flex:1,padding:"12px",display:"flex",alignItems:"center",gap:8}}>
           <div
+            role={hasDetails?"button":undefined}
+            aria-expanded={hasDetails?expanded:undefined}
+            aria-controls={hasDetails?regionId:undefined}
             style={{flex:1,cursor:hasDetails?"pointer":"default"}}
             onClick={hasDetails?()=>setExpanded(e=>!e):undefined}
           >
             <div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800]}}>
               {product.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>({product.peso})</span>
             </div>
+            {inBasket&&<div style={{fontFamily:fb,fontSize:12,fontStyle:"italic",color:"#2E55CD",marginTop:2}}>Este pão já faz parte da sua cesta</div>}
             <div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:4,lineHeight:1.4}}>{product.desc}</div>
             <div style={{display:"flex",alignItems:"center",gap:6,marginTop:4}}>
               <span style={{fontFamily:fb,fontSize:12,color:W[600]}}>{product.preco}</span>
@@ -68,16 +83,21 @@ export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel=
             </div>
           </div>
 
-          {qty===0
-            ?<button onClick={onAdd} style={{padding:"8px 16px",borderRadius:8,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:12,fontWeight:500,cursor:"pointer",flexShrink:0,minHeight:40}}>{ctaLabel}</button>
+          {cutoff
+            ?<button disabled style={{padding:"8px 16px",borderRadius:8,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:12,fontWeight:500,cursor:"default",flexShrink:0,minHeight:40,opacity:0.5}}>{ctaLabel}</button>
+            :showCta
+            ?<button disabled={ctaSt!=='idle'} onClick={handleCta} style={{padding:"8px 16px",borderRadius:8,border:ctaSt==='success'?'1px solid #6EE7B7':'none',background:ctaSt==='success'?'#D1FAE5':B[500],color:ctaSt==='success'?'#065F46':'#FFF',fontFamily:fb,fontSize:12,fontWeight:500,cursor:ctaSt!=='idle'?'default':'pointer',flexShrink:0,minHeight:40,opacity:ctaSt==='loading'?0.5:1,transition:'all 150ms ease'}}>{ctaSt==='loading'?loadingText:ctaSt==='success'?successText:ctaLabel}</button>
             :<QtyBtn qty={qty} onAdd={onAdd} onRemove={onRemove} name={product.nome}/>
           }
         </div>
       </div>
 
+      {cutoff&&<div style={{padding:"0 12px 8px",fontFamily:fb,fontSize:13,color:"#7A766E"}}>Prazo encerrado. Alterações valem a partir da próxima semana.</div>}
+      {ctaErr&&<div style={{padding:"4px 12px 8px",fontFamily:fb,fontSize:13,color:'#9A3412',background:'#FFEDD5',borderRadius:8,margin:"0 12px 8px"}}>{ctaErr}</div>}
+
       {/* Detalhe expandido */}
       {expanded&&hasDetails&&(
-        <div style={{padding:"12px 16px 16px",borderTop:`1px solid ${W[200]}`,animation:"fadeUp 200ms ease"}}>
+        <div id={regionId} role="region" aria-label={`Detalhes de ${product.nome}`} style={{padding:"12px 16px 16px",borderTop:`1px solid ${W[200]}`,animation:"fadeUp 200ms ease"}}>
           {product.ingredientes&&(
             <div style={{marginBottom:10}}>
               <div style={{fontFamily:fd,fontSize:12,textTransform:"uppercase",color:W[400],letterSpacing:"0.04em",marginBottom:4}}>Ingredientes</div>

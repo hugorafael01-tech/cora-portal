@@ -1,21 +1,12 @@
 import { useState } from "react";
+import { B, W } from "../tokens";
 
 /* ══════════════════════════════════════════
    CORA — Pré-cadastro de Interessados v2
    /interesse
    ══════════════════════════════════════════ */
 
-const WEBHOOK_URL = "https://hook.us2.make.com/e8gu7ih2gfoggsac7irq2k1p967gd8t1";
-
-/* ── Design Tokens ── */
-const B = {
-  50: "#EBEEFB", 100: "#C4CDF4", 500: "#2E55CD",
-  600: "#2545A8", 700: "#1E3A8A", 800: "#172E6E", 900: "#0F1E49",
-};
-const W = {
-  50: "#FAFAF8", 100: "#F5F4F0", 200: "#E8E6E1", 300: "#D4D1CB",
-  400: "#A8A49C", 500: "#7A766E", 600: "#5C5850", 700: "#3D3A34", 800: "#2A2723",
-};
+const LEAD_API = "/api/lead";
 
 /* ── Produtos da assinatura (vitrine, sem preço) ── */
 const PRODUCTS = [
@@ -74,6 +65,9 @@ const PatternBand = () => (
     }}
   />
 );
+
+/* ── Sanitização (remove tags HTML) ── */
+const sanitize = (str) => str.replace(/[<>]/g, "");
 
 /* ── Máscara de WhatsApp ── */
 const formatWhatsApp = (value) => {
@@ -184,6 +178,7 @@ const FormScreen = ({ onSubmit }) => {
   const [outraOpcao, setOutraOpcao] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState("");
 
   const MAX_SELECTION = 2;
 
@@ -211,6 +206,7 @@ const FormScreen = ({ onSubmit }) => {
   const handleSubmit = async () => {
     if (!validate()) return;
     setLoading(true);
+    setSubmitError("");
 
     const paesNomes = selectedPaes
       .map((id) => PRODUCTS.find((p) => p.id === id)?.nome)
@@ -218,25 +214,28 @@ const FormScreen = ({ onSubmit }) => {
       .join(", ");
 
     const payload = {
-      nome: nome.trim(),
+      nome: sanitize(nome.trim()),
       whatsapp: whatsapp.replace(/\D/g, ""),
-      bairro: bairro.trim(),
+      bairro: sanitize(bairro.trim()),
       cidade,
       paes_preferidos: paesNomes || "Nenhum selecionado",
-      outra_opcao: outraOpcao.trim() || "",
+      outra_opcao: sanitize(outraOpcao.trim()) || "",
       optin_mailing: optinMailing ? "Sim" : "Não",
       tipo: "interesse_v2",
       data: new Date().toISOString(),
     };
 
     try {
-      await fetch(WEBHOOK_URL, {
+      const res = await fetch(LEAD_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      if (!res.ok) throw new Error("status " + res.status);
     } catch {
-      // silently continue — dados podem ser recuperados depois
+      setLoading(false);
+      setSubmitError("Não conseguimos enviar seus dados. Verifique sua conexão e tente novamente.");
+      return;
     }
 
     setLoading(false);
@@ -590,6 +589,8 @@ const FormScreen = ({ onSubmit }) => {
             Quero acompanhar o lançamento da Cora e ser avisado quando as entregas começarem.
           </span>
         </div>
+
+        {submitError && <div style={{padding:"12px 16px",borderRadius:8,background:"#FFEDD5",color:"#9A3412",fontFamily:"'Montagu Slab', Georgia, serif",fontSize:14,marginBottom:16,lineHeight:1.5}}>{submitError}</div>}
 
         {/* Botão enviar */}
         <button
