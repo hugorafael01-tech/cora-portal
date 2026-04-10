@@ -49,7 +49,7 @@ const PRODUCTS = [
     id: "ciabatta",
     nome: "Ciabatta Rústica",
     peso: "400g",
-    img: "/images/_original.jpg",
+    img: "/images/_ciabatta.jpg",
     desc: "Massa leve de alta hidratação com farinha italiana, azeite e o levain da Cora. Casca fina e miolo aerado, feito pra abrir no meio e virar sanduíche.",
   },
 ];
@@ -600,7 +600,7 @@ const FormScreen = ({ onSubmit }) => {
               lineHeight: 1.5,
             }}
           >
-            Quero acompanhar o lançamento da Cora e ser avisado quando as entregas começarem.
+            Quero receber novidades da Cora pelo WhatsApp até as entregas começarem.
           </span>
         </div>
 
@@ -630,7 +630,7 @@ const FormScreen = ({ onSubmit }) => {
             if (!loading) e.currentTarget.style.background = B[500];
           }}
         >
-          {loading ? "Enviando..." : "Quero ser avisado"}
+          {loading ? "Enviando..." : "Tenho interesse"}
         </button>
       </div>
     </div>
