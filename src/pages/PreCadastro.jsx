@@ -215,7 +215,18 @@ const FormScreen = ({ onSubmit }) => {
     if (!bairro.trim()) e.bairro = "Informe seu bairro.";
     if (!cidade) e.cidade = "Selecione a cidade.";
     setErrors(e);
-    return Object.keys(e).length === 0;
+    if (Object.keys(e).length > 0) {
+      const firstErrorField = Object.keys(e)[0];
+      setTimeout(() => {
+        const el = document.getElementById('field-' + firstErrorField);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.focus();
+        }
+      }, 50);
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async () => {
@@ -346,6 +357,7 @@ const FormScreen = ({ onSubmit }) => {
         <div style={{ marginBottom: 20 }}>
           <label style={labelStyle}>Nome completo *</label>
           <input
+            id="field-nome"
             type="text"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
@@ -365,6 +377,7 @@ const FormScreen = ({ onSubmit }) => {
         <div style={{ marginBottom: 20 }}>
           <label style={labelStyle}>WhatsApp com DDD *</label>
           <input
+            id="field-whatsapp"
             type="tel"
             value={whatsapp}
             onChange={(e) => setWhatsapp(formatWhatsApp(e.target.value))}
@@ -532,6 +545,7 @@ const FormScreen = ({ onSubmit }) => {
         <div style={{ marginBottom: 20 }}>
           <label style={labelStyle}>Cidade *</label>
           <select
+            id="field-cidade"
             value={cidade}
             onChange={(e) => setCidade(e.target.value)}
             style={{
@@ -555,6 +569,7 @@ const FormScreen = ({ onSubmit }) => {
         <div style={{ marginBottom: 24 }}>
           <label style={labelStyle}>Bairro *</label>
           <input
+            id="field-bairro"
             type="text"
             value={bairro}
             onChange={(e) => setBairro(e.target.value)}
