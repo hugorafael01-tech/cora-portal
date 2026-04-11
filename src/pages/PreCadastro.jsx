@@ -223,7 +223,7 @@ const FormScreen = ({ onSubmit }) => {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           el.focus();
         }
-      }, 50);
+      }, 100);
       return false;
     }
     return true;
