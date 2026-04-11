@@ -193,6 +193,7 @@ const FormScreen = ({ onSubmit }) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
+  const [website, setWebsite] = useState("");
 
   const MAX_SELECTION = 2;
 
@@ -218,6 +219,7 @@ const FormScreen = ({ onSubmit }) => {
   };
 
   const handleSubmit = async () => {
+    if (website) return;
     if (!validate()) return;
     setLoading(true);
     setSubmitError("");
@@ -380,6 +382,20 @@ const FormScreen = ({ onSubmit }) => {
             }
           />
           {errors.whatsapp && <div style={errorStyle}>{errors.whatsapp}</div>}
+        </div>
+
+        {/* Honeypot anti-bot */}
+        <div style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0, overflow: "hidden" }} aria-hidden="true">
+          <label htmlFor="website">Website</label>
+          <input
+            type="text"
+            id="website"
+            name="website"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+          />
         </div>
 
         {/* Pães — vitrine */}
