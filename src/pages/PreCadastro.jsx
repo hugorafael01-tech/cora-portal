@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { B, W } from "../tokens";
 
 /* ══════════════════════════════════════════
@@ -194,7 +194,7 @@ const FormScreen = ({ onSubmit }) => {
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
   const [website, setWebsite] = useState("");
-  const [showFormError, setShowFormError] = useState(false);
+  const formErrorRef = useRef(null);
 
   const MAX_SELECTION = 2;
 
@@ -221,9 +221,14 @@ const FormScreen = ({ onSubmit }) => {
 
   const handleSubmit = async () => {
     if (website) return;
-    setShowFormError(false);
+    if (formErrorRef.current) formErrorRef.current.style.display = 'none';
     if (!validate()) {
-      setShowFormError(true);
+      setTimeout(() => {
+        if (formErrorRef.current) {
+          formErrorRef.current.style.display = 'block';
+          formErrorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
       return;
     }
     setLoading(true);
@@ -354,7 +359,7 @@ const FormScreen = ({ onSubmit }) => {
             id="field-nome"
             type="text"
             value={nome}
-            onChange={(e) => { setNome(e.target.value); if (showFormError) setShowFormError(false); }}
+            onChange={(e) => { setNome(e.target.value); if (formErrorRef.current) formErrorRef.current.style.display = 'none'; }}
             placeholder="Como você gostaria de ser chamado(a)?"
             style={inputStyle("nome")}
             onFocus={(e) =>
@@ -374,7 +379,7 @@ const FormScreen = ({ onSubmit }) => {
             id="field-whatsapp"
             type="tel"
             value={whatsapp}
-            onChange={(e) => { setWhatsapp(formatWhatsApp(e.target.value)); if (showFormError) setShowFormError(false); }}
+            onChange={(e) => { setWhatsapp(formatWhatsApp(e.target.value)); if (formErrorRef.current) formErrorRef.current.style.display = 'none'; }}
             placeholder="(21) 99999-9999"
             style={inputStyle("whatsapp")}
             onFocus={(e) =>
@@ -541,7 +546,7 @@ const FormScreen = ({ onSubmit }) => {
           <select
             id="field-cidade"
             value={cidade}
-            onChange={(e) => { setCidade(e.target.value); if (showFormError) setShowFormError(false); }}
+            onChange={(e) => { setCidade(e.target.value); if (formErrorRef.current) formErrorRef.current.style.display = 'none'; }}
             style={{
               ...inputStyle("cidade"),
               appearance: "none",
@@ -566,7 +571,7 @@ const FormScreen = ({ onSubmit }) => {
             id="field-bairro"
             type="text"
             value={bairro}
-            onChange={(e) => { setBairro(e.target.value); if (showFormError) setShowFormError(false); }}
+            onChange={(e) => { setBairro(e.target.value); if (formErrorRef.current) formErrorRef.current.style.display = 'none'; }}
             placeholder="Ex: Icaraí, Copacabana..."
             style={inputStyle("bairro")}
             onFocus={(e) =>
@@ -631,8 +636,10 @@ const FormScreen = ({ onSubmit }) => {
 
         {submitError && <div style={{padding:"12px 16px",borderRadius:8,background:"#FFEDD5",color:"#9A3412",fontFamily:"'Montagu Slab', Georgia, serif",fontSize:14,marginBottom:16,lineHeight:1.5}}>{submitError}</div>}
 
-        {showFormError && (
-          <div style={{
+        <div
+          ref={formErrorRef}
+          style={{
+            display: "none",
             padding: "12px 16px",
             borderRadius: 8,
             background: "#FEF2F2",
@@ -642,10 +649,10 @@ const FormScreen = ({ onSubmit }) => {
             fontSize: 14,
             marginBottom: 16,
             lineHeight: 1.5,
-          }}>
-            Preencha os campos obrigatórios acima.
-          </div>
-        )}
+          }}
+        >
+          Preencha os campos obrigatórios acima.
+        </div>
 
         {/* Botão enviar */}
         <button
