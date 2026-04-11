@@ -194,6 +194,7 @@ const FormScreen = ({ onSubmit }) => {
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
   const [website, setWebsite] = useState("");
+  const [showFormError, setShowFormError] = useState(false);
 
   const MAX_SELECTION = 2;
 
@@ -215,23 +216,16 @@ const FormScreen = ({ onSubmit }) => {
     if (!bairro.trim()) e.bairro = "Informe seu bairro.";
     if (!cidade) e.cidade = "Selecione a cidade.";
     setErrors(e);
-    if (Object.keys(e).length > 0) {
-      const firstErrorField = Object.keys(e)[0];
-      setTimeout(() => {
-        const el = document.getElementById('field-' + firstErrorField);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          el.focus();
-        }
-      }, 100);
-      return false;
-    }
-    return true;
+    return Object.keys(e).length === 0;
   };
 
   const handleSubmit = async () => {
     if (website) return;
-    if (!validate()) return;
+    setShowFormError(false);
+    if (!validate()) {
+      setShowFormError(true);
+      return;
+    }
     setLoading(true);
     setSubmitError("");
 
@@ -360,7 +354,7 @@ const FormScreen = ({ onSubmit }) => {
             id="field-nome"
             type="text"
             value={nome}
-            onChange={(e) => setNome(e.target.value)}
+            onChange={(e) => { setNome(e.target.value); if (showFormError) setShowFormError(false); }}
             placeholder="Como você gostaria de ser chamado(a)?"
             style={inputStyle("nome")}
             onFocus={(e) =>
@@ -380,7 +374,7 @@ const FormScreen = ({ onSubmit }) => {
             id="field-whatsapp"
             type="tel"
             value={whatsapp}
-            onChange={(e) => setWhatsapp(formatWhatsApp(e.target.value))}
+            onChange={(e) => { setWhatsapp(formatWhatsApp(e.target.value)); if (showFormError) setShowFormError(false); }}
             placeholder="(21) 99999-9999"
             style={inputStyle("whatsapp")}
             onFocus={(e) =>
@@ -547,7 +541,7 @@ const FormScreen = ({ onSubmit }) => {
           <select
             id="field-cidade"
             value={cidade}
-            onChange={(e) => setCidade(e.target.value)}
+            onChange={(e) => { setCidade(e.target.value); if (showFormError) setShowFormError(false); }}
             style={{
               ...inputStyle("cidade"),
               appearance: "none",
@@ -572,7 +566,7 @@ const FormScreen = ({ onSubmit }) => {
             id="field-bairro"
             type="text"
             value={bairro}
-            onChange={(e) => setBairro(e.target.value)}
+            onChange={(e) => { setBairro(e.target.value); if (showFormError) setShowFormError(false); }}
             placeholder="Ex: Icaraí, Copacabana..."
             style={inputStyle("bairro")}
             onFocus={(e) =>
@@ -636,6 +630,22 @@ const FormScreen = ({ onSubmit }) => {
         </div>
 
         {submitError && <div style={{padding:"12px 16px",borderRadius:8,background:"#FFEDD5",color:"#9A3412",fontFamily:"'Montagu Slab', Georgia, serif",fontSize:14,marginBottom:16,lineHeight:1.5}}>{submitError}</div>}
+
+        {showFormError && (
+          <div style={{
+            padding: "12px 16px",
+            borderRadius: 8,
+            background: "#FEF2F2",
+            border: "1px solid #FECACA",
+            color: "#991B1B",
+            fontFamily: "'Montagu Slab', Georgia, serif",
+            fontSize: 14,
+            marginBottom: 16,
+            lineHeight: 1.5,
+          }}>
+            Preencha os campos obrigatórios acima.
+          </div>
+        )}
 
         {/* Botão enviar */}
         <button
