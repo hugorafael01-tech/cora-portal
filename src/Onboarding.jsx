@@ -201,7 +201,7 @@ const Step3=({data,cesta})=>{
 
       <div style={{background:B[50],borderRadius:10,padding:14,border:`1px solid ${B[100]}`}}>
         <div style={{fontFamily:fb,fontSize:13,color:B[700],fontWeight:500}}>Entrega toda quinta-feira</div>
-        <div style={{fontFamily:fb,fontSize:12,color:B[600],marginTop:4}}>Alterações na cesta até terça, 22h. Cancelamento sem taxa, a qualquer momento.</div>
+        <div style={{fontFamily:fb,fontSize:12,color:B[600],marginTop:4}}>Alterações na cesta até terça, 12h. Cancelamento sem taxa, a qualquer momento.</div>
       </div>
     </div>
   );
