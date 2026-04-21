@@ -19,29 +19,34 @@ const IMG={
   multigraos:"/images/_multigraos.jpg",
   brioche:"/images/_brioche.jpg",
   focaccia:"/images/_focaccia.jpg",
+  ciabatta:"/images/_ciabatta.jpg",
   pattern:"/images/Cora_tile grafismo.svg",
 };
 
 const D={
   nome:"Beatriz",
-  entrega:{dia:"Quinta, 3 de abril",produto:"1 Pão Original (580g)"},
-  cesta:{nome:"Assinatura Cora",itens:"1 Pão Original (580g) / semana",valor:"R$ 98,00/mês"},
+  entrega:{dia:"Quinta, 23 de abril",produto:"1 Pão Original (615g)"},
+  assinatura:{itens:"1 Pão Original (615g) / semana",valorMensal:99,qtdPaes:1},
   ent:{dia:"Quintas",cond:"Ed. Boa Vista",bloco:"Bl. A / 502",frete:"R$ 15/mês"},
   cartao:{band:"Visa",n:"6411",prox:"1º de abril"},
-  cob:{mes:"Março",valor:"R$ 98,00",status:"Pago"},
+  cob:{mes:"Março",valor:"R$ 99,00",status:"Pago"},
   semanasRestantes:2,
-  extras:[{id:"focaccia",nome:"Focaccia Genovesa",peso:"400g",preco:"R$ 22,00",precoNum:22,img:IMG.focaccia,ingredientes:"Farinha, água, azeite extra-virgem, sal, levain, cebola roxa, alecrim fresco.",historia:"A receita veio de Gênova, onde a focaccia é assunto sério. Lá, cada padeiro tem sua versão — a da Cora leva fermentação longa de 24h e azeite generoso. A cebola roxa carameliza no forno e o alecrim perfuma a cozinha inteira."}],
+  extras:[{id:"focaccia",nome:"Focaccia Genovesa",peso:"430g",preco:"R$ 22,00",precoNum:22,img:IMG.focaccia,ingredientes:"Farinha, água, azeite extra-virgem, sal, levain, cebola roxa, alecrim fresco.",historia:"A receita veio de Gênova, onde a focaccia é assunto sério. Lá, cada padeiro tem sua versão. A da Cora leva fermentação longa de 24h e azeite generoso. A cebola roxa carameliza no forno e o alecrim perfuma a cozinha inteira."}],
   pães:[
-    {id:"original",nome:"Pão Original",peso:"580g",preco:"R$ 25,00",precoNum:25,img:IMG.original,desc:"Fermentação natural, casca crocante, miolo macio.",ingredientes:"Farinha de trigo, água, sal, levain da Cora.",detalhe:"Fermentação longa de 36h. Apenas 4 ingredientes. Crosta firme, miolo aberto com alvéolos irregulares.",qtd:1},
-    {id:"integral",nome:"Pão Integral",peso:"614g",preco:"R$ 28,00",precoNum:28,img:IMG.integral,desc:"100% integral, sementes de linhaça e girassol.",ingredientes:"Farinha integral, água, sal, levain, linhaça, girassol.",detalhe:"100% farinha integral. Mesma fermentação longa, com sementes tostadas que dão crocância.",qtd:0},
-    {id:"multigraos",nome:"Multi Grãos",peso:"631g",preco:"R$ 32,00",precoNum:32,img:IMG.multigraos,desc:"Aveia, centeio, gergelim e mel.",ingredientes:"Farinha de trigo, centeio, aveia, água, mel, sal, levain, gergelim.",detalhe:"Cinco grãos na massa, mel na fermentação. Miolo denso, casca com gergelim tostado.",qtd:0},
-    {id:"brioche",nome:"Brioche",peso:"400g",preco:"R$ 34,00",precoNum:34,img:IMG.brioche,desc:"Manteiga francesa, textura amanteigada.",ingredientes:"Farinha, manteiga, ovos, açúcar, sal, levain, leite.",detalhe:"Massa enriquecida com manteiga. Fermentação 18h. Miolo dourado, textura que desfia.",qtd:0},
+    {id:"original",nome:"Pão Original",peso:"615g",preco:"R$ 27,00",precoNum:27,img:IMG.original,desc:"Fermentação natural, casca crocante, miolo macio.",ingredientes:"Farinha de trigo, água, sal, levain da Cora.",detalhe:"Fermentação longa de 36h. Apenas 4 ingredientes. Crosta firme, miolo aberto com alvéolos irregulares.",qtd:1},
+    {id:"integral",nome:"Pão Integral",peso:"615g",preco:"R$ 29,00",precoNum:29,img:IMG.integral,desc:"100% integral, sementes de linhaça e girassol.",ingredientes:"Farinha integral, água, sal, levain, linhaça, girassol.",detalhe:"100% farinha integral. Mesma fermentação longa, com sementes tostadas que dão crocância.",qtd:0},
+  ],
+  rotativos:[
+    {id:"multigraos",nome:"Multigrãos",peso:"615g",preco:"R$ 32,00",precoNum:32,img:IMG.multigraos,desc:"Aveia, centeio, gergelim e mel.",ingredientes:"Farinha de trigo, centeio, aveia, água, mel, sal, levain, gergelim.",detalhe:"Cinco grãos na massa, mel na fermentação. Miolo denso, casca com gergelim tostado."},
+    {id:"focaccia",nome:"Focaccia Genovesa",peso:"430g",preco:"R$ 22,00",precoNum:22,img:IMG.focaccia,desc:"Azeite generoso, cebola roxa, alecrim.",ingredientes:"Farinha, água, azeite extra-virgem, sal, levain, cebola roxa, alecrim fresco.",detalhe:"Fermentação longa de 24h. Azeite generoso. A cebola roxa carameliza no forno e o alecrim perfuma a cozinha inteira."},
+    {id:"ciabatta",nome:"Ciabatta",peso:"533g",preco:"R$ 25,00",precoNum:25,img:IMG.ciabatta,desc:"Crosta fina, miolo aberto e leve.",ingredientes:"Farinha de trigo, água, sal, levain, azeite.",detalhe:"Massa de alta hidratação. Crosta fina e crocante, miolo com alvéolos grandes e textura leve."},
+    {id:"brioche",nome:"Brioche",peso:"256g",preco:"R$ 32,00",precoNum:32,img:IMG.brioche,desc:"Manteiga francesa, textura amanteigada.",ingredientes:"Farinha, manteiga, ovos, açúcar, sal, levain, leite.",detalhe:"Massa enriquecida com manteiga. Fermentação 18h. Miolo dourado, textura que desfia."},
   ],
   hist:[
-    {sem:"Semana 28/03",itens:"1 Pão Original (580g)",st:"Pendente",extra:null},
-    {sem:"Semana 21/03",itens:"1 Pão Original (580g)",st:"Entregue",extra:null},
-    {sem:"Semana 14/03",itens:"1 Pão Original (580g)",st:"Entregue",extra:{nome:"Focaccia Genovesa",valor:"R$ 22,00"}},
-    {sem:"Semana 07/03",itens:"1 Pão Original (580g)",st:"Entregue",extra:null},
+    {sem:"Semana 28/03",itens:"1 Pão Original (615g)",st:"Pendente",extra:null},
+    {sem:"Semana 21/03",itens:"1 Pão Original (615g)",st:"Entregue",extra:null},
+    {sem:"Semana 14/03",itens:"1 Pão Original (615g)",st:"Entregue",extra:{nome:"Focaccia Genovesa",valor:"R$ 22,00"}},
+    {sem:"Semana 07/03",itens:"1 Pão Original (615g)",st:"Entregue",extra:null},
   ],
 };
 const greet=()=>{const h=new Date().getHours();return h<12?"bom dia":h<18?"boa tarde":"boa noite";};
@@ -117,103 +122,175 @@ const NovidadeCard=({extra,qty,onCardClick,onAdd,onRemove,cutoff})=><Card style=
   <div style={{padding:16}}>
     <SL t="Novidade da semana"/>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}>
-      <div style={{flex:1}}><div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800]}}>{extra.nome}</div><div style={{fontFamily:fb,fontSize:14,color:W[600],marginTop:4}}>{extra.preco} — Só assinantes</div></div>
+      <div style={{flex:1}}><div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800]}}>{extra.nome}</div><div style={{fontFamily:fb,fontSize:14,color:W[600],marginTop:4}}>{extra.preco}</div></div>
       {cutoff?<button disabled className="bp" style={{padding:"10px 24px",borderRadius:8,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"default",minHeight:44,flexShrink:0,opacity:0.5}}>Quero</button>:qty===0?<button onClick={e=>{e.stopPropagation();onCardClick();}} className="bp" style={{padding:"10px 24px",borderRadius:8,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",minHeight:44,flexShrink:0}}>Quero</button>:<QtyBtn qty={qty} onAdd={()=>onAdd&&onAdd()} onRemove={()=>onRemove&&onRemove()} name={extra.nome}/>}
     </div>
     {cutoff&&<CutoffMsg/>}
   </div>
 </Card>;
 
+// ─── SOFT LIMIT WARNING (4+ extras) ───
+const ExtrasWarning=({count})=>{
+  if(count<4)return null;
+  return<div style={{fontFamily:fb,fontSize:12,color:ST.warning.t,background:ST.warning.bg,padding:"8px 12px",borderRadius:8,marginTop:8,border:`1px solid ${ST.warning.b}`,lineHeight:1.5}}>
+    <I d={ic.clock} size={14} color={ST.warning.t} sw={2}/> Você tem {count} itens nesta semana. Pedidos acima de 3 itens podem ter prioridade reduzida caso atinjamos o limite de produção da semana. Se isso acontecer, te avisaremos pelo WhatsApp e você não será cobrado.
+  </div>;
+};
+
 // ─── PERSISTENT ORDER FOOTER (lives in App, visible on all screens) ───
-const OrderFooter=({pending,onConfirm,onNav,cutoff})=>{
+const OrderFooter=({pending,confirmed,onConfirm,onNav,cutoff})=>{
   const total=totalOf(pending);
-  if(pending.length===0)return null;
+  const pCount=extrasCount(pending);
+  if(pCount===0)return null;
+  const totalExtrasCount=extrasCount(confirmed)+pCount;
   return<div style={{position:"fixed",bottom:56,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderTop:`1px solid ${W[200]}`,padding:"12px 16px",zIndex:8,animation:"fadeUp 200ms ease"}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
       <div onClick={()=>onNav("cardapio")} style={{cursor:"pointer"}}>
         <div style={{fontFamily:fb,fontSize:12,color:W[600],display:"flex",alignItems:"center",gap:4}}>
-          <I d={ic.bag} size={14} color={B[500]}/>{pending.length} {pending.length===1?"item":"itens"} — extras desta semana
+          <I d={ic.bag} size={14} color={B[500]}/>{pCount} {pCount===1?"item":"itens"} — extras desta semana
         </div>
         <div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800]}}>{fmt(total)}</div>
       </div>
       <ActionBtn primary disabled={cutoff} loadingText="Adicionando…" successText="Adicionado ✓" onAction={()=>simulate()} onComplete={onConfirm}>Confirmar</ActionBtn>
     </div>
     {cutoff?<CutoffMsg/>:<div style={{fontFamily:fb,fontSize:11,color:W[500],marginTop:4}}>Além da sua assinatura. Cobrado na próxima fatura.</div>}
+    <ExtrasWarning count={totalExtrasCount}/>
   </div>;
 };
 
 const ConfirmedFooter=({vis})=>{
   if(!vis)return null;
   return<div style={{position:"fixed",bottom:56,left:0,right:0,maxWidth:390,margin:"0 auto",background:ST.success.bg,borderTop:`1px solid ${ST.success.b}`,padding:"16px",zIndex:8,textAlign:"center",animation:"fadeUp 300ms ease"}}>
-    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:4}}><I d={ic.check} size={18} color={ST.success.t}/><span style={{fontFamily:fb,fontSize:15,fontWeight:600,color:ST.success.t}}>Pedido confirmado!</span></div>
-    <div style={{fontFamily:fb,fontSize:13,color:ST.success.t}}>Seus extras serão entregues na próxima quinta.</div>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:4}}><I d={ic.check} size={18} color={ST.success.t}/><span style={{fontFamily:fb,fontSize:15,fontWeight:600,color:ST.success.t}}>Cesta confirmada!</span></div>
+    <div style={{fontFamily:fb,fontSize:13,color:ST.success.t}}>Sua cesta será entregue na próxima quinta.</div>
   </div>;
 };
 
 // ─── HELPERS ───
-const cntIn=(list,nome)=>list.filter(p=>p.nome===nome).length;
-const addTo=(list,product)=>{const pn=typeof product.precoNum==="number"?product.precoNum:parseFloat(product.preco.replace("R$ ","").replace(",","."));return[...list,{nome:product.nome,preco:product.preco,precoNum:pn}];};
-const removeFrom=(list,nome)=>{const i=list.findIndex(p=>p.nome===nome);if(i===-1)return list;return[...list.slice(0,i),...list.slice(i+1)];};
-const totalOf=list=>list.reduce((s,p)=>s+p.precoNum,0);
+const cntIn=(list,nome)=>list.filter(p=>p.nome===nome&&p.kind!=="swap").length;
+const addTo=(list,product,kind="extra")=>{const pn=kind==="swap"?0:(typeof product.precoNum==="number"?product.precoNum:parseFloat(product.preco.replace("R$ ","").replace(",",".")));return[...list,{nome:product.nome,preco:product.preco,precoNum:pn,kind}];};
+const removeFrom=(list,nome)=>{const i=list.findIndex(p=>p.nome===nome&&p.kind!=="swap");if(i===-1)return list;return[...list.slice(0,i),...list.slice(i+1)];};
+const totalOf=list=>list.filter(p=>p.kind!=="swap").reduce((s,p)=>s+p.precoNum,0);
+const extrasCount=list=>list.filter(p=>p.kind!=="swap").length;
 
 // ═══ HOME ═══
-const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,userData,isFirstVisit,onSeen,cutoff})=>{
+const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,userData,isFirstVisit,onSeen,cutoff,weekSwap,onSwap})=>{
   const[modal,setModal]=useState(null);
+  const[swapModal,setSwapModal]=useState(false);
+  const[swapChoice,setSwapChoice]=useState(weekSwap||"pao-original");
   const[toast,setToast]=useState(false);
   const[toastMsg,setToastMsg]=useState("");
   const allItems=[...confirmed,...pending];
   const cntAll=n=>cntIn(allItems,n);
-  const handleAddComplete=p=>{addPending(p);setModal(null);setToastMsg(`${p.nome} adicionada ao seu pedido.`);setToast(true);setTimeout(()=>setToast(false),5000);};
+  const handleAddComplete=p=>{addPending(p);setModal(null);setToastMsg(`${p.nome} adicionada à sua cesta.`);setToast(true);setTimeout(()=>setToast(false),5000);};
   const handleQtyChange=(product,delta)=>{
     if(confirmed.length>0){
       if(delta>0) updateConfirmed(addTo(confirmed,product));
       else {
         const next=removeFrom(confirmed,product.nome);
         updateConfirmed(next);
-        if(next.length===0){setToastMsg("Pedido removido.");setToast(true);setTimeout(()=>setToast(false),5000);}
+        if(next.length===0){setToastMsg("Item removido da cesta.");setToast(true);setTimeout(()=>setToast(false),5000);}
       }
     } else {
       if(delta>0) addPending(product);
       else removePending(product.nome);
     }
   };
+  const confirmedExtras=confirmed.filter(p=>p.kind!=="swap");
   const confirmedTotal=totalOf(confirmed);
   const nome=userData?.nome?userData.nome.split(" ")[0]:D.nome;
   const saudacao=isFirstVisit?(userData?.genero==="f"?"Bem-vinda":"Bem-vindo"):greet();
   const prefix=isFirstVisit?`${saudacao}, ${nome}!`:`Oi, ${nome}, ${saudacao}!`;
+
+  // Resolve what's in this week's delivery
+  const basePao=D.pães.find(p=>p.id===(weekSwap||"original"));
+  const cestaImg=basePao?basePao.img:IMG.original;
+  const cestaLabel=basePao?`1 ${basePao.nome} (${basePao.peso})`:"1 Pão Original (615g)";
+  const temSwap=weekSwap&&weekSwap!=="original";
+  const temExtras=confirmedExtras.length>0;
+
+  const handleSwapConfirm=()=>{
+    const chosen=D.pães.find(p=>p.id===swapChoice.replace("pao-",""));
+    if(chosen){
+      onSwap(chosen.id);
+      setSwapModal(false);
+      setToastMsg("Cesta atualizada. Sua assinatura segue como antes na próxima semana.");
+      setToast(true);setTimeout(()=>setToast(false),5000);
+    }
+  };
 
   useEffect(()=>{if(!isFirstVisit||!onSeen)return;const t=setTimeout(onSeen,5000);return()=>clearTimeout(t);},[isFirstVisit,onSeen]);
 
   return<div style={{padding:"24px 16px 16px",paddingBottom:pending.length>0?80:16}}>
     <h1 style={{fontFamily:fd,fontSize:30,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",margin:"0 0 20px",lineHeight:1.1}}>{prefix}</h1>
 
-    {/* Entrega compacta — foto edge-to-edge esquerda */}
-    <Card style={{marginBottom:16,padding:0,overflow:"hidden"}} ariaLabel={`Cesta desta semana: ${D.entrega.dia}`}>
+    {/* Card unificado — CESTA DA SEMANA (4 estados: padrão, swap, extra, swap+extra) */}
+    <Card style={{marginBottom:16,padding:0,overflow:"hidden",background:"#FFF",border:`1px solid ${temSwap?B[200]:W[200]}`}} ariaLabel={`Cesta da semana: ${D.entrega.dia}`}>
       <div style={{display:"flex",alignItems:"stretch"}}>
-        <img src={IMG.original} alt="Pão Original" style={{width:80,objectFit:"cover",borderRadius:"12px 0 0 12px",display:"block"}}/>
-        <div style={{flex:1,padding:"12px 12px 12px 12px",display:"flex",alignItems:"center",gap:8}}>
-          <div style={{flex:1}}>
-            <div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[400],letterSpacing:"0.04em",marginBottom:2}}>Sua cesta desta semana</div>
-            <div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800]}}>{D.entrega.dia}</div>
-            <div style={{fontFamily:fb,fontSize:13,color:W[600],marginTop:2}}>{D.entrega.produto}</div>
+        <img src={cestaImg} alt={basePao?.nome||"Pão"} style={{width:80,objectFit:"cover",borderRadius:confirmedExtras.length>0?"12px 0 0 0":"12px 0 0 12px",display:"block"}}/>
+        <div style={{flex:1,padding:"12px",display:"flex",flexDirection:"column",gap:4}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
+            <SL t="Cesta da semana"/>
+            {temSwap
+              ?<span style={{fontFamily:fb,fontSize:11,fontWeight:500,padding:"3px 8px",borderRadius:4,background:W[200],color:W[800],whiteSpace:"nowrap"}}>editada só desta semana</span>
+              :temExtras
+                ?<Badge label="confirmada" type="info"/>
+                :null}
           </div>
-          <I d={ic.cal} size={20} color={B[400]}/>
+          <div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800]}}>{D.entrega.dia}</div>
+          <div style={{fontFamily:fb,fontSize:13,color:W[600]}}>
+            {cestaLabel}{temExtras&&!temSwap&&<span style={{color:W[400]}}> · assinatura</span>}
+          </div>
+          {temSwap&&<div style={{fontFamily:fb,fontSize:12,color:W[600],lineHeight:1.4}}>
+            Você trocou o Pão Original por {basePao?.nome} esta semana.{!temExtras&&<br/>}
+            {!temExtras&&"Próxima semana volta ao normal."}
+          </div>}
+          {!temSwap&&!temExtras&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:2}}>Tudo certo. Essa é sua cesta da Assinatura.</div>}
+          {!cutoff&&<button onClick={()=>{setSwapChoice(weekSwap?`pao-${weekSwap}`:"pao-original");setSwapModal(true);}} className="lk" style={{fontFamily:fb,fontSize:12,color:B[500],fontWeight:500,cursor:"pointer",background:"none",border:"none",padding:0,textAlign:"left",marginTop:2}}>Personalizar ›</button>}
         </div>
       </div>
+      {/* Extras confirmados + detalhamento swap — seção interna do mesmo card */}
+      {(temExtras||temSwap&&confirmedExtras.length>0)&&<div style={{borderTop:`1px solid ${W[200]}`,padding:"12px 16px"}}>
+        {temSwap&&<div style={{fontFamily:fb,fontSize:13,color:W[700],padding:"4px 0",marginBottom:confirmedExtras.length>0?4:0}}>{cestaLabel} · trocado pelo Original</div>}
+        {!temSwap&&temExtras&&<div style={{fontFamily:fb,fontSize:13,color:W[700],padding:"4px 0",marginBottom:4}}>{cestaLabel} · assinatura</div>}
+        {Object.entries(confirmedExtras.reduce((a,p)=>{a[p.nome]=a[p.nome]||p;return a;},{})).map(([nome,item])=>{const qty=cntIn(confirmedExtras,nome);return<div key={nome} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 0"}}><div style={{fontFamily:fb,fontSize:13,color:W[800],flex:1}}>+ {qty>1?`${qty}× `:""}{nome} · {fmt(item.precoNum*qty)}</div><QtyBtn qty={qty} onAdd={()=>updateConfirmed(addTo(confirmed,{nome:item.nome,preco:item.preco,precoNum:item.precoNum},"extra"))} onRemove={()=>updateConfirmed(removeFrom(confirmed,nome))} name={nome}/></div>;})}
+        <div style={{height:1,background:W[200],margin:"8px 0"}}/>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:B[700]}}>Total de extras: {fmt(confirmedTotal)} na próxima fatura.</div></div><button onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:13,color:B[500],fontWeight:500,cursor:"pointer",background:"none",border:"none",display:"flex",alignItems:"center",gap:4}}><I d={ic.edit} size={14} color={B[500]}/>Editar</button></div>
+        {temSwap&&<div style={{fontFamily:fb,fontSize:11,color:W[500],marginTop:6}}>Próxima semana volta ao normal.</div>}
+      </div>}
     </Card>
-
-    {/* Pedido confirmado */}
-    {confirmed.length>0&&<Card style={{marginBottom:16,border:`1px solid ${B[200]}`,background:B[50]}} ariaLabel="Seu pedido desta semana">
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><SL t="Seu pedido desta semana"/><Badge label="Confirmado" type="success"/></div>
-      {Object.entries(confirmed.reduce((acc,p)=>{acc[p.nome]=(acc[p.nome]||0)+1;return acc;},{})).map(([nome,qty])=>{const item=confirmed.find(p=>p.nome===nome);return<div key={nome} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0"}}><div style={{fontFamily:fb,fontSize:14,color:B[800]}}>{qty}× {nome}</div><div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:B[500]}}>{fmt(item.precoNum*qty)}</div></div>;})}
-      <div style={{height:1,background:B[200],margin:"8px 0"}}/>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:B[800]}}>{fmt(confirmedTotal)}</div><div style={{fontFamily:fb,fontSize:11,color:B[700]}}>Entrega: {D.entrega.dia} — Na fatura de abril</div></div><button onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:13,color:B[500],fontWeight:500,cursor:"pointer",background:"none",border:"none",display:"flex",alignItems:"center",gap:4}}><I d={ic.edit} size={14} color={B[500]}/>Editar</button></div>
-    </Card>}
 
     {/* Novidade hero — edge-to-edge photo */}
     {D.extras.length>0?<NovidadeCard extra={D.extras[0]} qty={cntAll(D.extras[0].nome)} onCardClick={()=>setModal(D.extras[0])} onAdd={()=>handleQtyChange(D.extras[0],1)} onRemove={()=>handleQtyChange(D.extras[0],-1)} cutoff={cutoff}/>:<Card style={{marginBottom:16,padding:20,textAlign:"center"}}><div style={{fontFamily:fd,fontSize:15,textTransform:"uppercase",color:W[400],marginBottom:8}}>Novidades da semana</div><div style={{fontFamily:fb,fontSize:14,color:W[500],lineHeight:1.6}}>Nenhuma novidade esta semana. Mas seu pão de sempre está garantido.</div></Card>}
 
     <div onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,textAlign:"center",padding:"8px 0",cursor:"pointer"}}>Ver cardápio completo ›</div>
+
+    {/* Swap modal */}
+    {swapModal&&<>
+      <div onClick={()=>setSwapModal(false)} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
+      <div role="dialog" aria-label="Personalizar cesta da semana" style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:"16px 16px 0 0",zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",padding:20}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[800]}}>Personalizar cesta da semana</div>
+          <button aria-label="Fechar" onClick={()=>setSwapModal(false)} style={{width:36,height:36,borderRadius:9999,background:W[100],border:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+        </div>
+        <div style={{fontFamily:fb,fontSize:14,color:W[600],marginBottom:20,lineHeight:1.5}}>
+          Você pode trocar os pães da sua Assinatura por outros produtos elegíveis. A troca vale só pra esta semana. Sua Assinatura volta ao normal na próxima.
+        </div>
+        {D.assinatura.qtdPaes>1&&<div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:12}}>Pão 1</div>}
+        {D.pães.map(p=>{const sel=swapChoice===`pao-${p.id}`;return<button key={p.id} onClick={()=>setSwapChoice(`pao-${p.id}`)} style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"12px",marginBottom:8,borderRadius:8,border:`2px solid ${sel?B[500]:W[200]}`,background:sel?B[50]:"#FFF",cursor:"pointer",textAlign:"left"}}>
+          <div style={{width:20,height:20,borderRadius:9999,border:`2px solid ${sel?B[500]:W[300]}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<div style={{width:10,height:10,borderRadius:9999,background:B[500]}}/>}</div>
+          <ProductThumb src={p.img} w={48} h={40} alt={p.nome}/>
+          <div><div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:sel?B[700]:W[700]}}>{p.nome}</div><div style={{fontFamily:fb,fontSize:12,color:W[500]}}>{p.peso}</div></div>
+        </button>;})}
+        <div style={{marginTop:8,marginBottom:16}}/>
+
+        <div style={{display:"flex",gap:8}}>
+          <Btn onClick={()=>setSwapModal(false)} style={{flex:1}}>Cancelar</Btn>
+          <ActionBtn primary loadingText="Salvando…" successText="Salvo ✓" onAction={()=>simulate()} onComplete={handleSwapConfirm} style={{flex:2}}>Confirmar troca</ActionBtn>
+        </div>
+      </div>
+    </>}
+
     {modal&&<Modal product={modal} onClose={()=>setModal(null)} onAction={()=>simulate()} onComplete={()=>handleAddComplete(modal)} actionLabel="Adicionar à cesta" hint="Cobrado na próxima fatura" qty={cntAll(modal.nome)} onAdd={()=>handleQtyChange(modal,1)} onRemove={()=>handleQtyChange(modal,-1)} cutoff={cutoff}/>}
     <Toast msg={toastMsg} vis={toast}/>
   </div>;
@@ -229,10 +306,10 @@ const Assinatura=({onNav,hasPending,cutoff})=>{
 
   return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[800],margin:0}}>Sua Assinatura</h2><Badge label="Ativa"/></div>
-    <div style={{background:B[50],borderRadius:12,padding:16,marginBottom:16,fontFamily:fb,fontSize:14,color:B[800],lineHeight:1.6}}>Toda semana você recebe pão fresco na porta da sua casa. O valor da assinatura é fixo — e em meses com 5 semanas, o pão extra é por nossa conta.</div>
-    <Card style={{marginBottom:12}}><SL t="Minha cesta"/>
-      <div style={{display:"flex",gap:12,alignItems:"center"}}><ProductThumb src={IMG.original} w={56} h={48} alt="Pão Original"/><div style={{flex:1}}><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800]}}>{D.cesta.nome}</div><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{D.cesta.itens}</div><div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:B[500],marginTop:4}}>{D.cesta.valor}</div></div></div>
-      {!editing&&<><Btn full disabled={cutoff} onClick={()=>setEditing(true)} style={{marginTop:12}}>Alterar minha cesta</Btn>{cutoff&&<CutoffMsg/>}</>}
+    <div style={{background:B[50],borderRadius:12,padding:16,marginBottom:16,fontFamily:fb,fontSize:14,color:B[800],lineHeight:1.6}}>Toda semana você recebe pão fresco na porta da sua casa. O valor da assinatura é fixo. Em meses com 5 semanas, o pão extra é por nossa conta.</div>
+    <Card style={{marginBottom:12}}><SL t="Minha assinatura"/>
+      <div style={{display:"flex",gap:12,alignItems:"center"}}><ProductThumb src={IMG.original} w={56} h={48} alt="Pão Original"/><div style={{flex:1}}><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{D.assinatura.itens}</div><div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:B[500],marginTop:4}}>{fmt(D.assinatura.valorMensal*D.assinatura.qtdPaes)}/mês</div></div></div>
+      {!editing&&<><Btn full disabled={cutoff} onClick={()=>setEditing(true)} style={{marginTop:12}}>Alterar minha assinatura</Btn>{cutoff&&<CutoffMsg/>}</>}
       {editing&&<div style={{marginTop:16,borderTop:`1px solid ${W[200]}`,paddingTop:16}}>
         <DeadlineWarning/>
         <div style={{fontFamily:fb,fontSize:12,color:W[500],marginBottom:12}}>Limite: 3 pães/semana ({total}/3)</div>
@@ -248,7 +325,7 @@ const Assinatura=({onNav,hasPending,cutoff})=>{
         <div style={{display:"flex",gap:8}}><Btn onClick={()=>{setEditing(false);setQtds(D.pães.map(p=>p.qtd));setShowCalc(false);}} style={{flex:1}}>Cancelar</Btn><ActionBtn primary disabled={!changed} loadingText="Atualizando…" successText="Atualizada ✓" onAction={()=>simulate()} onComplete={handleSave} style={{flex:2}}>{changed?"Salvar":"Faça uma alteração"}</ActionBtn></div>
       </div>}
     </Card>
-    <Toast msg="Cesta atualizada! O novo valor começa a valer esta semana." vis={saved}/>
+    <Toast msg="Assinatura atualizada! O novo valor começa a valer esta semana." vis={saved}/>
     <Card style={{marginBottom:12}}><SL t="Entrega"/><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800],marginBottom:4}}>Entregas às {D.ent.dia.toLowerCase()}</div><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{D.ent.cond}, {D.ent.bloco}</div><div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:8}}>Frete: {D.ent.frete}</div><div style={{fontFamily:fb,fontSize:12,color:B[700],background:B[50],padding:"8px 12px",borderRadius:8,marginBottom:8,display:"flex",gap:8,alignItems:"flex-start"}}><I d={ic.users} size={16} color={B[500]}/><span>Traga 5 moradores do seu prédio e tenha entrega gratuita.</span></div><div onClick={async()=>{if(addrSt!=='idle')return;setAddrSt('loading');await simulate();setAddrSt('success');setTimeout(()=>setAddrSt('idle'),1500);}} className="lk" style={{fontFamily:fb,fontSize:13,color:addrSt==='success'?'#065F46':B[500],fontWeight:500,cursor:addrSt!=='idle'?'default':'pointer',background:addrSt==='success'?'#D1FAE5':'none',padding:addrSt==='success'?'4px 8px':0,borderRadius:6,display:'inline-block',transition:'all 150ms ease',opacity:addrSt==='loading'?0.5:1}}>{addrSt==='loading'?'Salvando…':addrSt==='success'?'Salvo ✓':'Editar endereço ›'}</div></Card>
     <Card style={{marginBottom:12}}><SL t="Cobrança"/><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800],marginBottom:4}}>Mensal no cartão</div><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{D.cartao.band} ••••{D.cartao.n}</div><div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:8}}>Próxima: {D.cartao.prox}</div><div onClick={async()=>{if(cardSt!=='idle')return;setCardSt('loading');await simulate();setCardSt('success');setTimeout(()=>setCardSt('idle'),1500);}} className="lk" style={{fontFamily:fb,fontSize:13,color:cardSt==='success'?'#065F46':B[500],fontWeight:500,cursor:cardSt!=='idle'?'default':'pointer',background:cardSt==='success'?'#D1FAE5':'none',padding:cardSt==='success'?'4px 8px':0,borderRadius:6,display:'inline-block',transition:'all 150ms ease',opacity:cardSt==='loading'?0.5:1}}>{cardSt==='loading'?'Validando…':cardSt==='success'?'Atualizado ✓':'Atualizar cartão ›'}</div></Card>
     <Card onClick={()=>onNav("perfil")} style={{marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}} ariaLabel="Ver histórico"><div style={{display:"flex",alignItems:"center",gap:12}}><I d={ic.file} size={20} color={B[500]}/><div><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[700]}}>Histórico de entregas e cobranças</div><div style={{fontFamily:fb,fontSize:12,color:W[500]}}>{D.cob.mes} — {D.cob.valor} — {D.cob.status}</div></div></div><I d={ic.chev} size={16} color={W[400]}/></Card>
@@ -260,29 +337,31 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff})=>
   const[modal,setModal]=useState(null);
   const[toastC,setToastC]=useState(false);
   const allItems=[...confirmed,...pending];const cntAll=n=>cntIn(allItems,n);
-  const addItem=p=>{setPending(prev=>addTo(prev,p));};
+  const addItem=p=>{setPending(prev=>addTo(prev,p,"extra"));};
   const removeItem=n=>{
-    const pi=pending.findIndex(p=>p.nome===n);
+    const pi=pending.findIndex(p=>p.nome===n&&p.kind!=="swap");
     if(pi!==-1){setPending(prev=>removeFrom(prev,n));return;}
-    const ci=confirmed.findIndex(p=>p.nome===n);
+    const ci=confirmed.findIndex(p=>p.nome===n&&p.kind!=="swap");
     if(ci!==-1){
       const next=removeFrom(confirmed,n);
       setConfirmed(next);
-      if(next.length===0){setToastC(true);setTimeout(()=>setToastC(false),5000);}
+      if(extrasCount(next)===0){setToastC(true);setTimeout(()=>setToastC(false),5000);}
     }
   };
+  const confirmedExtras=confirmed.filter(p=>p.kind!=="swap");
+  const totalExtrasAll=extrasCount(confirmed)+extrasCount(pending);
 
   return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
     <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[800],margin:"0 0 4px"}}>Cardápio</h2>
     <div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:12}}>Peça itens extras para esta semana</div>
     <DeadlineWarning/>
 
-    {confirmed.length>0&&<div style={{background:ST.success.bg,borderRadius:8,padding:"10px 12px",marginBottom:16,border:`1px solid ${ST.success.b}`,display:"flex",alignItems:"center",gap:8}}><I d={ic.check} size={16} color={ST.success.t}/><span style={{fontFamily:fb,fontSize:13,color:ST.success.t,fontWeight:500}}>{Object.entries(confirmed.reduce((a,p)=>{a[p.nome]=(a[p.nome]||0)+1;return a;},{})).map(([n,q])=>`${q}× ${n}`).join(", ")} — confirmado</span></div>}
+    {confirmedExtras.length>0&&<div style={{background:ST.success.bg,borderRadius:8,padding:"10px 12px",marginBottom:16,border:`1px solid ${ST.success.b}`,display:"flex",alignItems:"center",gap:8}}><I d={ic.check} size={16} color={ST.success.t}/><span style={{fontFamily:fb,fontSize:13,color:ST.success.t,fontWeight:500}}>{Object.entries(confirmedExtras.reduce((a,p)=>{a[p.nome]=(a[p.nome]||0)+1;return a;},{})).map(([n,q])=>`${q}× ${n}`).join(", ")} — confirmado</span></div>}
 
     {D.extras.length>0?D.extras.map((ex,i)=><NovidadeCard key={i} extra={ex} qty={cntAll(ex.nome)} onCardClick={()=>setModal(ex)} onAdd={()=>addItem(ex)} onRemove={()=>removeItem(ex.nome)} cutoff={cutoff}/>):<Card style={{marginBottom:16,padding:20,textAlign:"center"}}><div style={{fontFamily:fb,fontSize:14,color:W[500]}}>Nenhuma novidade esta semana.</div></Card>}
 
     <div style={{height:1,background:W[200],margin:"4px 0 20px"}}/>
-    <div style={{fontFamily:fd,fontSize:16,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",marginBottom:12}}>Nossos pães</div>
+    <div style={{fontFamily:fd,fontSize:16,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",marginBottom:12}}>Pães da assinatura</div>
 
     {D.pães.map((p,i)=>{const q=cntAll(p.nome);return<ProductCard key={i}
   product={{...p, preco:`${p.preco}/un`}}
@@ -291,29 +370,34 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff})=>
   onRemove={()=>removeItem(p.nome)}
   ctaLabel="Pedir"
   cutoff={cutoff}
-  basketIds={D.pães.filter(x=>x.qtd>0).map(x=>x.id)}
   loadingText="Adicionando…"
   successText="Adicionado ✓"
 />;})}
 
+    <ExtrasWarning count={totalExtrasAll}/>
+
     {modal&&<Modal product={modal} onClose={()=>setModal(null)} onAction={()=>simulate()} onComplete={()=>{addItem(modal);setModal(null);}} actionLabel="Adicionar à cesta" hint="Cobrado na próxima fatura" qty={cntAll(modal.nome)} onAdd={()=>addItem(modal)} onRemove={()=>removeItem(modal.nome)} cutoff={cutoff}/>}
-    <Toast msg="Pedido removido." vis={toastC}/>
+    <Toast msg="Item removido da cesta." vis={toastC}/>
   </div>;
 };
 
 // ═══ PERFIL ═══
-const Perfil=({confirmed,hasPending})=>{
-  const[cpf,setCpf]=useState(false);const[pauseSt,setPauseSt]=useState('idle');const dados=[["Endereço","Ed. Boa Vista, Bl. A / 502"],["Dia de entrega","Quintas-feiras"],["WhatsApp","(21) 99876-5432"],["E-mail","beatriz@email.com"],["CPF",cpf?"123.456.789-00":"•••.•••.789-00"]];const confirmedTotal=totalOf(confirmed);
+const Perfil=({confirmed,hasPending,weekSwap})=>{
+  const[cpf,setCpf]=useState(false);const[pauseSt,setPauseSt]=useState('idle');const dados=[["Endereço","Ed. Boa Vista, Bl. A / 502"],["Dia de entrega","Quintas-feiras"],["WhatsApp","(21) 99876-5432"],["E-mail","beatriz@email.com"],["CPF",cpf?"123.456.789-00":"•••.•••.789-00"]];const confirmedExtras=confirmed.filter(p=>p.kind!=="swap");const confirmedTotal=totalOf(confirmed);const assinVal=D.assinatura.valorMensal*D.assinatura.qtdPaes;
   return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
     <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[800],margin:"0 0 20px"}}>Perfil</h2>
     <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}><div style={{width:48,height:48,borderRadius:9999,background:B[50],display:"flex",alignItems:"center",justifyContent:"center",fontFamily:fd,fontSize:20,color:B[500],textTransform:"uppercase"}}>B</div><div><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800]}}>Beatriz Silva</div><div style={{fontFamily:fb,fontSize:12,color:W[500]}}>beatriz@email.com</div></div></div>
     <Card style={{marginBottom:12}}><SL t="Dados pessoais"/>{dados.map(([l,v],i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderBottom:i<dados.length-1?`1px solid ${W[100]}`:"none"}}><div><div style={{fontFamily:fb,fontSize:11,color:W[400],marginBottom:2}}>{l}</div><div style={{fontFamily:fb,fontSize:13,color:W[700]}}>{v}</div></div>{l==="CPF"?<button aria-label={cpf?"Ocultar CPF":"Mostrar CPF"} onClick={()=>setCpf(!cpf)} style={{background:"none",border:"none",cursor:"pointer",padding:4,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={cpf?ic.eyeOff:ic.eye} size={16} color={W[400]}/></button>:<I d={ic.chev} size={14} color={W[400]}/>}</div>)}</Card>
     <Card style={{marginBottom:12}}><SL t="Histórico de entregas e cobranças"/>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><I d={ic.check} size={14} color={ST.success.t}/><span style={{fontFamily:fb,fontSize:13,fontWeight:500,color:ST.success.t}}>Tudo em dia</span></div>
-      {confirmed.length>0&&<div style={{padding:12,borderRadius:8,background:B[50],border:`1px solid ${B[200]}`,marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><span style={{fontFamily:fb,fontSize:12,color:B[700],fontWeight:500}}>Esta semana</span><Badge label="Confirmado" type="success"/></div><div style={{fontFamily:fb,fontSize:13,color:B[800]}}>{D.entrega.produto}</div>{Object.entries(confirmed.reduce((a,p)=>{a[p.nome]=(a[p.nome]||0)+1;return a;},{})).map(([n,q])=><div key={n} style={{fontFamily:fb,fontSize:12,color:B[500],marginTop:4}}>+ {q}× {n} — {fmt(confirmed.find(p=>p.nome===n).precoNum*q)}</div>)}<div style={{fontFamily:fb,fontSize:12,color:B[700],marginTop:4,fontWeight:500}}>Total extras: {fmt(confirmedTotal)}</div></div>}
+      {(confirmedExtras.length>0||weekSwap)&&<div style={{padding:12,borderRadius:8,background:B[50],border:`1px solid ${B[200]}`,marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><span style={{fontFamily:fb,fontSize:12,color:B[700],fontWeight:500}}>Esta semana</span><Badge label="Confirmado" type="success"/></div>
+        {weekSwap&&weekSwap!=="original"?<div style={{fontFamily:fb,fontSize:13,color:B[800]}}>1× {D.pães.find(p=>p.id===weekSwap)?.nome} · trocado pelo Original</div>:<div style={{fontFamily:fb,fontSize:13,color:B[800]}}>{D.entrega.produto} · assinatura</div>}
+        {Object.entries(confirmedExtras.reduce((a,p)=>{a[p.nome]=(a[p.nome]||0)+1;return a;},{})).map(([n,q])=><div key={n} style={{fontFamily:fb,fontSize:12,color:B[500],marginTop:4}}>+ {q}× {n} · {fmt(confirmedExtras.find(p=>p.nome===n).precoNum*q)}</div>)}
+        {confirmedTotal>0&&<div style={{fontFamily:fb,fontSize:12,color:B[700],marginTop:4,fontWeight:500}}>Total extras: {fmt(confirmedTotal)}</div>}
+      </div>}
       {D.hist.map((h,i)=><div key={i} style={{padding:"12px 0",borderBottom:i<D.hist.length-1?`1px solid ${W[100]}`:"none"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontFamily:fb,fontSize:12,color:W[400]}}>{h.sem}</span><Badge label={h.st} type={h.st==="Entregue"?"success":"info"}/></div><div style={{fontFamily:fb,fontSize:13,color:W[700],marginTop:4}}>{h.itens}</div>{h.extra&&<div style={{fontFamily:fb,fontSize:12,color:B[500],marginTop:4}}>+ {h.extra.nome} — {h.extra.valor}</div>}</div>)}
       <div style={{marginTop:12,padding:12,borderRadius:8,background:W[50],border:`1px solid ${W[200]}`}}><div style={{fontFamily:fb,fontSize:12,color:W[400],marginBottom:4}}>Cobrança do mês</div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800]}}>{D.cob.mes} — {D.cob.valor}</span><Badge label="Pago"/></div></div>
-      <div style={{marginTop:8,padding:12,borderRadius:8,background:B[50],border:`1px solid ${B[100]}`}}><div style={{fontFamily:fb,fontSize:12,color:B[700],marginBottom:4}}>Próxima fatura (abril)</div><div style={{fontFamily:fb,fontSize:13,color:B[800],lineHeight:1.6}}>Assinatura: R$ 98,00<br/>+ Extras: {fmt(confirmedTotal||22)}<br/>+ Frete: R$ 15,00<br/><span style={{fontWeight:600}}>= {fmt(98+15+(confirmedTotal||22))} (estimado)</span></div></div>
+      <div style={{marginTop:8,padding:12,borderRadius:8,background:B[50],border:`1px solid ${B[100]}`}}><div style={{fontFamily:fb,fontSize:12,color:B[700],marginBottom:4}}>Próxima fatura (abril)</div><div style={{fontFamily:fb,fontSize:13,color:B[800],lineHeight:1.6}}>Assinatura: {fmt(assinVal)}<br/>+ Extras: {fmt(confirmedTotal||22)}<br/>+ Frete: R$ 15,00<br/><span style={{fontWeight:600}}>= {fmt(assinVal+15+(confirmedTotal||22))} (estimado)</span></div></div>
     </Card>
     <Card style={{marginBottom:12}}><SL t="Cartão"/><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[800]}}>{D.cartao.band} ••••{D.cartao.n}</div><div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:4}}>Próxima: {D.cartao.prox}</div></div><ActionBtn loadingText="Validando…" successText="Atualizado ✓" onAction={()=>simulate()} style={{padding:"8px 16px",fontSize:12}}>Atualizar</ActionBtn></div></Card>
     <Card style={{marginBottom:12}}><div style={{fontFamily:fb,fontSize:14,color:W[700],marginBottom:12,lineHeight:1.5}}>Precisa pausar ou cancelar? Fale pelo WhatsApp.</div><button disabled={pauseSt!=='idle'} onClick={async()=>{if(pauseSt!=='idle')return;setPauseSt('loading');await simulate();setPauseSt('success');setTimeout(()=>setPauseSt('idle'),1500);}} className="bw" style={{width:"100%",padding:"12px 0",borderRadius:8,background:pauseSt==='success'?'#D1FAE5':'#25D366',color:pauseSt==='success'?'#065F46':'#FFF',border:pauseSt==='success'?'1px solid #6EE7B7':'none',fontFamily:fb,fontSize:14,fontWeight:500,cursor:pauseSt!=='idle'?'default':'pointer',display:"flex",alignItems:"center",justifyContent:"center",gap:8,minHeight:44,opacity:pauseSt==='loading'?0.5:1,transition:'all 150ms ease'}}>{pauseSt==='idle'&&<I d={ic.msg} size={18} color="#FFF"/>}{pauseSt==='loading'?'Processando…':pauseSt==='success'?'Confirmada ✓':'Falar pelo WhatsApp'}</button></Card>
@@ -330,10 +414,11 @@ export default function CoraPortal(){
   const[justConfirmed,setJustConfirmed]=useState(false);
   const[userData,setUserData]=useState(null);
   const[isFirstVisit,setIsFirstVisit]=useState(true);
-  const addPending=p=>setPending(prev=>addTo(prev,p));
+  const[weekSwap,setWeekSwap]=useState(null);
+  const addPending=p=>setPending(prev=>addTo(prev,p,"extra"));
   const removePending=n=>setPending(prev=>removeFrom(prev,n));
   const handleConfirm=()=>{setConfirmed(prev=>[...prev,...pending]);setPending([]);setJustConfirmed(true);setTimeout(()=>setJustConfirmed(false),4000);};
-  const hasPending=pending.length>0;
+  const hasPending=extrasCount(pending)>0;
   const cutoff=isPastCutoff();
   const isOnboarding=scr==="onboarding";
 
@@ -352,13 +437,13 @@ const params = new URLSearchParams(window.location.search);
       <img src={IMG.logo} alt="Cora" style={{height:28}}/>
     </div>
     <div style={{flex:1,overflowY:"auto"}}>
-      {scr==="home"&&<Home onNav={setScr} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff}/>}
+      {scr==="home"&&<Home onNav={setScr} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} weekSwap={weekSwap} onSwap={setWeekSwap}/>}
       {scr==="assinatura"&&<Assinatura onNav={setScr} hasPending={hasPending} cutoff={cutoff}/>}
       {scr==="cardapio"&&<Cardapio pending={pending} confirmed={confirmed} setPending={setPending} setConfirmed={setConfirmed} hasPending={hasPending} cutoff={cutoff}/>}
-      {scr==="perfil"&&<Perfil confirmed={confirmed} hasPending={hasPending}/>}
+      {scr==="perfil"&&<Perfil confirmed={confirmed} hasPending={hasPending} weekSwap={weekSwap}/>}
     </div>
     {/* RODAPÉ PERSISTENTE — visível em TODAS as telas */}
-    <OrderFooter pending={pending} onConfirm={handleConfirm} onNav={setScr} cutoff={cutoff}/>
+    <OrderFooter pending={pending} confirmed={confirmed} onConfirm={handleConfirm} onNav={setScr} cutoff={cutoff}/>
     <ConfirmedFooter vis={justConfirmed}/>
     <Nav active={scr} onNav={setScr} badge={pending.length}/>
     <style>{`*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior:none}img{max-width:100%}input,button{font-size:16px}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}.bp:hover{background:${B[600]}!important}.bw:hover{background:#1FAF54!important}.bl:hover{background:${W[100]}!important}.lk:hover{text-decoration:underline}.qb:hover:not(:disabled){background:${W[100]}!important}button:focus-visible{outline:none;box-shadow:0 0 0 3px ${B[50]},0 0 0 5px ${B[500]}}`}</style>
