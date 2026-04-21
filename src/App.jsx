@@ -26,7 +26,7 @@ const IMG={
 const D={
   nome:"Beatriz",
   entrega:{dia:"Quinta, 23 de abril",produto:"1 Pão Original (615g)"},
-  assinatura:{itens:"1 Pão Original (615g) / semana",valorMensal:99,qtdPaes:1},
+  assinatura:{itens:"1 Pão Original (615g) / semana",valorMensal:99,qtdPaes:3},
   ent:{dia:"Quintas",cond:"Ed. Boa Vista",bloco:"Bl. A / 502",frete:"R$ 15/mês"},
   cartao:{band:"Visa",n:"6411",prox:"1º de abril"},
   cob:{mes:"Março",valor:"R$ 99,00",status:"Pago"},
@@ -42,6 +42,7 @@ const D={
     {id:"ciabatta",nome:"Ciabatta",peso:"533g",preco:"R$ 25,00",precoNum:25,img:IMG.ciabatta,desc:"Crosta fina, miolo aberto e leve.",ingredientes:"Farinha de trigo, água, sal, levain, azeite.",detalhe:"Massa de alta hidratação. Crosta fina e crocante, miolo com alvéolos grandes e textura leve."},
     {id:"brioche",nome:"Brioche",peso:"256g",preco:"R$ 32,00",precoNum:32,img:IMG.brioche,desc:"Manteiga francesa, textura amanteigada.",ingredientes:"Farinha, manteiga, ovos, açúcar, sal, levain, leite.",detalhe:"Massa enriquecida com manteiga. Fermentação 18h. Miolo dourado, textura que desfia."},
   ],
+  semana:{pedidosAbertos:false,cardapioProxima:["Pão Original","Pão Integral","Focaccia Genovesa"],entregaProxima:"Quinta, 30 de abril"},
   hist:[
     {sem:"Semana 28/03",itens:"1 Pão Original (615g)",st:"Pendente",extra:null},
     {sem:"Semana 21/03",itens:"1 Pão Original (615g)",st:"Entregue",extra:null},
@@ -85,6 +86,20 @@ const QtyBtn=({qty,onAdd,onRemove,name})=><div onClick={e=>e.stopPropagation()} 
 const Toast=({msg,vis})=>vis?<div role="status" aria-live="polite" style={{position:"fixed",bottom:72,left:16,right:16,maxWidth:358,margin:"0 auto",background:W[800],color:"#FFF",borderRadius:8,padding:"12px 16px",zIndex:60,fontFamily:fb,fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8,animation:"fadeUp 300ms ease"}}><I d={ic.check} size={16} color="#6EE7B7"/>{msg}</div>:null;
 const DeadlineWarning=()=><div style={{fontFamily:fb,fontSize:12,color:ST.warning.t,background:ST.warning.bg,padding:"8px 12px",borderRadius:8,marginBottom:20,display:"inline-flex",alignItems:"center",gap:8,border:`1px solid ${ST.warning.b}`}}><I d={ic.clock} size={14} color={ST.warning.t}/>Pedidos até terça, 12h, para entrega na quinta</div>;
 const CutoffMsg=()=><div style={{fontFamily:fb,fontSize:13,color:"#7A766E",marginTop:6}}>Prazo encerrado. Alterações valem a partir da próxima semana.</div>;
+const CutoffBanner=({cutoff})=>{
+  if(!cutoff)return null;
+  const aberta=D.semana.pedidosAbertos;
+  if(aberta){
+    const prods=D.semana.cardapioProxima;const base=prods.slice(0,-1).join(", ");const novidade=prods[prods.length-1];
+    const lista=prods.length>1?`${base} e ${novidade} (novidade da semana)`:novidade;
+    return<div style={{background:W[50],border:`1px solid ${W[200]}`,borderRadius:8,padding:12,marginBottom:16,fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5}}>
+      <I d={ic.cal} size={14} color={W[500]}/> Pedidos da próxima semana já estão abertos.<br/>Cardápio: {lista}.
+    </div>;
+  }
+  return<div style={{background:W[50],border:`1px solid ${W[200]}`,borderRadius:8,padding:12,marginBottom:16,fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5}}>
+    <I d={ic.clock} size={14} color={W[500]}/> Pedidos desta semana fechados. Os pedidos da próxima semana abrirão em breve.
+  </div>;
+};
 const simulate=()=>new Promise(r=>setTimeout(r,600));
 const ActionBtn=({children,loadingText,successText,onAction,onComplete,primary,disabled:extDisabled,full,style:es,ariaLabel})=>{const[st,setSt]=useState('idle');const[err,setErr]=useState('');const handle=async()=>{if(st!=='idle')return;setSt('loading');setErr('');try{await onAction();setSt('success');setTimeout(()=>{setSt('idle');onComplete?.();},1500);}catch(e){setErr(e.message||'Erro ao processar. Tente novamente.');setSt('idle');}};const busy=st==='loading'||st==='success';const label=st==='loading'?loadingText:st==='success'?successText:children;const stStyle=st==='success'?{background:'#D1FAE5',color:'#065F46',border:'1px solid #6EE7B7',opacity:1}:{};return<><Btn primary={st!=='success'&&primary} disabled={busy||extDisabled} onClick={handle} full={full} ariaLabel={ariaLabel} style={{...es,...stStyle}}>{label}</Btn>{err&&<div style={{fontFamily:fb,fontSize:13,color:'#9A3412',background:'#FFEDD5',padding:'8px 12px',borderRadius:8,marginTop:6}}>{err}</div>}</>;};
 
@@ -224,6 +239,8 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
   return<div style={{padding:"24px 16px 16px",paddingBottom:pending.length>0?80:16}}>
     <h1 style={{fontFamily:fd,fontSize:30,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",margin:"0 0 20px",lineHeight:1.1}}>{prefix}</h1>
 
+    <CutoffBanner cutoff={cutoff}/>
+
     {/* Card unificado — CESTA DA SEMANA (4 estados: padrão, swap, extra, swap+extra) */}
     <Card style={{marginBottom:16,padding:0,overflow:"hidden",background:"#FFF",border:`1px solid ${temSwap?B[200]:W[200]}`}} ariaLabel={`Cesta da semana: ${D.entrega.dia}`}>
       <div style={{display:"flex",alignItems:"stretch"}}>
@@ -300,7 +317,7 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
 const Assinatura=({onNav,hasPending,cutoff})=>{
   const[editing,setEditing]=useState(false);const[qtds,setQtds]=useState(D.pães.map(p=>p.qtd));const[saved,setSaved]=useState(false);const[showCalc,setShowCalc]=useState(false);
   const[addrSt,setAddrSt]=useState('idle');const[cardSt,setCardSt]=useState('idle');
-  const total=qtds.reduce((s,q)=>s+q,0);const mensal=D.pães.reduce((s,p,i)=>s+qtds[i]*p.precoNum*4,0);const orig=D.pães.reduce((s,p)=>s+p.qtd*p.precoNum*4,0);const changed=qtds.some((q,i)=>q!==D.pães[i].qtd);const diff=mensal-orig;const prop=Math.abs(diff/4*D.semanasRestantes);
+  const total=qtds.reduce((s,q)=>s+q,0);const mensal=D.assinatura.valorMensal*total;const orig=D.assinatura.valorMensal*D.assinatura.qtdPaes;const changed=qtds.some((q,i)=>q!==D.pães[i].qtd);const diff=mensal-orig;const prop=Math.abs(diff/4*D.semanasRestantes);
   const upd=(i,d)=>setQtds(p=>{const n=[...p];const v=n[i]+d;const t=total+d;if(v<0||t>3)return p;n[i]=v;return n;});
   const handleSave=()=>{setEditing(false);setSaved(true);setTimeout(()=>setSaved(false),5000);};
 
@@ -315,7 +332,7 @@ const Assinatura=({onNav,hasPending,cutoff})=>{
         <div style={{fontFamily:fb,fontSize:12,color:W[500],marginBottom:12}}>Limite: 3 pães/semana ({total}/3)</div>
         {D.pães.map((p,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:i<D.pães.length-1?`1px solid ${W[100]}`:"none"}}>
           <ProductThumb src={p.img} w={48} h={40} alt={p.nome}/>
-          <div style={{flex:1}}><div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800]}}>{p.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>({p.peso})</span></div><div style={{fontFamily:fb,fontSize:12,color:W[600],marginTop:4}}>{p.preco}/un</div></div>
+          <div style={{flex:1}}><div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800]}}>{p.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>({p.peso})</span></div></div>
           <div style={{display:"flex",alignItems:"center",gap:8}}><button onClick={()=>upd(i,-1)} disabled={qtds[i]===0} className="qb" style={{width:32,height:32,borderRadius:8,border:`1px solid ${qtds[i]>0?W[300]:W[200]}`,background:"none",cursor:qtds[i]>0?"pointer":"default",fontSize:18,color:qtds[i]>0?W[600]:W[300],display:"flex",alignItems:"center",justifyContent:"center",opacity:qtds[i]===0?0.4:1}}>−</button><span style={{fontFamily:fb,fontSize:16,fontWeight:600,color:qtds[i]>0?B[500]:W[400],width:24,textAlign:"center"}}>{qtds[i]}</span><button onClick={()=>upd(i,1)} disabled={total>=3} className="qb" style={{width:32,height:32,borderRadius:8,border:`1px solid ${total<3?B[500]:W[200]}`,background:total<3?B[50]:"none",cursor:total<3?"pointer":"default",fontSize:18,color:total<3?B[500]:W[300],display:"flex",alignItems:"center",justifyContent:"center",opacity:total>=3?0.4:1}}>+</button></div>
         </div>)}
         <div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800],textAlign:"right",padding:"12px 0 4px"}}>Novo valor mensal: <span style={{color:B[500]}}>{fmt(mensal)}</span></div>
