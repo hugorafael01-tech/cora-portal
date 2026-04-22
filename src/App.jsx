@@ -216,11 +216,14 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
   const prefix=isFirstVisit?`${saudacao}, ${nome}!`:`Oi, ${nome}, ${saudacao}!`;
 
   // Resolve what's in this week's delivery
-  const basePao=D.pães.find(p=>p.id===(weekSwap||"original"));
-  const cestaImg=basePao?basePao.img:IMG.original;
-  const cestaLabel=basePao?`1 ${basePao.nome} (${basePao.peso})`:"1 Pão Original (615g)";
   const temSwap=weekSwap&&weekSwap!=="original";
   const temExtras=confirmedExtras.length>0;
+  // Com swap, mostra o pao trocado. Sem swap, usa a composicao real da Assinatura
+  // (D.entrega.produto e atualizado pelo onboarding; imagem pega o primeiro pao com qtd>0)
+  const basePao=temSwap?D.pães.find(p=>p.id===weekSwap):null;
+  const primeiroPaoAtivo=D.pães.find(p=>p.qtd>0)||D.pães[0];
+  const cestaImg=basePao?basePao.img:(primeiroPaoAtivo?.img||IMG.original);
+  const cestaLabel=basePao?`1 ${basePao.nome} (${basePao.peso})`:D.entrega.produto;
 
   const handleSwapConfirm=()=>{
     const chosen=D.pães.find(p=>p.id===swapChoice.replace("pao-",""));
