@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { B, W } from "../tokens";
+import { haptic } from "../utils/haptic";
 
 /* ══════════════════════════════════════════
    CORA — Pré-cadastro de Interessados v2
@@ -151,7 +152,7 @@ const SplashScreen = ({ onNext }) => (
 
     {/* CTA */}
     <button
-      onClick={onNext}
+      onClick={() => { haptic(); onNext(); }}
       style={{
         marginTop: 48,
         width: 200,
@@ -265,6 +266,7 @@ const FormScreen = ({ onSubmit }) => {
     }
 
     setLoading(false);
+    haptic();
     onSubmit(nome.trim().split(/\s+/)[0]);
   };
 
@@ -445,6 +447,8 @@ const FormScreen = ({ onSubmit }) => {
                   <img
                     src={product.img}
                     alt={product.nome}
+                    loading="lazy"
+                    decoding="async"
                     style={{
                       width: 80,
                       height: 80,
@@ -688,6 +692,17 @@ const FormScreen = ({ onSubmit }) => {
 /* ══════════════════════════════════════════
    TELA 3 — CONFIRMAÇÃO
    ══════════════════════════════════════════ */
+const shareCora = () => {
+  haptic();
+  const url = typeof window !== "undefined" ? `${window.location.origin}/interesse` : "";
+  const texto = `Conheci a Cora, padaria por assinatura de Niterói. Achei que você também pode gostar: ${url}`;
+  if (typeof navigator !== "undefined" && navigator.share) {
+    navigator.share({ title: "Cora", text: texto, url }).catch(() => {});
+  } else if (typeof window !== "undefined") {
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank", "noopener,noreferrer");
+  }
+};
+
 const ConfirmScreen = ({ nome }) => (
   <div
     style={{
@@ -787,6 +802,30 @@ const ConfirmScreen = ({ nome }) => (
       >
         Se curtiu a ideia, aproveita e compartilha com os seus amigos.
       </p>
+
+      {/* Share CTA */}
+      <button
+        onClick={shareCora}
+        style={{
+          marginTop: 24,
+          padding: "12px 24px",
+          borderRadius: 8,
+          border: `1.5px solid ${B[500]}`,
+          background: "transparent",
+          color: B[500],
+          fontFamily: "'Montagu Slab', Georgia, serif",
+          fontSize: 15,
+          fontWeight: 500,
+          cursor: "pointer",
+          transition: "all 150ms ease",
+          minHeight: 48,
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = B[50])}
+        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+        aria-label="Compartilhar a Cora"
+      >
+        Compartilhar
+      </button>
 
       {/* Privacy */}
       <p

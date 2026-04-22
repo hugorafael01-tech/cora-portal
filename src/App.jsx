@@ -5,6 +5,7 @@ const CoraOnboarding = lazy(() => import("./Onboarding"));
 const PreCadastro = lazy(() => import("./pages/PreCadastro"));
 import ProductCard from "./components/ProductCard";
 import { isPastCutoff } from "./utils/cutoff";
+import { haptic } from "./utils/haptic";
 import { B, W, fd, fb, fmt } from "./tokens";
 
 /* CORA — Portal do Assinante — v3.2.7
@@ -101,15 +102,6 @@ const CutoffBanner=({cutoff})=>{
   </div>;
 };
 const simulate=()=>new Promise(r=>setTimeout(r,600));
-// Haptic feedback sutil (mobile). Silencioso em desktop/iOS Safari antigo.
-// Ignorado se usuario prefere reduced motion.
-const haptic=(ms=10)=>{
-  try{
-    if(typeof window==="undefined"||!window.navigator?.vibrate) return;
-    if(window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    window.navigator.vibrate(ms);
-  }catch(e){/* noop */}
-};
 const ActionBtn=({children,loadingText,successText,onAction,onComplete,primary,disabled:extDisabled,full,style:es,ariaLabel})=>{const[st,setSt]=useState('idle');const[err,setErr]=useState('');const handle=async()=>{if(st!=='idle')return;setSt('loading');setErr('');try{await onAction();setSt('success');setTimeout(()=>{setSt('idle');onComplete?.();},1500);}catch(e){setErr(e.message||'Erro ao processar. Tente novamente.');setSt('idle');}};const busy=st==='loading'||st==='success';const label=st==='loading'?loadingText:st==='success'?successText:children;const stStyle=st==='success'?{background:'#D1FAE5',color:'#065F46',border:'1px solid #6EE7B7',opacity:1}:{};return<><Btn primary={st!=='success'&&primary} disabled={busy||extDisabled} onClick={handle} full={full} ariaLabel={ariaLabel} style={{...es,...stStyle}}>{label}</Btn>{err&&<div style={{fontFamily:fb,fontSize:13,color:'#9A3412',background:'#FFEDD5',padding:'8px 12px',borderRadius:8,marginTop:6}}>{err}</div>}</>;};
 
 // ─── MODAL ───
