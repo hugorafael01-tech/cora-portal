@@ -192,7 +192,7 @@ const extrasCount=list=>list.filter(p=>p.kind!=="swap").length;
 const qtdsToSlots=(qtds)=>{const s=[];Object.entries(qtds).forEach(([id,q])=>{for(let i=0;i<q;i++)s.push(id);});return s;};
 const slotsToQtds=(slots)=>slots.reduce((a,id)=>{a[id]=(a[id]||0)+1;return a;},{});
 
-const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,cestaSemana,cestaAtual,houveSwap,onSetCestaSemana})=>{
+const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,cestaSemana,cestaAtual,houveSwap,onSetCestaSemana,ehPrimeiroAcesso})=>{
   const[modal,setModal]=useState(null);
   const[swapModal,setSwapModal]=useState(false);
   const[rascunhoSlots,setRascunhoSlots]=useState([]); // slots da cesta durante a edicao no modal
@@ -200,7 +200,7 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
   const[toastMsg,setToastMsg]=useState("");
   const allItems=[...confirmed,...pending];
   const cntAll=n=>cntIn(allItems,n);
-  const handleAddComplete=p=>{addPending(p);setModal(null);setToastMsg(`${p.nome} adicionada à sua cesta.`);setToast(true);setTimeout(()=>setToast(false),5000);};
+  const handleAddComplete=p=>{addPending(p);setModal(null);};
   const handleQtyChange=(product,delta)=>{
     if(confirmed.length>0){
       if(delta>0) updateConfirmed(addTo(confirmed,product));
@@ -217,8 +217,8 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
   const confirmedExtras=confirmed.filter(p=>p.kind!=="swap");
   const confirmedTotal=totalOf(confirmed);
   const nome=userData?.nome?userData.nome.split(" ")[0]:D.nome;
-  const saudacao=isFirstVisit?(userData?.genero==="f"?"Bem-vinda":"Bem-vindo"):greet();
-  const prefix=isFirstVisit?`${saudacao}, ${nome}!`:`Oi, ${nome}, ${saudacao}!`;
+  const bemvindo=userData?.genero==="f"?"Bem-vinda":userData?.genero==="m"?"Bem-vindo":"Boas-vindas";
+  const prefix=ehPrimeiroAcesso?`${bemvindo}, ${nome}!`:`Oi, ${nome}, ${greet()}!`;
 
   // Composicao da Cesta desta semana (multi-pao)
   const cestaSlots=qtdsToSlots(cestaAtual);
@@ -339,10 +339,16 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
 // Helper pra montar a string "N Nome (peso) + N Nome (peso)" a partir de qtds map
 const composicaoToStr=(qtdsMap)=>Object.entries(qtdsMap).filter(([,q])=>q>0).map(([id,q])=>{const p=D.pães.find(x=>x.id===id);return p?`${q} ${p.nome} (${p.peso})`:"";}).filter(Boolean).join(" + ");
 
+// Helper para nome do proximo mes em portugues
+const MESES_PT=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const proximoMesPt=()=>MESES_PT[(new Date().getMonth()+1)%12];
+const mesAtualPt=()=>MESES_PT[new Date().getMonth()];
+
 const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,onSalvar})=>{
   const[editing,setEditing]=useState(false);
   // Rascunho local SO durante a edicao. Ao salvar, chama onSalvar(rascunho). Ao cancelar, descarta.
   const[rascunho,setRascunho]=useState(assinaturaQtds);
+  const[confirmModal,setConfirmModal]=useState(false);
   const[saved,setSaved]=useState(false);const[showCalc,setShowCalc]=useState(false);
   const[addrSt,setAddrSt]=useState('idle');const[cardSt,setCardSt]=useState('idle');
 
@@ -355,8 +361,17 @@ const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,onSalvar})=>{
   const orig=D.assinatura.valorMensal*origTotal;
   const changed=JSON.stringify(rascunho)!==JSON.stringify(assinaturaQtds);
   const diff=mensal-orig;const prop=Math.abs(diff/4*D.semanasRestantes);
+  // Detecta tipo da mudanca
+  const ehAumento=total>origTotal;
+  const ehReducao=total<origTotal;
+  const ehTroca=total===origTotal&&changed;
   const upd=(id,d)=>setRascunho(prev=>{const v=(prev[id]||0)+d;const t=total+d;if(v<0||t>3)return prev;return{...prev,[id]:v};});
-  const handleSave=()=>{onSalvar(rascunho);setEditing(false);setSaved(true);setTimeout(()=>setSaved(false),5000);};
+  const handleSaveClick=()=>setConfirmModal(true);
+  const handleConfirmAlteracao=()=>{
+    onSalvar(rascunho,{ehAumento,ehReducao,ehTroca,composicaoDe:composicaoToStr(assinaturaQtds),composicaoPara:composicaoToStr(rascunho),valorDe:orig,valorPara:mensal,valorProporcional:ehAumento?prop:0});
+    setConfirmModal(false);
+    setEditing(false);setSaved(true);setTimeout(()=>setSaved(false),5000);
+  };
 
   const itensStr=composicaoToStr(assinaturaQtds)||"Sem pães configurados";
   const valorMensalAtual=D.assinatura.valorMensal*origTotal;
@@ -378,12 +393,38 @@ const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,onSalvar})=>{
         </div>;})}
         <div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800],textAlign:"right",padding:"12px 0 4px"}}>Novo valor mensal: <span style={{color:B[500]}}>{fmt(mensal)}</span></div>
         {changed&&<><div style={{fontFamily:fb,fontSize:12,color:W[500],textAlign:"right",marginBottom:4}}>Antes: {fmt(orig)} → Depois: {fmt(mensal)}</div>
-          <div onClick={()=>setShowCalc(!showCalc)} style={{background:B[50],borderRadius:8,padding:"10px 12px",marginBottom:12,cursor:"pointer",border:`1px solid ${B[100]}`}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontFamily:fb,fontSize:13,color:B[700]}}>Ajuste neste mês: <span style={{fontWeight:600}}>{diff>0?"+":""}{fmt(prop)}</span></div><I d={ic.chevDown} size={16} color={B[400]}/></div>{showCalc&&<div style={{marginTop:8,fontFamily:fb,fontSize:12,color:B[600],lineHeight:1.6,animation:"fadeUp 200ms ease"}}>Faltam {D.semanasRestantes} semanas neste mês.<br/>Diferença semanal: {diff>0?"+":""}{fmt(Math.abs(diff/4))}/semana<br/>Cobrado proporcionalmente na próxima fatura: {diff>0?"+":""}{fmt(prop)}</div>}</div>
+          {ehAumento&&<div onClick={()=>setShowCalc(!showCalc)} style={{background:B[50],borderRadius:8,padding:"10px 12px",marginBottom:12,cursor:"pointer",border:`1px solid ${B[100]}`}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontFamily:fb,fontSize:13,color:B[700]}}>Ajuste neste mês: <span style={{fontWeight:600}}>+{fmt(prop)}</span></div><I d={ic.chevDown} size={16} color={B[400]}/></div>{showCalc&&<div style={{marginTop:8,fontFamily:fb,fontSize:12,color:B[600],lineHeight:1.6,animation:"fadeUp 200ms ease"}}>Faltam {D.semanasRestantes} semanas neste mês.<br/>Diferença semanal: +{fmt(Math.abs(diff/4))}/semana<br/>Cobrado proporcionalmente na próxima fatura: +{fmt(prop)}</div>}</div>}
+          {ehReducao&&<div style={{background:W[100],borderRadius:8,padding:"10px 12px",marginBottom:12,border:`1px solid ${W[200]}`,fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5}}>Até o fim de {mesAtualPt()}, você continuará recebendo {origTotal} {origTotal===1?"pão":"pães"} por semana. Sua nova Assinatura começa em 1º de {proximoMesPt()}.</div>}
         </>}
-        <div style={{display:"flex",gap:8}}><Btn onClick={()=>{setEditing(false);setRascunho(assinaturaQtds);setShowCalc(false);}} style={{flex:1}}>Cancelar</Btn><ActionBtn primary disabled={!changed} loadingText="Atualizando…" successText="Atualizada ✓" onAction={()=>simulate()} onComplete={handleSave} style={{flex:2}}>{changed?"Salvar":"Faça uma alteração"}</ActionBtn></div>
+        <div style={{display:"flex",gap:8}}><Btn onClick={()=>{setEditing(false);setRascunho(assinaturaQtds);setShowCalc(false);}} style={{flex:1}}>Cancelar</Btn><Btn primary disabled={!changed} onClick={handleSaveClick} style={{flex:2}}>{changed?"Salvar":"Faça uma alteração"}</Btn></div>
       </div>}
     </Card>
-    <Toast msg="Assinatura atualizada! O novo valor começa a valer esta semana." vis={saved}/>
+
+    {/* Modal de confirmacao */}
+    {confirmModal&&<>
+      <div onClick={()=>setConfirmModal(false)} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
+      <div role="dialog" aria-label="Confirmar alteração da Assinatura" style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:"16px 16px 0 0",zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",padding:20}}>
+        <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[800],marginBottom:16}}>Confirmar alteração da Assinatura</div>
+
+        <div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:4}}>Sua Assinatura vai mudar de:</div>
+        <div style={{fontFamily:fb,fontSize:14,color:W[800],marginBottom:10}}>{composicaoToStr(assinaturaQtds)||"Sem pães"} · {fmt(orig)}/mês</div>
+        <div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:4}}>Para:</div>
+        <div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:B[700],marginBottom:16}}>{composicaoToStr(rascunho)||"Sem pães"} · {fmt(mensal)}/mês</div>
+
+        <div style={{height:1,background:W[200],marginBottom:16}}/>
+
+        {ehAumento&&<div style={{fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5,marginBottom:20}}>Você será cobrado <strong>+{fmt(prop)}</strong> neste mês (pelos dias restantes). Sua próxima fatura completa de {fmt(mensal)} será em 1º de {proximoMesPt()}.</div>}
+        {ehReducao&&<div style={{fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5,marginBottom:20}}>Até o fim de {mesAtualPt()}, você continuará recebendo {origTotal} {origTotal===1?"pão":"pães"} por semana. Sua nova Assinatura começa em 1º de {proximoMesPt()}.</div>}
+        {ehTroca&&<div style={{fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5,marginBottom:20}}>O valor mensal continua o mesmo.</div>}
+
+        <div style={{display:"flex",gap:8}}>
+          <Btn onClick={()=>setConfirmModal(false)} style={{flex:1}}>Voltar</Btn>
+          <ActionBtn primary loadingText="Salvando…" successText="Atualizada ✓" onAction={()=>simulate()} onComplete={handleConfirmAlteracao} style={{flex:2}}>Confirmar alteração</ActionBtn>
+        </div>
+      </div>
+    </>}
+
+    <Toast msg="Assinatura atualizada!" vis={saved}/>
     <Card style={{marginBottom:12}}><SL t="Entrega"/><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800],marginBottom:4}}>Entregas às {D.ent.dia.toLowerCase()}</div><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{D.ent.cond}, {D.ent.bloco}</div><div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:8}}>Frete: {D.ent.frete}</div><div style={{fontFamily:fb,fontSize:12,color:B[700],background:B[50],padding:"8px 12px",borderRadius:8,marginBottom:8,display:"flex",gap:8,alignItems:"flex-start"}}><I d={ic.users} size={16} color={B[500]}/><span>Traga 5 moradores do seu prédio e tenha entrega gratuita.</span></div><div onClick={async()=>{if(addrSt!=='idle')return;setAddrSt('loading');await simulate();setAddrSt('success');setTimeout(()=>setAddrSt('idle'),1500);}} className="lk" style={{fontFamily:fb,fontSize:13,color:addrSt==='success'?'#065F46':B[500],fontWeight:500,cursor:addrSt!=='idle'?'default':'pointer',background:addrSt==='success'?'#D1FAE5':'none',padding:addrSt==='success'?'4px 8px':0,borderRadius:6,display:'inline-block',transition:'all 150ms ease',opacity:addrSt==='loading'?0.5:1}}>{addrSt==='loading'?'Salvando…':addrSt==='success'?'Salvo ✓':'Editar endereço ›'}</div></Card>
     <Card style={{marginBottom:12}}><SL t="Cobrança"/><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800],marginBottom:4}}>Mensal no cartão</div><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{D.cartao.band} ••••{D.cartao.n}</div><div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:8}}>Próxima: {D.cartao.prox}</div><div onClick={async()=>{if(cardSt!=='idle')return;setCardSt('loading');await simulate();setCardSt('success');setTimeout(()=>setCardSt('idle'),1500);}} className="lk" style={{fontFamily:fb,fontSize:13,color:cardSt==='success'?'#065F46':B[500],fontWeight:500,cursor:cardSt!=='idle'?'default':'pointer',background:cardSt==='success'?'#D1FAE5':'none',padding:cardSt==='success'?'4px 8px':0,borderRadius:6,display:'inline-block',transition:'all 150ms ease',opacity:cardSt==='loading'?0.5:1}}>{cardSt==='loading'?'Validando…':cardSt==='success'?'Atualizado ✓':'Atualizar cartão ›'}</div></Card>
     <Card onClick={()=>onNav("perfil")} style={{marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}} ariaLabel="Ver histórico"><div style={{display:"flex",alignItems:"center",gap:12}}><I d={ic.file} size={20} color={B[500]}/><div><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[700]}}>Histórico de entregas e cobranças</div><div style={{fontFamily:fb,fontSize:12,color:W[500]}}>{D.cob.mes} — {D.cob.valor} — {D.cob.status}</div></div></div><I d={ic.chev} size={16} color={W[400]}/></Card>
@@ -440,7 +481,7 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff})=>
 };
 
 // ═══ PERFIL ═══
-const Perfil=({confirmed,hasPending,assinaturaQtds,cestaAtual,houveSwap})=>{
+const Perfil=({confirmed,hasPending,assinaturaQtds,cestaAtual,houveSwap,historicoAlteracoes=[]})=>{
   const[cpf,setCpf]=useState(false);const[pauseSt,setPauseSt]=useState('idle');const dados=[["Endereço","Ed. Boa Vista, Bl. A / 502"],["Dia de entrega","Quintas-feiras"],["WhatsApp","(21) 99876-5432"],["E-mail","beatriz@email.com"],["CPF",cpf?"123.456.789-00":"•••.•••.789-00"]];const confirmedExtras=confirmed.filter(p=>p.kind!=="swap");const confirmedTotal=totalOf(confirmed);const qtdTotal=Object.values(assinaturaQtds||{}).reduce((s,q)=>s+q,0);const assinVal=D.assinatura.valorMensal*qtdTotal;const cestaLabelPerfil=composicaoToStr(cestaAtual||assinaturaQtds||{})||"Sem pães configurados";
   return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
     <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[800],margin:"0 0 20px"}}>Perfil</h2>
@@ -453,6 +494,21 @@ const Perfil=({confirmed,hasPending,assinaturaQtds,cestaAtual,houveSwap})=>{
         {Object.entries(confirmedExtras.reduce((a,p)=>{a[p.nome]=(a[p.nome]||0)+1;return a;},{})).map(([n,q])=><div key={n} style={{fontFamily:fb,fontSize:12,color:B[500],marginTop:4}}>+ {q}× {n} · {fmt(confirmedExtras.find(p=>p.nome===n).precoNum*q)}</div>)}
         {confirmedTotal>0&&<div style={{fontFamily:fb,fontSize:12,color:B[700],marginTop:4,fontWeight:500}}>Total extras: {fmt(confirmedTotal)}</div>}
       </div>}
+      {/* Historico de alteracoes da Assinatura */}
+      {historicoAlteracoes.map((alt,i)=>{
+        const d=new Date(alt.data);
+        const dataStr=`${d.getDate()} de ${MESES_PT[d.getMonth()]}`;
+        return<div key={i} style={{padding:12,borderRadius:8,background:"#FFF",border:`1px solid ${W[200]}`,marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <span style={{fontFamily:fb,fontSize:12,color:W[500],fontWeight:500}}>{dataStr}</span>
+            <span style={{fontFamily:fb,fontSize:11,fontWeight:500,padding:"3px 8px",borderRadius:4,background:W[200],color:W[800]}}>Alteração</span>
+          </div>
+          <div style={{fontFamily:fb,fontSize:13,color:W[800],lineHeight:1.5}}>Assinatura alterada: {alt.de||"Sem pães"} → {alt.para||"Sem pães"}</div>
+          <div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:4}}>{fmt(alt.valorDe)}/mês → {fmt(alt.valorPara)}/mês</div>
+          {alt.tipoMudanca==="aumento"&&<div style={{fontFamily:fb,fontSize:12,color:B[600],marginTop:4}}>Cobrança proporcional: +{fmt(alt.valorProporcional)}</div>}
+          {alt.tipoMudanca==="reducao"&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:4}}>Vale a partir de 1º de {proximoMesPt()}</div>}
+        </div>;
+      })}
       {D.hist.map((h,i)=><div key={i} style={{padding:"12px 0",borderBottom:i<D.hist.length-1?`1px solid ${W[100]}`:"none"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontFamily:fb,fontSize:12,color:W[400]}}>{h.sem}</span><Badge label={h.st} type={h.st==="Entregue"?"success":"info"}/></div><div style={{fontFamily:fb,fontSize:13,color:W[700],marginTop:4}}>{h.itens}</div>{h.extra&&<div style={{fontFamily:fb,fontSize:12,color:B[500],marginTop:4}}>+ {h.extra.nome} — {h.extra.valor}</div>}</div>)}
       <div style={{marginTop:12,padding:12,borderRadius:8,background:W[50],border:`1px solid ${W[200]}`}}><div style={{fontFamily:fb,fontSize:12,color:W[400],marginBottom:4}}>Cobrança do mês</div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800]}}>{D.cob.mes} — {D.cob.valor}</span><Badge label="Pago"/></div></div>
       <div style={{marginTop:8,padding:12,borderRadius:8,background:B[50],border:`1px solid ${B[100]}`}}><div style={{fontFamily:fb,fontSize:12,color:B[700],marginBottom:4}}>Próxima fatura (abril)</div><div style={{fontFamily:fb,fontSize:13,color:B[800],lineHeight:1.6}}>Assinatura: {fmt(assinVal)}<br/>+ Extras: {fmt(confirmedTotal||22)}<br/>+ Frete: R$ 15,00<br/><span style={{fontWeight:600}}>= {fmt(assinVal+15+(confirmedTotal||22))} (estimado)</span></div></div>
@@ -482,6 +538,10 @@ export default function CoraPortal(){
   });
   // cestaSemana: null = segue a Assinatura. Objeto {id:qty} = cliente customizou esta semana.
   const [cestaSemana,setCestaSemana]=useState(null);
+  // Historico de alteracoes da Assinatura (exibido no Perfil, mesclado com cobrancas)
+  const [historicoAlteracoes,setHistoricoAlteracoes]=useState([]);
+  // Primeiro acesso (boas-vindas). Vira false apos navegar pra outra aba.
+  const [ehPrimeiroAcesso,setEhPrimeiroAcesso]=useState(true);
 
   // Sincronizacao com onboarding (substitui a mutacao direta de D)
   useEffect(()=>{
@@ -491,7 +551,14 @@ export default function CoraPortal(){
     setCestaSemana(null);
     setPending([]);
     setConfirmed([]);
+    setEhPrimeiroAcesso(true); // boas-vindas ao voltar do onboarding
   },[onboardingConfig]);
+
+  // Ao navegar pra outra aba (Assinatura/Cardapio/Perfil), desativa primeiro acesso
+  const handleNav=(tela)=>{
+    if(tela!=="home") setEhPrimeiroAcesso(false);
+    setScr(tela);
+  };
 
   // Derivados
   const cestaAtual=cestaSemana??assinaturaQtds;
@@ -516,9 +583,21 @@ export default function CoraPortal(){
     setScr("home");
   };
 
-  const handleSalvarAssinatura=(novosQtds)=>{
+  const handleSalvarAssinatura=(novosQtds,meta)=>{
     setAssinaturaQtds(novosQtds);
     setCestaSemana(null); // volta a seguir a Assinatura
+    if(meta){
+      const tipoMudanca=meta.ehAumento?"aumento":(meta.ehReducao?"reducao":"troca");
+      setHistoricoAlteracoes(prev=>[{
+        data:new Date().toISOString(),
+        tipoMudanca,
+        de:meta.composicaoDe,
+        para:meta.composicaoPara,
+        valorDe:meta.valorDe,
+        valorPara:meta.valorPara,
+        valorProporcional:meta.valorProporcional||0,
+      },...prev]);
+    }
   };
 
 const params = new URLSearchParams(window.location.search);
@@ -531,15 +610,15 @@ const params = new URLSearchParams(window.location.search);
       <img src={IMG.logo} alt="Cora" style={{height:28}}/>
     </div>
     <div style={{flex:1,overflowY:"auto"}}>
-      {scr==="home"&&<Home onNav={setScr} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} cestaSemana={cestaSemana} cestaAtual={cestaAtual} houveSwap={houveSwap} onSetCestaSemana={setCestaSemana}/>}
-      {scr==="assinatura"&&<Assinatura onNav={setScr} hasPending={hasPending} cutoff={cutoff} assinaturaQtds={assinaturaQtds} onSalvar={handleSalvarAssinatura}/>}
+      {scr==="home"&&<Home onNav={handleNav} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} cestaSemana={cestaSemana} cestaAtual={cestaAtual} houveSwap={houveSwap} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso}/>}
+      {scr==="assinatura"&&<Assinatura onNav={handleNav} hasPending={hasPending} cutoff={cutoff} assinaturaQtds={assinaturaQtds} onSalvar={handleSalvarAssinatura}/>}
       {scr==="cardapio"&&<Cardapio pending={pending} confirmed={confirmed} setPending={setPending} setConfirmed={setConfirmed} hasPending={hasPending} cutoff={cutoff}/>}
-      {scr==="perfil"&&<Perfil confirmed={confirmed} hasPending={hasPending} assinaturaQtds={assinaturaQtds} cestaAtual={cestaAtual} houveSwap={houveSwap}/>}
+      {scr==="perfil"&&<Perfil confirmed={confirmed} hasPending={hasPending} assinaturaQtds={assinaturaQtds} cestaAtual={cestaAtual} houveSwap={houveSwap} historicoAlteracoes={historicoAlteracoes}/>}
     </div>
     {/* RODAPÉ PERSISTENTE — visível em TODAS as telas */}
-    <OrderFooter pending={pending} confirmed={confirmed} onConfirm={handleConfirm} onCancel={handleCancel} onNav={setScr} cutoff={cutoff}/>
+    <OrderFooter pending={pending} confirmed={confirmed} onConfirm={handleConfirm} onCancel={handleCancel} onNav={handleNav} cutoff={cutoff}/>
     <ConfirmedFooter vis={justConfirmed}/>
-    <Nav active={scr} onNav={setScr} badge={pending.length}/>
+    <Nav active={scr} onNav={handleNav} badge={pending.length}/>
     <style>{`*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior:none}img{max-width:100%}input,button{font-size:16px}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}.bp:hover{background:${B[600]}!important}.bw:hover{background:#1FAF54!important}.bl:hover{background:${W[100]}!important}.lk:hover{text-decoration:underline}.qb:hover:not(:disabled){background:${W[100]}!important}button:focus-visible{outline:none;box-shadow:0 0 0 3px ${B[50]},0 0 0 5px ${B[500]}}`}</style>
   </div>;
 }
