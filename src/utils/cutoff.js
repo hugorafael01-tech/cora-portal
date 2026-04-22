@@ -8,6 +8,10 @@
  * Janela aberta:    segunda 00:00 → terça 11:59
  */
 export function isPastCutoff(now = new Date()) {
+  // DEV ONLY — permite testar fluxos pré-cutoff em qualquer horário.
+  // Não afeta produção porque ninguém adiciona o param por engano.
+  if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bypass_cutoff") === "true") return false;
+
   const day = now.getDay(); // 0=dom, 1=seg, 2=ter, 3=qua…
   const hour = now.getHours();
 
