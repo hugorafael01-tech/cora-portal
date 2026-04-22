@@ -430,6 +430,7 @@ export default function CoraPortal(){
   const[userData,setUserData]=useState(null);
   const[isFirstVisit,setIsFirstVisit]=useState(true);
   const[weekSwap,setWeekSwap]=useState(null);
+  const[onboardingConfig,setOnboardingConfig]=useState(null);
   const addPending=p=>setPending(prev=>addTo(prev,p,"extra"));
   const removePending=n=>setPending(prev=>removeFrom(prev,n));
   const handleConfirm=()=>{setConfirmed(prev=>[...prev,...pending]);setPending([]);setJustConfirmed(true);setTimeout(()=>setJustConfirmed(false),4000);};
@@ -438,8 +439,28 @@ export default function CoraPortal(){
   const cutoff=isPastCutoff();
   const isOnboarding=scr==="onboarding";
 
-  const handleOnboardingComplete=(data)=>{
+  const handleOnboardingComplete=(payload)=>{
+    // Retrocompat: payload pode ser só "data" (versao antiga) ou {data, assinatura}
+    const data=payload?.data||payload;
+    const assinatura=payload?.assinatura;
     setUserData(data);
+    if(assinatura&&Object.keys(assinatura).length>0){
+      const paoById={original:{nome:"Pão Original",peso:"615g"},integral:{nome:"Pão Integral",peso:"615g"}};
+      const partes=Object.entries(assinatura).flatMap(([id,qty])=>{const p=paoById[id];if(!p)return[];return[`${qty} ${p.nome} (${p.peso})`];});
+      const qtdPaes=Object.values(assinatura).reduce((s,q)=>s+q,0);
+      const itensStr=partes.join(" + ");
+      D.assinatura.qtdPaes=qtdPaes;
+      D.assinatura.itens=`${itensStr} / semana`;
+      D.entrega.produto=itensStr;
+      // Sobrescreve D.pães[i].qtd para refletir na tela Assinatura (edicao)
+      const firstId=Object.keys(assinatura)[0];
+      if(firstId){
+        D.pães.forEach(p=>{p.qtd=assinatura[p.id]||0;});
+        // Se swap referenciar produto nao presente, resetar
+        setWeekSwap(null);
+      }
+      setOnboardingConfig({data,assinatura});
+    }
     setScr("home");
   };
 

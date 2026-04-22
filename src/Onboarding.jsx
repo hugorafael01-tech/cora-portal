@@ -330,7 +330,7 @@ export default function CoraOnboarding({onComplete}){
 
   if(screen==="welcome") return shell(<>
     <div style={{padding:"10px 16px",background:"#FFF",borderBottom:`1px solid ${W[200]}`}}><img src={IMG.logo} alt="Cora" style={{height:28}}/></div>
-    <div style={{flex:1}}><Welcome data={data} assinatura={assinatura} onComplete={()=>onComplete&&onComplete(data)}/></div>
+    <div style={{flex:1}}><Welcome data={data} assinatura={assinatura} onComplete={()=>onComplete&&onComplete({data,assinatura})}/></div>
   </>);
 
   return shell(<>
