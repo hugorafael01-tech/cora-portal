@@ -3,14 +3,16 @@ import ProductCard from "./components/ProductCard";
 import { B, W, fd, fb, fmt } from "./tokens";
 
 /* ═══════════════════════════════════════════════════════════════
-   CORA . Onboarding v4
-   maxWidth 390 · cards do Cardapio · splash fix
+   CORA . Onboarding v5
+   Alinhado com PreCadastro: splash, honeypot, validacoes inline
    ═══════════════════════════════════════════════════════════════ */
 
 const IMG={
   logo:"/images/cora_logo_com_tag.svg",
+  logoTag:"/images/cora_logo_com_tag.svg",
   original:"/images/_original.jpg",
   integral:"/images/_integral.jpg",
+  coracao:"/images/grafismo_coracao.svg",
 };
 
 const VALOR_POR_PAO=99;
@@ -31,6 +33,11 @@ const formatWhatsApp=(value)=>{
   return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`;
 };
 
+/* ── Grafismo Coração (decorativo, reaproveitado do PreCadastro) ── */
+const GrafismoCoracao=({size=36})=>(
+  <img src={IMG.coracao} alt="" aria-hidden="true" style={{width:size,height:"auto"}}/>
+);
+
 /* ─── Base ─── */
 const H=({children,size=24})=><div style={{fontFamily:fd,fontSize:size,textTransform:"uppercase",letterSpacing:"0.02em",color:B[800],margin:0}}>{children}</div>;
 const Label=({children,apoio})=><div style={{marginBottom:4}}><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[700]}}>{children}</div>{apoio&&<div style={{fontFamily:fb,fontSize:12,color:W[400],marginTop:2}}>{apoio}</div>}</div>;
@@ -39,19 +46,30 @@ const Btn=({children,primary,disabled,onClick,style:es={}})=><button onClick={on
 const Progress=({step})=><div style={{display:"flex",gap:6,padding:"0 16px"}}>{[1,2,3].map(s=><div key={s} style={{flex:1,height:3,borderRadius:2,transition:"all 300ms",background:s<=step?B[500]:W[200]}}/>)}</div>;
 const Field=({label,apoio,children,error})=><div style={{marginBottom:16}}><Label apoio={apoio}>{label}</Label>{children}{error&&<div style={{fontSize:13,color:"#DC2626",fontFamily:fb,marginTop:4}}>{error}</div>}</div>;
 
-/* ═══ SPLASH ═══ */
+/* ═══ SPLASH . Redesenhado alinhado com PreCadastro ═══ */
 const Splash=({onStart})=>(
-  <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 24px",textAlign:"center",minHeight:"100%",background:W[50]}}>
-    <img src={IMG.logo} alt="Cora" style={{height:48,marginBottom:40}}/>
-    <div style={{fontFamily:fb,fontSize:18,color:B[800],lineHeight:1.7,maxWidth:280}}>
-      Pão de fermentação natural, toda semana na sua porta.
+  <div style={{minHeight:"100dvh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"60px 32px 40px",background:W[50],textAlign:"center"}}>
+    <GrafismoCoracao size={36}/>
+
+    <div style={{marginTop:40}}>
+      <img src={IMG.logoTag} alt="Cora. Padaria por assinatura" style={{width:"clamp(180px, 65vw, 260px)",height:"auto"}}/>
     </div>
-    <div style={{fontFamily:fb,fontSize:18,color:W[500],lineHeight:1.7,marginBottom:40}}>
-      Você escolhe, a gente assa.
+
+    <div style={{marginTop:48,maxWidth:300,padding:"0 8px"}}>
+      <p style={{fontFamily:fb,fontSize:"clamp(22px, 6.5vw, 30px)",lineHeight:1.3,color:W[400],margin:0,fontWeight:400}}>
+        Feliz em te receber.
+      </p>
+      <p style={{fontFamily:fb,fontSize:"clamp(22px, 6.5vw, 30px)",lineHeight:1.3,color:W[800],margin:0,marginTop:4,fontWeight:500}}>
+        Vamos montar sua Assinatura?
+      </p>
     </div>
-    <Btn primary onClick={onStart}>Quero me cadastrar</Btn>
-    <div style={{fontFamily:fb,fontSize:12,color:W[400],marginTop:16}}>
-      Padaria por assinatura
+
+    <button onClick={onStart} style={{marginTop:48,width:200,height:52,borderRadius:8,border:"none",background:B[500],color:"#FFF",fontSize:16,fontWeight:600,fontFamily:fb,cursor:"pointer",transition:"background 150ms"}} onMouseOver={e=>e.currentTarget.style.background=B[600]} onMouseOut={e=>e.currentTarget.style.background=B[500]}>
+      Vamos
+    </button>
+
+    <div style={{marginTop:60}}>
+      <GrafismoCoracao size={36}/>
     </div>
   </div>
 );
@@ -89,7 +107,7 @@ const Step1=({data,setData,errors,clearError})=>(
   </div>
 );
 
-/* ═══ STEP 2 . Assinatura (cards iguais ao Cardapio) ═══ */
+/* ═══ STEP 2 . Monte sua Assinatura ═══ */
 const Step2=({assinatura,setAssinatura})=>{
   const totalPaes=Object.values(assinatura).reduce((s,q)=>s+q,0);
   const totalMensal=VALOR_POR_PAO*totalPaes;
@@ -111,6 +129,7 @@ const Step2=({assinatura,setAssinatura})=>{
         {atingiuLimite&&<div style={{fontFamily:fb,fontSize:12,color:B[700],background:B[50],border:`1px solid ${B[100]}`,borderRadius:8,padding:"8px 12px",marginTop:10,lineHeight:1.4}}>Você escolheu 3 pães, o máximo por semana.</div>}
       </div>
 
+      {/* Cards #FFF interativos. ProductCard mostra accordion quando tem ingredientes */}
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
         {ASSINATURA_OPCOES.map(c=>{
           const qty=assinatura[c.id]||0;
@@ -124,6 +143,7 @@ const Step2=({assinatura,setAssinatura})=>{
         })}
       </div>
 
+      {/* Resumo (contêiner W[100]) */}
       {totalPaes>0&&<div style={{background:W[100],borderRadius:10,padding:14,border:`1px solid ${W[200]}`}}>
         {Object.entries(assinatura).map(([id,qty])=>{
           const c=ASSINATURA_OPCOES.find(x=>x.id===id);
@@ -145,6 +165,7 @@ const Step2=({assinatura,setAssinatura})=>{
         <div style={{fontFamily:fb,fontSize:11,color:W[400],marginTop:6,lineHeight:1.4}}>Cobrado mensalmente no cartão. Em meses com 5 semanas, o pão extra é por nossa conta.</div>
       </div>}
 
+      {/* Pagamento */}
       {totalPaes>0&&<div style={{marginTop:20}}>
         <div style={{height:1,background:W[200],marginBottom:16}}/>
         <Label apoio="Seu cartão é cadastrado com segurança. A primeira cobrança acontece no início do mês.">Dados de pagamento</Label>
@@ -213,7 +234,7 @@ const Step3=({data,assinatura})=>{
   );
 };
 
-/* ═══ WELCOME ═══ */
+/* ═══ WELCOME . Sem pattern, cards #FFF ═══ */
 const Welcome=({data,assinatura,onComplete})=>{
   const items=Object.entries(assinatura).map(([id,qty])=>({...ASSINATURA_OPCOES.find(c=>c.id===id),qty})).filter(Boolean);
   const nome=data.nome?data.nome.split(" ")[0]:"você";
@@ -230,7 +251,7 @@ const Welcome=({data,assinatura,onComplete})=>{
 
         {items.length>0&&<div style={{background:"#FFF",borderRadius:12,overflow:"hidden",marginTop:24,width:"100%",border:`1px solid ${W[200]}`,textAlign:"left"}}>
           <div style={{padding:"14px 14px 8px",fontFamily:fb,fontSize:13,color:W[500]}}>Você vai receber toda quinta</div>
-          {items.map((c,i)=><div key={c.id} style={{display:"flex",alignItems:"stretch",borderTop:`1px solid ${W[200]}`}}>
+          {items.map(c=><div key={c.id} style={{display:"flex",alignItems:"stretch",borderTop:`1px solid ${W[200]}`}}>
             <img src={c.img} alt={c.nome} style={{width:72,objectFit:"cover",display:"block"}}/>
             <div style={{flex:1,padding:12}}>
               <div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800]}}>{c.qty}× {c.nome} ({c.peso})</div>
@@ -331,7 +352,7 @@ export default function CoraOnboarding({onComplete}){
         </div>
       </>}
 
-      {/* Honeypot anti-bot (escondido) */}
+      {/* Honeypot anti-bot (escondido fora de tela) */}
       <div style={{position:"absolute",left:"-9999px",opacity:0,height:0,overflow:"hidden"}} aria-hidden="true">
         <label htmlFor="website">Website</label>
         <input type="text" id="website" name="website" value={website} onChange={e=>setWebsite(e.target.value)} tabIndex={-1} autoComplete="off"/>
