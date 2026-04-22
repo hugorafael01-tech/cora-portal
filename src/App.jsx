@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef } from "react";
-import CoraOnboarding from "./Onboarding";
-import PreCadastro from "./pages/PreCadastro";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
+// Code splitting: Onboarding e PreCadastro sao pesados e so acessados em fluxos
+// especificos. Lazy chunks separados reduzem o bundle inicial do Portal.
+const CoraOnboarding = lazy(() => import("./Onboarding"));
+const PreCadastro = lazy(() => import("./pages/PreCadastro"));
 import ProductCard from "./components/ProductCard";
 import { isPastCutoff } from "./utils/cutoff";
 import { B, W, fd, fb, fmt } from "./tokens";
@@ -74,8 +76,8 @@ const ic={
 };
 
 // ─── IMAGE COMPONENTS (edge-to-edge support) ───
-const ProductImg=({src,h=120,alt="",rounded=true,style:es})=><img src={src} alt={alt} style={{width:"100%",height:h,objectFit:"cover",display:"block",borderRadius:rounded?12:0,...es}}/>;
-const ProductThumb=({src,w=56,h=48,alt="",style:es})=><img src={src} alt={alt} style={{width:w,height:h,borderRadius:8,objectFit:"cover",flexShrink:0,display:"block",...es}}/>;
+const ProductImg=({src,h=120,alt="",rounded=true,style:es})=><img src={src} alt={alt} loading="lazy" decoding="async" style={{width:"100%",height:h,objectFit:"cover",display:"block",borderRadius:rounded?12:0,...es}}/>;
+const ProductThumb=({src,w=56,h=48,alt="",style:es})=><img src={src} alt={alt} loading="lazy" decoding="async" style={{width:w,height:h,borderRadius:8,objectFit:"cover",flexShrink:0,display:"block",...es}}/>;
 
 // ─── SHARED COMPONENTS ───
 const Card=({children,style,onClick,ariaLabel})=>{const[h,setH]=useState(false);return<div role={onClick?"button":undefined} aria-label={ariaLabel} onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} style={{background:W[100],border:`1px solid ${h&&onClick?W[300]:W[200]}`,borderRadius:12,padding:16,transition:"border-color 150ms ease",...style}}>{children}</div>;};
@@ -99,6 +101,15 @@ const CutoffBanner=({cutoff})=>{
   </div>;
 };
 const simulate=()=>new Promise(r=>setTimeout(r,600));
+// Haptic feedback sutil (mobile). Silencioso em desktop/iOS Safari antigo.
+// Ignorado se usuario prefere reduced motion.
+const haptic=(ms=10)=>{
+  try{
+    if(typeof window==="undefined"||!window.navigator?.vibrate) return;
+    if(window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    window.navigator.vibrate(ms);
+  }catch(e){/* noop */}
+};
 const ActionBtn=({children,loadingText,successText,onAction,onComplete,primary,disabled:extDisabled,full,style:es,ariaLabel})=>{const[st,setSt]=useState('idle');const[err,setErr]=useState('');const handle=async()=>{if(st!=='idle')return;setSt('loading');setErr('');try{await onAction();setSt('success');setTimeout(()=>{setSt('idle');onComplete?.();},1500);}catch(e){setErr(e.message||'Erro ao processar. Tente novamente.');setSt('idle');}};const busy=st==='loading'||st==='success';const label=st==='loading'?loadingText:st==='success'?successText:children;const stStyle=st==='success'?{background:'#D1FAE5',color:'#065F46',border:'1px solid #6EE7B7',opacity:1}:{};return<><Btn primary={st!=='success'&&primary} disabled={busy||extDisabled} onClick={handle} full={full} ariaLabel={ariaLabel} style={{...es,...stStyle}}>{label}</Btn>{err&&<div style={{fontFamily:fb,fontSize:13,color:'#9A3412',background:'#FFEDD5',padding:'8px 12px',borderRadius:8,marginTop:6}}>{err}</div>}</>;};
 
 // ─── MODAL ───
@@ -187,6 +198,15 @@ const addTo=(list,product,kind="extra")=>{const pn=kind==="swap"?0:(typeof produ
 const removeFrom=(list,nome)=>{const i=list.findIndex(p=>p.nome===nome&&p.kind!=="swap");if(i===-1)return list;return[...list.slice(0,i),...list.slice(i+1)];};
 const totalOf=list=>list.filter(p=>p.kind!=="swap").reduce((s,p)=>s+p.precoNum,0);
 const extrasCount=list=>list.filter(p=>p.kind!=="swap").length;
+
+// Empty state com grafismo da marca. Para casos de "Nenhuma novidade" e afins.
+const EmptyState=({title,body})=><div style={{background:W[100],border:`1px solid ${W[200]}`,borderRadius:12,padding:"32px 20px",textAlign:"center",marginBottom:16}}>
+  <div style={{width:56,height:56,borderRadius:28,background:"#FFF",border:`1px solid ${W[200]}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+    <img src="/images/grafismo_coracao.svg" alt="" aria-hidden="true" style={{width:32,height:32,opacity:0.6}}/>
+  </div>
+  {title&&<div style={{fontFamily:fd,fontSize:15,textTransform:"uppercase",color:W[600],letterSpacing:"0.04em",marginBottom:8}}>{title}</div>}
+  {body&&<div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6,maxWidth:280,margin:"0 auto"}}>{body}</div>}
+</div>;
 
 // Hook de focus trap + ESC pra modais. `active` liga/desliga. `onClose` dispara no ESC.
 const useModalA11y=(ref,active,onClose)=>{
@@ -342,6 +362,7 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
     setRascunhoSlots(prev=>{const n=[...prev];n[idx]=novoId;return n;});
   };
   const handleSwapConfirm=()=>{
+    haptic();
     const novoQtds=slotsToQtds(rascunhoSlots);
     // Preenche ids ausentes com 0 para comparacao estavel com assinaturaQtds
     D.pães.forEach(p=>{if(novoQtds[p.id]===undefined)novoQtds[p.id]=0;});
@@ -405,7 +426,7 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
     </Card>
 
     {/* Novidade hero — edge-to-edge photo */}
-    {D.extras.length>0?<NovidadeCard extra={D.extras[0]} qty={cntAll(D.extras[0].nome)} onCardClick={()=>setModal(D.extras[0])} onAdd={()=>handleQtyChange(D.extras[0],1)} onRemove={()=>handleQtyChange(D.extras[0],-1)} cutoff={cutoff}/>:<Card style={{marginBottom:16,padding:20,textAlign:"center"}}><div style={{fontFamily:fd,fontSize:15,textTransform:"uppercase",color:W[500],marginBottom:8}}>Novidades da semana</div><div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6}}>Nenhuma novidade esta semana. Mas seu pão de sempre está garantido.</div></Card>}
+    {D.extras.length>0?<NovidadeCard extra={D.extras[0]} qty={cntAll(D.extras[0].nome)} onCardClick={()=>setModal(D.extras[0])} onAdd={()=>handleQtyChange(D.extras[0],1)} onRemove={()=>handleQtyChange(D.extras[0],-1)} cutoff={cutoff}/>:<EmptyState title="Novidades da semana" body="Nenhuma novidade esta semana. Seu pão de sempre está garantido."/>}
 
     <div onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,textAlign:"center",padding:"8px 0",cursor:"pointer"}}>Ver cardápio completo ›</div>
 
@@ -570,7 +591,7 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff})=>
 
     {confirmedExtras.length>0&&<div style={{background:ST.success.bg,borderRadius:8,padding:"10px 12px",marginBottom:16,border:`1px solid ${ST.success.b}`,display:"flex",alignItems:"center",gap:8}}><I d={ic.check} size={16} color={ST.success.t}/><span style={{fontFamily:fb,fontSize:13,color:ST.success.t,fontWeight:500}}>{Object.entries(confirmedExtras.reduce((a,p)=>{a[p.nome]=(a[p.nome]||0)+1;return a;},{})).map(([n,q])=>`${q}× ${n}`).join(", ")} — confirmado</span></div>}
 
-    {D.extras.length>0?D.extras.map((ex,i)=><NovidadeCard key={i} extra={ex} qty={cntAll(ex.nome)} onCardClick={()=>setModal(ex)} onAdd={()=>addItem(ex)} onRemove={()=>removeItem(ex.nome)} cutoff={cutoff}/>):<Card style={{marginBottom:16,padding:20,textAlign:"center"}}><div style={{fontFamily:fb,fontSize:14,color:W[500]}}>Nenhuma novidade esta semana.</div></Card>}
+    {D.extras.length>0?D.extras.map((ex,i)=><NovidadeCard key={i} extra={ex} qty={cntAll(ex.nome)} onCardClick={()=>setModal(ex)} onAdd={()=>addItem(ex)} onRemove={()=>removeItem(ex.nome)} cutoff={cutoff}/>):<EmptyState title="Novidade da semana" body="Nenhuma novidade esta semana."/>}
 
     <div style={{height:1,background:W[200],margin:"4px 0 20px"}}/>
     <div style={{fontFamily:fd,fontSize:16,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",marginBottom:12}}>Nossos pães</div>
@@ -679,7 +700,7 @@ export default function CoraPortal(){
 
   const addPending=p=>setPending(prev=>addTo(prev,p,"extra"));
   const removePending=n=>setPending(prev=>removeFrom(prev,n));
-  const handleConfirm=()=>{setConfirmed(prev=>[...prev,...pending]);setPending([]);setJustConfirmed(true);setTimeout(()=>setJustConfirmed(false),4000);};
+  const handleConfirm=()=>{haptic();setConfirmed(prev=>[...prev,...pending]);setPending([]);setJustConfirmed(true);setTimeout(()=>setJustConfirmed(false),4000);};
   const handleCancel=()=>setPending([]);
   const hasPending=extrasCount(pending)>0;
   const cutoff=isPastCutoff();
@@ -697,6 +718,7 @@ export default function CoraPortal(){
   };
 
   const handleSalvarAssinatura=(novosQtds,meta)=>{
+    haptic();
     setAssinaturaQtds(novosQtds);
     setCestaSemana(null); // volta a seguir a Assinatura
     if(meta){
@@ -714,9 +736,11 @@ export default function CoraPortal(){
   };
 
 const params = new URLSearchParams(window.location.search);
-  if (window.location.pathname === "/interesse") return <PreCadastro />;
-  if (!params.get("dev")) return <PreCadastro />;
-  if(isOnboarding) return <CoraOnboarding onComplete={handleOnboardingComplete}/>;
+  // Fallback minimo enquanto chunks lazy carregam. Usa grafismo da marca.
+  const lazyFallback=<div style={{position:"fixed",inset:0,background:W[50],display:"flex",alignItems:"center",justifyContent:"center"}}><img src="/images/grafismo_coracao.svg" alt="Cora" style={{width:48,height:48,opacity:0.6}}/></div>;
+  if (window.location.pathname === "/interesse") return <Suspense fallback={lazyFallback}><PreCadastro /></Suspense>;
+  if (!params.get("dev")) return <Suspense fallback={lazyFallback}><PreCadastro /></Suspense>;
+  if(isOnboarding) return <Suspense fallback={lazyFallback}><CoraOnboarding onComplete={handleOnboardingComplete}/></Suspense>;
 
   return<div style={{fontFamily:fb,maxWidth:390,margin:"0 auto",background:W[50],minHeight:"100vh",display:"flex",flexDirection:"column",position:"relative"}}>
     <a href="#main-content" className="skip-link">Pular para o conteúdo</a>

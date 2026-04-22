@@ -78,3 +78,12 @@ export const motion = {
 
 // ─── UTILITÁRIO ───
 export const fmt = v => `R$ ${v.toFixed(2).replace(".",",")}`;
+
+/* ─── DARK MODE (pendente) ───
+   Inline styles em React não respondem a `prefers-color-scheme` nativamente.
+   Implementação requer um dos caminhos:
+   1) Migrar estilos para CSS modules/vanilla-extract (permite media queries nativas)
+   2) Adicionar state global `theme` e trocar tokens via Context (W/B viram W.light/W.dark)
+   3) Usar CSS custom properties no :root e trocar via `[data-theme='dark']`
+   Recomendação: opção 3 (menor refactor, melhor performance). Planejar em fase dedicada. */
+

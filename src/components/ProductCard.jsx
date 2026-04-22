@@ -50,6 +50,7 @@ export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel=
       <div style={{display:"flex",alignItems:"stretch"}}>
         <img
           src={product.img} alt={product.nome}
+          loading="lazy" decoding="async"
           role={hasDetails?"button":undefined}
           aria-expanded={hasDetails?expanded:undefined}
           aria-controls={hasDetails?regionId:undefined}
