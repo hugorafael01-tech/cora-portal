@@ -90,10 +90,8 @@ const CutoffBanner=({cutoff})=>{
   if(!cutoff)return null;
   const aberta=D.semana.pedidosAbertos;
   if(aberta){
-    const prods=D.semana.cardapioProxima;const base=prods.slice(0,-1).join(", ");const novidade=prods[prods.length-1];
-    const lista=prods.length>1?`${base} e ${novidade} (novidade da semana)`:novidade;
     return<div style={{background:W[50],border:`1px solid ${W[200]}`,borderRadius:8,padding:12,marginBottom:16,fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5}}>
-      <I d={ic.cal} size={14} color={W[500]}/> Pedidos da próxima semana já estão abertos.<br/>Cardápio: {lista}.
+      <I d={ic.cal} size={14} color={W[500]}/> Pedidos da próxima semana já estão abertos.
     </div>;
   }
   return<div style={{background:W[50],border:`1px solid ${W[200]}`,borderRadius:8,padding:12,marginBottom:16,fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5}}>
