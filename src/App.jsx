@@ -26,7 +26,7 @@ const IMG={
 const D={
   nome:"Beatriz",
   entrega:{dia:"Quinta, 23 de abril",produto:"1 Pão Original (615g)"},
-  assinatura:{itens:"1 Pão Original (615g) / semana",valorMensal:99,qtdPaes:3},
+  assinatura:{itens:"1 Pão Original (615g) / semana",valorMensal:99,qtdPaes:1},
   ent:{dia:"Quintas",cond:"Ed. Boa Vista",bloco:"Bl. A / 502",frete:"R$ 15/mês"},
   cartao:{band:"Visa",n:"6411",prox:"1º de abril"},
   cob:{mes:"Março",valor:"R$ 99,00",status:"Pago"},
@@ -153,7 +153,7 @@ const ExtrasWarning=({count})=>{
 };
 
 // ─── PERSISTENT ORDER FOOTER (lives in App, visible on all screens) ───
-const OrderFooter=({pending,confirmed,onConfirm,onNav,cutoff})=>{
+const OrderFooter=({pending,confirmed,onConfirm,onCancel,onNav,cutoff})=>{
   const total=totalOf(pending);
   const pCount=extrasCount(pending);
   if(pCount===0)return null;
@@ -166,7 +166,7 @@ const OrderFooter=({pending,confirmed,onConfirm,onNav,cutoff})=>{
         </div>
         <div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800]}}>{fmt(total)}</div>
       </div>
-      <ActionBtn primary disabled={cutoff} loadingText="Adicionando…" successText="Adicionado ✓" onAction={()=>simulate()} onComplete={onConfirm}>Confirmar</ActionBtn>
+      <div style={{display:"flex",gap:8,flexShrink:0}}><Btn onClick={onCancel}>Cancelar</Btn><ActionBtn primary disabled={cutoff} loadingText="Adicionando…" successText="Adicionado ✓" onAction={()=>simulate()} onComplete={onConfirm}>Confirmar</ActionBtn></div>
     </div>
     {cutoff?<CutoffMsg/>:<div style={{fontFamily:fb,fontSize:11,color:W[500],marginTop:4}}>Além da sua assinatura. Cobrado na próxima fatura.</div>}
     <ExtrasWarning count={totalExtrasCount}/>
@@ -435,6 +435,7 @@ export default function CoraPortal(){
   const addPending=p=>setPending(prev=>addTo(prev,p,"extra"));
   const removePending=n=>setPending(prev=>removeFrom(prev,n));
   const handleConfirm=()=>{setConfirmed(prev=>[...prev,...pending]);setPending([]);setJustConfirmed(true);setTimeout(()=>setJustConfirmed(false),4000);};
+  const handleCancel=()=>setPending([]);
   const hasPending=extrasCount(pending)>0;
   const cutoff=isPastCutoff();
   const isOnboarding=scr==="onboarding";
@@ -460,7 +461,7 @@ const params = new URLSearchParams(window.location.search);
       {scr==="perfil"&&<Perfil confirmed={confirmed} hasPending={hasPending} weekSwap={weekSwap}/>}
     </div>
     {/* RODAPÉ PERSISTENTE — visível em TODAS as telas */}
-    <OrderFooter pending={pending} confirmed={confirmed} onConfirm={handleConfirm} onNav={setScr} cutoff={cutoff}/>
+    <OrderFooter pending={pending} confirmed={confirmed} onConfirm={handleConfirm} onCancel={handleCancel} onNav={setScr} cutoff={cutoff}/>
     <ConfirmedFooter vis={justConfirmed}/>
     <Nav active={scr} onNav={setScr} badge={pending.length}/>
     <style>{`*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior:none}img{max-width:100%}input,button{font-size:16px}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}.bp:hover{background:${B[600]}!important}.bw:hover{background:#1FAF54!important}.bl:hover{background:${W[100]}!important}.lk:hover{text-decoration:underline}.qb:hover:not(:disabled){background:${W[100]}!important}button:focus-visible{outline:none;box-shadow:0 0 0 3px ${B[50]},0 0 0 5px ${B[500]}}`}</style>
