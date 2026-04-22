@@ -1,17 +1,16 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import ProductCard from "./components/ProductCard";
 import { B, W, fd, fb, fmt } from "./tokens";
 
 /* ═══════════════════════════════════════════════════════════════
-   CORA — Onboarding v3
-   maxWidth 390 · cards = Cardápio · pattern fix · splash fix
+   CORA . Onboarding v4
+   maxWidth 390 · cards do Cardapio · splash fix
    ═══════════════════════════════════════════════════════════════ */
 
 const IMG={
   logo:"/images/cora_logo_com_tag.svg",
   original:"/images/_original.jpg",
   integral:"/images/_integral.jpg",
-  pattern:"/images/Cora_tile_grafismo.svg",
 };
 
 const VALOR_POR_PAO=99;
@@ -19,17 +18,26 @@ const FRETE_MENSAL=15;
 const LIMITE_PAES=3;
 
 const ASSINATURA_OPCOES=[
-  {id:"original",nome:"Pão Original",peso:"615g",avulso:27,img:IMG.original,desc:"Farinha Superiore, água, sal e o levain da Cora. Fermentação longa. O pão que começou tudo.",ingredientes:"Farinha Superiore, farinha FV integral, água, sal, levain da Cora."},
-  {id:"integral",nome:"Pão Integral",peso:"615g",avulso:29,img:IMG.integral,desc:"60% farinha FV integral moída a pedra, 40% Mora. Azeite, fermentação natural.",ingredientes:"Farinha FV integral, farinha Mora, água, sal, levain, azeite, farelo de trigo."},
+  {id:"original",nome:"Pão Original",peso:"615g",avulso:27,img:IMG.original,desc:"Mix de farinhas italiana e brasileira, água, sal e o levain da Cora. Fermentação lenta, crosta firme e miolo aberto.",ingredientes:"Farinha Superiore, farinha FV integral, água, sal, levain da Cora."},
+  {id:"integral",nome:"Pão Integral",peso:"615g",avulso:29,img:IMG.integral,desc:"100% integral, com um blend de farinhas brasileira e italiana que traz mais complexidade ao sabor. Azeite na massa, fermentação lenta e miolo que fica macio por dias.",ingredientes:"Farinha FV integral, farinha Mora, água, sal, levain, azeite, farelo de trigo."},
 ];
+
+/* ── Utilitários (reaproveitados do PreCadastro) ── */
+const sanitize=(str)=>str.replace(/[<>]/g,"");
+const formatWhatsApp=(value)=>{
+  const digits=value.replace(/\D/g,"").slice(0,11);
+  if(digits.length<=2) return digits;
+  if(digits.length<=7) return `(${digits.slice(0,2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`;
+};
 
 /* ─── Base ─── */
 const H=({children,size=24})=><div style={{fontFamily:fd,fontSize:size,textTransform:"uppercase",letterSpacing:"0.02em",color:B[800],margin:0}}>{children}</div>;
 const Label=({children,apoio})=><div style={{marginBottom:4}}><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[700]}}>{children}</div>{apoio&&<div style={{fontFamily:fb,fontSize:12,color:W[400],marginTop:2}}>{apoio}</div>}</div>;
-const Input=({placeholder,value,onChange,type="text"})=><input type={type} placeholder={placeholder} value={value} onChange={e=>onChange(e.target.value)} style={{width:"100%",padding:"12px 14px",fontSize:15,fontFamily:fb,border:`1.5px solid ${W[200]}`,borderRadius:8,background:"#FFF",color:W[800],outline:"none",transition:"border-color 200ms"}} onFocus={e=>e.target.style.borderColor=B[400]} onBlur={e=>e.target.style.borderColor=W[200]}/>;
+const Input=({placeholder,value,onChange,type="text",error,onFocusExtra})=><input type={type} placeholder={placeholder} value={value} onChange={e=>onChange(e.target.value)} style={{width:"100%",padding:"12px 14px",fontSize:15,fontFamily:fb,border:`1.5px solid ${error?"#EF4444":W[200]}`,borderRadius:8,background:"#FFF",color:W[800],outline:"none",transition:"border-color 200ms"}} onFocus={e=>{e.target.style.borderColor=error?"#EF4444":B[400];onFocusExtra&&onFocusExtra();}} onBlur={e=>e.target.style.borderColor=error?"#EF4444":W[200]}/>;
 const Btn=({children,primary,disabled,onClick,style:es={}})=><button onClick={onClick} disabled={disabled} style={{width:"100%",padding:"14px 0",borderRadius:8,fontSize:15,fontWeight:600,fontFamily:fb,cursor:disabled?"default":"pointer",transition:"all 200ms",border:primary?"none":`1.5px solid ${W[300]}`,background:primary?(disabled?W[300]:B[500]):"transparent",color:primary?"#FFF":W[600],opacity:disabled?0.6:1,...es}}>{children}</button>;
 const Progress=({step})=><div style={{display:"flex",gap:6,padding:"0 16px"}}>{[1,2,3].map(s=><div key={s} style={{flex:1,height:3,borderRadius:2,transition:"all 300ms",background:s<=step?B[500]:W[200]}}/>)}</div>;
-const Field=({label,apoio,children})=><div style={{marginBottom:16}}><Label apoio={apoio}>{label}</Label>{children}</div>;
+const Field=({label,apoio,children,error})=><div style={{marginBottom:16}}><Label apoio={apoio}>{label}</Label>{children}{error&&<div style={{fontSize:13,color:"#DC2626",fontFamily:fb,marginTop:4}}>{error}</div>}</div>;
 
 /* ═══ SPLASH ═══ */
 const Splash=({onStart})=>(
@@ -48,21 +56,21 @@ const Splash=({onStart})=>(
   </div>
 );
 
-/* ═══ STEP 1 — Dados pessoais + gênero ═══ */
-const Step1=({data,setData})=>(
+/* ═══ STEP 1 . Dados pessoais + gênero ═══ */
+const Step1=({data,setData,errors,clearError})=>(
   <div>
     <div style={{marginBottom:20}}>
       <H size={22}>Seus dados</H>
       <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:4}}>Pra gente saber quem você é e onde entregar.</div>
     </div>
-    <Field label="Nome completo" apoio="Como você gostaria de ser chamado(a)?">
-      <Input placeholder="Ana Beatriz Souza" value={data.nome} onChange={v=>setData({...data,nome:v})}/>
+    <Field label="Nome completo" apoio="Como você gostaria de ser chamado(a)?" error={errors.nome}>
+      <Input placeholder="Ana Beatriz Souza" value={data.nome} onChange={v=>{setData({...data,nome:sanitize(v)});clearError("nome");}} error={errors.nome}/>
     </Field>
-    <Field label="WhatsApp (com DDD)" apoio="Para confirmações de entrega e novidades.">
-      <Input placeholder="(21) 99999-0000" value={data.whatsapp} onChange={v=>setData({...data,whatsapp:v})} type="tel"/>
+    <Field label="WhatsApp (com DDD)" apoio="Para confirmações de entrega e novidades." error={errors.whatsapp}>
+      <Input placeholder="(21) 99999-0000" value={data.whatsapp} onChange={v=>{setData({...data,whatsapp:formatWhatsApp(v)});clearError("whatsapp");}} type="tel" error={errors.whatsapp}/>
     </Field>
-    <Field label="E-mail" apoio="Para login e comprovantes.">
-      <Input placeholder="ana@email.com" value={data.email} onChange={v=>setData({...data,email:v})} type="email"/>
+    <Field label="E-mail" apoio="Para login e comprovantes." error={errors.email}>
+      <Input placeholder="ana@email.com" value={data.email} onChange={v=>{setData({...data,email:sanitize(v)});clearError("email");}} type="email" error={errors.email}/>
     </Field>
     <Field label="Como gostaria de ser tratado(a)?" apoio="Para a gente acertar na saudação.">
       <div style={{display:"flex",gap:8,marginTop:4}}>
@@ -72,18 +80,17 @@ const Step1=({data,setData})=>(
       </div>
     </Field>
     <div style={{height:1,background:W[200],margin:"4px 0 16px"}}/>
-    <Field label="Endereço completo" apoio="Rua, número, bairro e cidade.">
-      <Input placeholder="Rua das Flores, 120, Fonseca, Niterói" value={data.endereco} onChange={v=>setData({...data,endereco:v})}/>
+    <Field label="Endereço completo" apoio="Rua, número, bairro e cidade." error={errors.endereco}>
+      <Input placeholder="Rua das Flores, 120, Fonseca, Niterói" value={data.endereco} onChange={v=>{setData({...data,endereco:sanitize(v)});clearError("endereco");}} error={errors.endereco}/>
     </Field>
     <Field label="Complemento" apoio="Apartamento, bloco, portaria, referência.">
-      <Input placeholder="Bl. A, Apto 502. Deixar com o porteiro" value={data.complemento} onChange={v=>setData({...data,complemento:v})}/>
+      <Input placeholder="Bl. A, Apto 502. Deixar com o porteiro" value={data.complemento} onChange={v=>setData({...data,complemento:sanitize(v)})}/>
     </Field>
   </div>
 );
 
-/* ═══ STEP 2 — Assinatura (cards iguais ao Cardápio) ═══ */
+/* ═══ STEP 2 . Assinatura (cards iguais ao Cardapio) ═══ */
 const Step2=({assinatura,setAssinatura})=>{
-  // assinatura = {id: qty} map
   const totalPaes=Object.values(assinatura).reduce((s,q)=>s+q,0);
   const totalMensal=VALOR_POR_PAO*totalPaes;
   const atingiuLimite=totalPaes>=LIMITE_PAES;
@@ -100,26 +107,23 @@ const Step2=({assinatura,setAssinatura})=>{
     <div>
       <div style={{marginBottom:16}}>
         <H size={22}>Monte sua Assinatura</H>
-        <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:4}}>Escolha seus pães. Até 3 por semana. Pode trocar a qualquer momento.</div>
+        <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:4}}>Escolha entre 1 e 3 pães pra receber toda semana, na sua porta. Você pode alterar quando quiser.</div>
         {atingiuLimite&&<div style={{fontFamily:fb,fontSize:12,color:B[700],background:B[50],border:`1px solid ${B[100]}`,borderRadius:8,padding:"8px 12px",marginTop:10,lineHeight:1.4}}>Você escolheu 3 pães, o máximo por semana.</div>}
       </div>
 
-      {/* Cards iguais ao Cardápio — foto edge-to-edge esquerda */}
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
         {ASSINATURA_OPCOES.map(c=>{
           const qty=assinatura[c.id]||0;
-          const podeAdicionar=!atingiuLimite||qty>0;
           return<ProductCard key={c.id}
             product={{...c, preco:undefined}}
             qty={qty}
-            onAdd={()=>{if(!atingiuLimite)setQty(c.id,qty+1);}}
+            onAdd={()=>{if(!atingiuLimite||qty>0)setQty(c.id,qty+1);}}
             onRemove={()=>setQty(c.id,qty-1)}
-            ctaLabel={podeAdicionar?"Quero":"Limite atingido"}
+            ctaLabel="Quero"
           />;
         })}
       </div>
 
-      {/* Resumo */}
       {totalPaes>0&&<div style={{background:W[100],borderRadius:10,padding:14,border:`1px solid ${W[200]}`}}>
         {Object.entries(assinatura).map(([id,qty])=>{
           const c=ASSINATURA_OPCOES.find(x=>x.id===id);
@@ -141,7 +145,6 @@ const Step2=({assinatura,setAssinatura})=>{
         <div style={{fontFamily:fb,fontSize:11,color:W[400],marginTop:6,lineHeight:1.4}}>Cobrado mensalmente no cartão. Em meses com 5 semanas, o pão extra é por nossa conta.</div>
       </div>}
 
-      {/* Pagamento */}
       {totalPaes>0&&<div style={{marginTop:20}}>
         <div style={{height:1,background:W[200],marginBottom:16}}/>
         <Label apoio="Seu cartão é cadastrado com segurança. A primeira cobrança acontece no início do mês.">Dados de pagamento</Label>
@@ -156,7 +159,7 @@ const Step2=({assinatura,setAssinatura})=>{
   );
 };
 
-/* ═══ STEP 3 — Revisão ═══ */
+/* ═══ STEP 3 . Revisão ═══ */
 const Step3=({data,assinatura})=>{
   const items=Object.entries(assinatura).map(([id,qty])=>({...ASSINATURA_OPCOES.find(c=>c.id===id),qty})).filter(Boolean);
   const totalPaes=items.reduce((s,c)=>s+c.qty,0);
@@ -210,33 +213,30 @@ const Step3=({data,assinatura})=>{
   );
 };
 
-/* ═══ WELCOME (com pattern) ═══ */
+/* ═══ WELCOME ═══ */
 const Welcome=({data,assinatura,onComplete})=>{
   const items=Object.entries(assinatura).map(([id,qty])=>({...ASSINATURA_OPCOES.find(c=>c.id===id),qty})).filter(Boolean);
   const nome=data.nome?data.nome.split(" ")[0]:"você";
   const saudacao=data.genero==="f"?"Bem-vinda":data.genero==="m"?"Bem-vindo":"Boas-vindas";
 
   return(
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 24px",textAlign:"center",minHeight:"100%",position:"relative",overflow:"hidden"}}>
-      <div style={{position:"absolute",inset:0,opacity:0.06,backgroundImage:`url(${IMG.pattern})`,backgroundSize:120,backgroundRepeat:"repeat",zIndex:0}}/>
-      <div style={{position:"relative",zIndex:1,width:"100%"}}>
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 24px",textAlign:"center",minHeight:"100%",background:W[50]}}>
+      <div style={{width:"100%"}}>
         <div style={{width:64,height:64,borderRadius:32,background:B[50],display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",border:`2px solid ${B[200]}`}}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={B[500]} strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>
         </div>
         <H size={26}>{saudacao}, {nome.toUpperCase()}!</H>
         <div style={{fontFamily:fb,fontSize:15,color:W[600],marginTop:12,lineHeight:1.6,maxWidth:300,margin:"12px auto 0"}}>Sua Assinatura está ativa. Sua primeira entrega será na próxima quinta-feira.</div>
 
-        {items.length>0&&<div style={{background:W[100],borderRadius:12,overflow:"hidden",marginTop:24,width:"100%",border:`1px solid ${W[200]}`,textAlign:"left"}}>
-          <div style={{padding:"14px 14px 0"}}>
-            <div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:8}}>Você vai receber toda quinta</div>
-          </div>
-          {items.map((c,i)=><div key={c.id} style={{display:"flex",alignItems:"stretch",borderTop:i>0?`1px solid ${W[200]}`:"none"}}>
+        {items.length>0&&<div style={{background:"#FFF",borderRadius:12,overflow:"hidden",marginTop:24,width:"100%",border:`1px solid ${W[200]}`,textAlign:"left"}}>
+          <div style={{padding:"14px 14px 8px",fontFamily:fb,fontSize:13,color:W[500]}}>Você vai receber toda quinta</div>
+          {items.map((c,i)=><div key={c.id} style={{display:"flex",alignItems:"stretch",borderTop:`1px solid ${W[200]}`}}>
             <img src={c.img} alt={c.nome} style={{width:72,objectFit:"cover",display:"block"}}/>
             <div style={{flex:1,padding:12}}>
               <div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800]}}>{c.qty}× {c.nome} ({c.peso})</div>
             </div>
           </div>)}
-          <div style={{padding:"10px 14px 14px",fontFamily:fb,fontSize:13,color:W[500]}}>Na porta do seu apartamento.</div>
+          <div style={{padding:"10px 14px 14px",fontFamily:fb,fontSize:13,color:W[500],borderTop:`1px solid ${W[200]}`}}>Na porta do seu apartamento.</div>
         </div>}
 
         <div style={{fontFamily:fb,fontSize:13,color:B[600],marginTop:20,lineHeight:1.5,background:B[50],borderRadius:8,padding:12,width:"100%",textAlign:"left"}}>Você vai receber uma mensagem no WhatsApp com os detalhes. Qualquer dúvida, é só responder por lá.</div>
@@ -253,9 +253,45 @@ export default function CoraOnboarding({onComplete}){
   const[termos,setTermos]=useState(false);
   const[data,setData]=useState({nome:"",whatsapp:"",email:"",endereco:"",complemento:"",genero:""});
   const assinaturaDaURL=(()=>{const p=new URLSearchParams(window.location.search);const id=p.get("produto")||p.get("cesta");return id?{[id]:1}:{};})();
-  const[assinatura,setAssinatura]=useState(assinaturaDaURL); // {id: qty}
+  const[assinatura,setAssinatura]=useState(assinaturaDaURL);
+  const[errors,setErrors]=useState({});
+  const[website,setWebsite]=useState(""); // honeypot
+  const formErrorRef=useRef(null);
 
-  const canNext1=data.nome&&data.whatsapp&&data.email&&data.endereco&&data.genero;
+  const clearError=(field)=>{
+    setErrors(prev=>{const n={...prev};delete n[field];return n;});
+    if(formErrorRef.current) formErrorRef.current.style.display='none';
+  };
+
+  const validateStep1=()=>{
+    const e={};
+    if(!data.nome.trim()||data.nome.trim().split(/\s+/).length<2) e.nome="Precisamos do nome e sobrenome.";
+    const digits=data.whatsapp.replace(/\D/g,"");
+    if(digits.length<10||digits.length>11) e.whatsapp="Confira o número com DDD.";
+    if(!data.email.trim()||!data.email.includes("@")) e.email="Informe um e-mail válido.";
+    if(!data.endereco.trim()) e.endereco="Informe seu endereço.";
+    if(!data.genero) e.genero="Selecione uma opção.";
+    setErrors(e);
+    return Object.keys(e).length===0;
+  };
+
+  const handleNext=()=>{
+    if(website) return; // honeypot: bot detectado
+    if(formErrorRef.current) formErrorRef.current.style.display='none';
+    if(step===1){
+      if(!validateStep1()){
+        setTimeout(()=>{
+          if(formErrorRef.current){
+            formErrorRef.current.style.display='block';
+            formErrorRef.current.scrollIntoView({behavior:'smooth',block:'center'});
+          }
+        },100);
+        return;
+      }
+    }
+    setStep(step+1);
+  };
+
   const totalItems=Object.values(assinatura).reduce((s,q)=>s+q,0);
   const canNext2=totalItems>0;
   const canConfirm=termos;
@@ -285,7 +321,7 @@ export default function CoraOnboarding({onComplete}){
       <Progress step={step}/>
     </div>
     <div style={{flex:1,overflowY:"auto",padding:16}}>
-      {step===1&&<Step1 data={data} setData={setData}/>}
+      {step===1&&<Step1 data={data} setData={setData} errors={errors} clearError={clearError}/>}
       {step===2&&<Step2 assinatura={assinatura} setAssinatura={setAssinatura}/>}
       {step===3&&<>
         <Step3 data={data} assinatura={assinatura}/>
@@ -294,10 +330,20 @@ export default function CoraOnboarding({onComplete}){
           <div style={{fontFamily:fb,fontSize:13,color:W[600],lineHeight:1.5}}>Ao confirmar, aceito os termos de uso e a política de privacidade da Cora.</div>
         </div>
       </>}
+
+      {/* Honeypot anti-bot (escondido) */}
+      <div style={{position:"absolute",left:"-9999px",opacity:0,height:0,overflow:"hidden"}} aria-hidden="true">
+        <label htmlFor="website">Website</label>
+        <input type="text" id="website" name="website" value={website} onChange={e=>setWebsite(e.target.value)} tabIndex={-1} autoComplete="off"/>
+      </div>
+
+      <div ref={formErrorRef} style={{display:"none",padding:"12px 16px",borderRadius:8,background:"#FEF2F2",border:"1px solid #FECACA",color:"#991B1B",fontFamily:fb,fontSize:14,marginTop:16,lineHeight:1.5}}>
+        Preencha os campos obrigatórios acima.
+      </div>
     </div>
     <div style={{padding:"12px 16px",background:"#FFF",borderTop:`1px solid ${W[200]}`,flexShrink:0,display:"flex",gap:10}}>
       {step>1&&<Btn onClick={()=>setStep(step-1)} style={{width:"auto",flex:"0 0 auto",padding:"14px 20px"}}>Voltar</Btn>}
-      {step<3?<Btn primary disabled={step===1?!canNext1:!canNext2} onClick={()=>setStep(step+1)}>Continuar</Btn>:<Btn primary disabled={!canConfirm} onClick={()=>setScreen("welcome")}>Confirmar assinatura</Btn>}
+      {step<3?<Btn primary disabled={step===2&&!canNext2} onClick={handleNext}>Continuar</Btn>:<Btn primary disabled={!canConfirm} onClick={()=>setScreen("welcome")}>Confirmar assinatura</Btn>}
     </div>
   </>);
 }
