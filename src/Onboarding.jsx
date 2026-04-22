@@ -136,10 +136,14 @@ const Step2=({assinatura,setAssinatura})=>{
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
         {ASSINATURA_OPCOES.map(c=>{
           const qty=assinatura[c.id]||0;
+          // disabled = limite global atingido. No ProductCard:
+          // - qty===0: CTA 'Quero' fica desabilitado (total ja eh 3)
+          // - qty>0: botao + do QtyBtn fica desabilitado, - continua habilitado
           return<ProductCard key={c.id}
             product={{...c, preco:undefined}}
             qty={qty}
-            onAdd={()=>{if(!atingiuLimite||qty>0)setQty(c.id,qty+1);}}
+            disabled={atingiuLimite}
+            onAdd={()=>{if(!atingiuLimite)setQty(c.id,qty+1);}}
             onRemove={()=>setQty(c.id,qty-1)}
             ctaLabel="Quero"
           />;

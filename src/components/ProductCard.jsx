@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { B, W, fb, fd } from "../tokens";
 
-const QtyBtn=({qty,onAdd,onRemove,name})=>(
+const QtyBtn=({qty,onAdd,onRemove,name,addDisabled=false})=>(
   <div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
     <button aria-label={`Remover ${name}`} onClick={onRemove} style={{width:32,height:32,borderRadius:8,border:`1px solid ${W[300]}`,background:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
     <span style={{fontFamily:fb,fontSize:16,fontWeight:600,color:B[500],width:24,textAlign:"center"}}>{qty}</span>
-    <button aria-label={`Adicionar ${name}`} onClick={onAdd} style={{width:32,height:32,borderRadius:8,border:`1px solid ${B[500]}`,background:B[50],cursor:"pointer",fontSize:18,color:B[500],display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+    <button aria-label={`Adicionar ${name}`} onClick={onAdd} disabled={addDisabled} style={{width:32,height:32,borderRadius:8,border:`1px solid ${addDisabled?W[200]:B[500]}`,background:addDisabled?"transparent":B[50],cursor:addDisabled?"default":"pointer",fontSize:18,color:addDisabled?W[300]:B[500],display:"flex",alignItems:"center",justifyContent:"center",opacity:addDisabled?0.5:1}}>+</button>
   </div>
 );
 
@@ -20,7 +20,7 @@ const QtyBtn=({qty,onAdd,onRemove,name})=>(
     onRemove  — () => void
     ctaLabel  — string, ex: "Pedir", "Quero", "Tenho interesse"
 */
-export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel="Pedir", cutoff=false, basketIds=[], loadingText, successText }) {
+export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel="Pedir", cutoff=false, disabled=false, basketIds=[], loadingText, successText }) {
   const [expanded, setExpanded] = useState(false);
   const [ctaSt, setCtaSt] = useState('idle');
   const [ctaErr, setCtaErr] = useState('');
@@ -42,8 +42,9 @@ export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel=
       border:`1px solid ${qty>0?B[200]:W[200]}`,
       borderRadius:12,
       overflow:"hidden",
-      transition:"border-color 200ms",
+      transition:"border-color 200ms, opacity 200ms",
       marginBottom:8,
+      opacity:(disabled&&qty===0)?0.55:1,
     }}>
       {/* Linha principal */}
       <div style={{display:"flex",alignItems:"stretch"}}>
@@ -83,11 +84,11 @@ export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel=
             </div>
           </div>
 
-          {cutoff
+          {cutoff||(disabled&&qty===0)
             ?<button disabled style={{padding:"8px 16px",borderRadius:8,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:12,fontWeight:500,cursor:"default",flexShrink:0,minHeight:40,opacity:0.5}}>{ctaLabel}</button>
             :showCta
             ?<button disabled={ctaSt!=='idle'} onClick={handleCta} style={{padding:"8px 16px",borderRadius:8,border:ctaSt==='success'?'1px solid #6EE7B7':'none',background:ctaSt==='success'?'#D1FAE5':B[500],color:ctaSt==='success'?'#065F46':'#FFF',fontFamily:fb,fontSize:12,fontWeight:500,cursor:ctaSt!=='idle'?'default':'pointer',flexShrink:0,minHeight:40,opacity:ctaSt==='loading'?0.5:1,transition:'all 150ms ease'}}>{ctaSt==='loading'?loadingText:ctaSt==='success'?successText:ctaLabel}</button>
-            :<QtyBtn qty={qty} onAdd={onAdd} onRemove={onRemove} name={product.nome}/>
+            :<QtyBtn qty={qty} onAdd={onAdd} onRemove={onRemove} name={product.nome} addDisabled={disabled}/>
           }
         </div>
       </div>
