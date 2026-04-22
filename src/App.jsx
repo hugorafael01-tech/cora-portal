@@ -192,6 +192,56 @@ const extrasCount=list=>list.filter(p=>p.kind!=="swap").length;
 const qtdsToSlots=(qtds)=>{const s=[];Object.entries(qtds).forEach(([id,q])=>{for(let i=0;i<q;i++)s.push(id);});return s;};
 const slotsToQtds=(slots)=>slots.reduce((a,id)=>{a[id]=(a[id]||0)+1;return a;},{});
 
+// Dias ate a proxima entrega (quinta). Retorna objeto com n de dias e texto sobrio.
+// Quinta = 4 (Date.getDay: 0=dom, 1=seg, ..., 4=qui, 5=sex, 6=sab)
+const diasAteEntrega=(now=new Date())=>{
+  const hoje=now.getDay();
+  const dias=(4-hoje+7)%7;
+  if(dias===0) return {dias:0,texto:"hoje"};
+  if(dias===1) return {dias:1,texto:"amanhã"};
+  return {dias,texto:`em ${dias} dias`};
+};
+
+// Data formatada estilo hero. Ex: "QUINTA, 23 ABR"
+const MESES_CURTOS_PT=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const DIAS_SEMANA_PT=["dom","seg","ter","qua","qui","sex","sáb"];
+const formatarDataHero=(dataStr)=>{
+  // Aceita string "Quinta, 23 de abril" ou tenta parse.
+  // Se nao conseguir parsear, retorna string original em uppercase.
+  if(!dataStr) return "";
+  return dataStr.toUpperCase();
+};
+
+// Timeline da semana. Renderiza 7 circulos Seg-Dom ligados por linha horizontal.
+// Estados: passado (preenchido W[300]), hoje (anel B[500]), entrega (preenchido B[500]).
+const WeekTimeline=({hoje=new Date().getDay(),diaEntrega=4})=>{
+  // Ordem de segunda a domingo na visualizacao: [seg,ter,qua,qui,sex,sab,dom] = indices [1,2,3,4,5,6,0]
+  const ordem=[1,2,3,4,5,6,0];
+  const labels=["S","T","Q","Q","S","S","D"]; // iniciais curtas
+  const width=280;const height=36;const padding=12;
+  const step=(width-padding*2)/(ordem.length-1);
+  return<svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{display:"block",maxWidth:width,margin:"8px auto 4px"}} aria-hidden="true">
+    {/* Linha de base */}
+    <line x1={padding} y1={height/2} x2={width-padding} y2={height/2} stroke={W[200]} strokeWidth="1.5"/>
+    {ordem.map((d,i)=>{
+      const x=padding+i*step;
+      const ehHoje=d===hoje;
+      const ehEntrega=d===diaEntrega;
+      const ehPassado=!ehHoje && ((hoje<diaEntrega) ? (d<hoje||d===0&&hoje!==0) : (d<hoje&&d!==0));
+      // Cores
+      let fill="#FFF";let stroke=W[300];let rOuter=5;let rInner=0;
+      if(ehEntrega){fill=B[500];stroke=B[500];}
+      if(ehPassado&&!ehEntrega){fill=W[300];stroke=W[300];}
+      if(ehHoje){fill="#FFF";stroke=B[500];rInner=3;}
+      return<g key={i}>
+        <circle cx={x} cy={height/2} r={rOuter} fill={fill} stroke={stroke} strokeWidth="1.5"/>
+        {ehHoje&&<circle cx={x} cy={height/2} r={rInner} fill={B[500]}/>}
+        <text x={x} y={height-2} textAnchor="middle" fontSize="10" fontFamily={fb} fill={ehHoje?B[500]:W[500]} fontWeight={ehHoje?"600":"400"}>{labels[i]}</text>
+      </g>;
+    })}
+  </svg>;
+};
+
 const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,cestaSemana,cestaAtual,houveSwap,onSetCestaSemana,ehPrimeiroAcesso})=>{
   const[modal,setModal]=useState(null);
   const[swapModal,setSwapModal]=useState(false);
@@ -218,7 +268,8 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
   const confirmedTotal=totalOf(confirmed);
   const nome=userData?.nome?userData.nome.split(" ")[0]:D.nome;
   const bemvindo=userData?.genero==="f"?"Bem-vinda":userData?.genero==="m"?"Bem-vindo":"Boas-vindas";
-  const prefix=ehPrimeiroAcesso?`${bemvindo}, ${nome}!`:`Oi, ${nome}, ${greet()}!`;
+  // Sobrio: ponto final, sem "Oi". Primeiro acesso mantem exclamacao (momento de acolhida).
+  const prefix=ehPrimeiroAcesso?`${bemvindo}, ${nome}.`:`${greet().charAt(0).toUpperCase()}${greet().slice(1)}, ${nome}.`;
 
   // Composicao da Cesta desta semana (multi-pao)
   const cestaSlots=qtdsToSlots(cestaAtual);
@@ -259,29 +310,37 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
 
     {/* Card unificado — CESTA DA SEMANA (4 estados: padrão, swap, extra, swap+extra) */}
     <Card style={{marginBottom:16,padding:0,overflow:"hidden",background:"#FFF",border:`1px solid ${temSwap?B[200]:W[200]}`}} ariaLabel={`Cesta da semana: ${D.entrega.dia}`}>
-      <div style={{display:"flex",alignItems:"stretch"}}>
-        <img src={cestaImg} alt={primeiroPaoCesta?.nome||"Pão"} style={{width:80,objectFit:"cover",borderRadius:confirmedExtras.length>0?"12px 0 0 0":"12px 0 0 12px",display:"block"}}/>
-        <div style={{flex:1,padding:"12px",display:"flex",flexDirection:"column",gap:4}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
-            <SL t="Cesta da semana"/>
-            {temSwap
-              ?<span style={{fontFamily:fb,fontSize:11,fontWeight:500,padding:"3px 8px",borderRadius:4,background:W[200],color:W[800],whiteSpace:"nowrap"}}>editada só desta semana</span>
-              :temExtras
-                ?<Badge label="confirmada" type="info"/>
-                :null}
-          </div>
-          <div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800]}}>{D.entrega.dia}</div>
-          <div style={{fontFamily:fb,fontSize:13,color:W[600]}}>
-            {cestaLabel}{temExtras&&!temSwap&&<span style={{color:W[500]}}> · assinatura</span>}
+      {/* Cabeçalho com data hero e countdown */}
+      <div style={{padding:"20px 20px 12px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,marginBottom:12}}>
+          <SL t="Cesta da semana"/>
+          {temSwap
+            ?<span style={{fontFamily:fb,fontSize:11,fontWeight:500,padding:"3px 8px",borderRadius:4,background:W[200],color:W[800],whiteSpace:"nowrap"}}>editada só desta semana</span>
+            :temExtras
+              ?<Badge label="confirmada" type="info"/>
+              :null}
+        </div>
+        <h2 style={{fontFamily:fd,fontSize:32,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",lineHeight:1,margin:0}}>{D.entrega.dia}</h2>
+        <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:4}}>{diasAteEntrega().texto}</div>
+        <WeekTimeline/>
+      </div>
+      {/* Foto do pão principal + composição */}
+      <div style={{display:"flex",alignItems:"stretch",borderTop:`1px solid ${W[200]}`}}>
+        <img src={cestaImg} alt={primeiroPaoCesta?.nome||"Pão"} style={{width:96,height:96,objectFit:"cover",display:"block",flexShrink:0}}/>
+        <div style={{flex:1,padding:"16px 20px",display:"flex",flexDirection:"column",justifyContent:"center",gap:4}}>
+          <div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800],lineHeight:1.4}}>
+            {cestaLabel}{temExtras&&!temSwap&&<span style={{fontWeight:400,color:W[500]}}> · assinatura</span>}
           </div>
           {temSwap&&<div style={{fontFamily:fb,fontSize:12,color:W[600],lineHeight:1.4}}>
-            Cesta editada só desta semana.{!temExtras&&<br/>}
-            {!temExtras&&"Próxima semana volta ao normal."}
+            Cesta editada só desta semana. Próxima semana volta ao normal.
           </div>}
-          {!temSwap&&!temExtras&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:2}}>Tudo certo. Essa é sua cesta da Assinatura.</div>}
-          {!cutoff&&<button onClick={openSwapModal} className="lk" style={{fontFamily:fb,fontSize:12,color:B[500],fontWeight:500,cursor:"pointer",background:"none",border:"none",padding:0,textAlign:"left",marginTop:2}}>Personalizar ›</button>}
+          {!temSwap&&!temExtras&&<div style={{fontFamily:fb,fontSize:12,color:W[500]}}>Tudo certo. Essa é sua cesta da Assinatura.</div>}
         </div>
       </div>
+      {/* Ação primária do card: Personalizar esta semana */}
+      {!cutoff&&<div style={{padding:"12px 20px 16px",borderTop:`1px solid ${W[200]}`}}>
+        <button onClick={openSwapModal} style={{width:"100%",padding:"12px 16px",borderRadius:8,border:`1.5px solid ${B[500]}`,background:"transparent",color:B[500],fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",transition:"all 150ms ease"}} onMouseEnter={e=>e.currentTarget.style.background=B[50]} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>Personalizar esta semana</button>
+      </div>}
       {/* Extras confirmados + detalhamento swap — seção interna do mesmo card */}
       {(temExtras||temSwap&&confirmedExtras.length>0)&&<div style={{borderTop:`1px solid ${W[200]}`,padding:"12px 16px"}}>
         {temSwap&&<div style={{fontFamily:fb,fontSize:13,color:W[700],padding:"4px 0",marginBottom:confirmedExtras.length>0?4:0}}>{cestaLabel} · editada</div>}
@@ -460,7 +519,7 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff})=>
     {D.extras.length>0?D.extras.map((ex,i)=><NovidadeCard key={i} extra={ex} qty={cntAll(ex.nome)} onCardClick={()=>setModal(ex)} onAdd={()=>addItem(ex)} onRemove={()=>removeItem(ex.nome)} cutoff={cutoff}/>):<Card style={{marginBottom:16,padding:20,textAlign:"center"}}><div style={{fontFamily:fb,fontSize:14,color:W[500]}}>Nenhuma novidade esta semana.</div></Card>}
 
     <div style={{height:1,background:W[200],margin:"4px 0 20px"}}/>
-    <div style={{fontFamily:fd,fontSize:16,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",marginBottom:12}}>Pães da assinatura</div>
+    <div style={{fontFamily:fd,fontSize:16,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",marginBottom:12}}>Nossos pães</div>
 
     {D.pães.map((p,i)=>{const q=cntAll(p.nome);return<ProductCard key={i}
   product={{...p, preco:`${p.preco}/un`}}
@@ -485,7 +544,7 @@ const Perfil=({confirmed,hasPending,assinaturaQtds,cestaAtual,houveSwap,historic
   const[cpf,setCpf]=useState(false);const[pauseSt,setPauseSt]=useState('idle');const dados=[["Endereço","Ed. Boa Vista, Bl. A / 502"],["Dia de entrega","Quintas-feiras"],["WhatsApp","(21) 99876-5432"],["E-mail","beatriz@email.com"],["CPF",cpf?"123.456.789-00":"•••.•••.789-00"]];const confirmedExtras=confirmed.filter(p=>p.kind!=="swap");const confirmedTotal=totalOf(confirmed);const qtdTotal=Object.values(assinaturaQtds||{}).reduce((s,q)=>s+q,0);const assinVal=D.assinatura.valorMensal*qtdTotal;const cestaLabelPerfil=composicaoToStr(cestaAtual||assinaturaQtds||{})||"Sem pães configurados";
   return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
     <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[800],margin:"0 0 20px"}}>Perfil</h2>
-    <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}><div style={{width:48,height:48,borderRadius:9999,background:B[50],display:"flex",alignItems:"center",justifyContent:"center",fontFamily:fd,fontSize:20,color:B[500],textTransform:"uppercase"}}>B</div><div><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800]}}>Beatriz Silva</div><div style={{fontFamily:fb,fontSize:12,color:W[500]}}>beatriz@email.com</div></div></div>
+    <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}><div style={{width:48,height:48,borderRadius:9999,background:B[50],display:"flex",alignItems:"center",justifyContent:"center",border:`1px solid ${B[200]}`,flexShrink:0}}><img src="/images/grafismo_coracao.svg" alt="" aria-hidden="true" style={{width:28,height:28}}/></div><div><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800]}}>Beatriz Silva</div><div style={{fontFamily:fb,fontSize:12,color:W[500]}}>beatriz@email.com</div></div></div>
     <Card style={{marginBottom:12}}><SL t="Dados pessoais"/>{dados.map(([l,v],i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderBottom:i<dados.length-1?`1px solid ${W[100]}`:"none"}}><div><div style={{fontFamily:fb,fontSize:11,color:W[500],marginBottom:2}}>{l}</div><div style={{fontFamily:fb,fontSize:13,color:W[700]}}>{v}</div></div>{l==="CPF"?<button aria-label={cpf?"Ocultar CPF":"Mostrar CPF"} onClick={()=>setCpf(!cpf)} style={{background:"none",border:"none",cursor:"pointer",padding:4,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={cpf?ic.eyeOff:ic.eye} size={16} color={W[400]}/></button>:<I d={ic.chev} size={14} color={W[400]}/>}</div>)}</Card>
     <Card style={{marginBottom:12}}><SL t="Histórico de entregas e cobranças"/>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><I d={ic.check} size={14} color={ST.success.t}/><span style={{fontFamily:fb,fontSize:13,fontWeight:500,color:ST.success.t}}>Tudo em dia</span></div>

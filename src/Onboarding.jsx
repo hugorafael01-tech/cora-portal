@@ -237,22 +237,25 @@ const Step3=({data,assinatura})=>{
   );
 };
 
-/* ═══ WELCOME . Sem pattern, cards #FFF ═══ */
+/* ═══ WELCOME . Check animado + stagger de entrada ═══ */
 const Welcome=({data,assinatura,onComplete})=>{
   const items=Object.entries(assinatura).map(([id,qty])=>({...ASSINATURA_OPCOES.find(c=>c.id===id),qty})).filter(Boolean);
   const nome=data.nome?data.nome.split(" ")[0]:"você";
   const saudacao=data.genero==="f"?"Bem-vinda":data.genero==="m"?"Bem-vindo":"Boas-vindas";
 
+  // Animacao: path do check tem length ~28. Anima de dashoffset 28 (invisivel) ate 0 (desenhado).
   return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 24px",textAlign:"center",minHeight:"100%",background:W[50]}}>
       <div style={{width:"100%"}}>
-        <div style={{width:64,height:64,borderRadius:32,background:B[50],display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",border:`2px solid ${B[200]}`}}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={B[500]} strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>
+        <div className="welcome-check" style={{width:64,height:64,borderRadius:32,background:B[50],display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",border:`2px solid ${B[200]}`}}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={B[500]} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 6L9 17l-5-5" className="welcome-check-path"/>
+          </svg>
         </div>
-        <H size={26}>{saudacao}, {nome.toUpperCase()}!</H>
-        <div style={{fontFamily:fb,fontSize:15,color:W[600],marginTop:12,lineHeight:1.6,maxWidth:300,margin:"12px auto 0"}}>Sua Assinatura está ativa. Sua primeira entrega será na próxima quinta-feira.</div>
+        <div className="welcome-stagger-1"><H size={26}>{saudacao}, {nome.toUpperCase()}.</H></div>
+        <div className="welcome-stagger-2" style={{fontFamily:fb,fontSize:15,color:W[600],marginTop:12,lineHeight:1.6,maxWidth:300,margin:"12px auto 0"}}>Sua Assinatura está ativa. Sua primeira entrega será na próxima quinta-feira.</div>
 
-        {items.length>0&&<div style={{background:"#FFF",borderRadius:12,overflow:"hidden",marginTop:24,width:"100%",border:`1px solid ${W[200]}`,textAlign:"left"}}>
+        {items.length>0&&<div className="welcome-stagger-3" style={{background:"#FFF",borderRadius:12,overflow:"hidden",marginTop:24,width:"100%",border:`1px solid ${W[200]}`,textAlign:"left"}}>
           <div style={{padding:"14px 14px 8px",fontFamily:fb,fontSize:13,color:W[500]}}>Você vai receber toda quinta</div>
           {items.map(c=><div key={c.id} style={{display:"flex",alignItems:"stretch",borderTop:`1px solid ${W[200]}`}}>
             <img src={c.img} alt={c.nome} style={{width:72,objectFit:"cover",display:"block"}}/>
@@ -263,8 +266,8 @@ const Welcome=({data,assinatura,onComplete})=>{
           <div style={{padding:"10px 14px 14px",fontFamily:fb,fontSize:13,color:W[500],borderTop:`1px solid ${W[200]}`}}>Na sua porta.</div>
         </div>}
 
-        <div style={{fontFamily:fb,fontSize:13,color:B[600],marginTop:20,lineHeight:1.5,background:B[50],borderRadius:8,padding:12,width:"100%",textAlign:"left"}}>Você vai receber uma mensagem no WhatsApp com os detalhes. Qualquer dúvida, é só responder por lá.</div>
-        <div style={{marginTop:24,width:"100%"}}><Btn primary onClick={onComplete}>Acompanhe sua Assinatura</Btn></div>
+        <div className="welcome-stagger-4" style={{fontFamily:fb,fontSize:13,color:B[600],marginTop:20,lineHeight:1.5,background:B[50],borderRadius:8,padding:12,width:"100%",textAlign:"left"}}>Você vai receber uma mensagem no WhatsApp com os detalhes. Qualquer dúvida, é só responder por lá.</div>
+        <div className="welcome-stagger-5" style={{marginTop:24,width:"100%"}}><Btn primary onClick={onComplete}>Acompanhe sua Assinatura</Btn></div>
       </div>
     </div>
   );
@@ -335,8 +338,21 @@ export default function CoraOnboarding({onComplete}){
         input::placeholder{font-family:'Montagu Slab',Georgia,Palatino,serif}
         /* Focus visible universal */
         button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="dialog"]:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;box-shadow:0 0 0 3px ${B[50]},0 0 0 5px ${B[500]}}
+        /* Welcome: check desenhando */
+        .welcome-check-path{stroke-dasharray:30;stroke-dashoffset:30;animation:drawCheck 600ms 100ms ease-out forwards}
+        @keyframes drawCheck{to{stroke-dashoffset:0}}
+        .welcome-check{opacity:0;transform:scale(0.8);animation:popIn 300ms ease-out forwards}
+        @keyframes popIn{to{opacity:1;transform:scale(1)}}
+        /* Welcome: stagger de entrada */
+        [class^="welcome-stagger-"]{opacity:0;transform:translateY(12px);animation:fadeUp 400ms ease-out forwards}
+        .welcome-stagger-1{animation-delay:500ms}
+        .welcome-stagger-2{animation-delay:650ms}
+        .welcome-stagger-3{animation-delay:800ms}
+        .welcome-stagger-4{animation-delay:950ms}
+        .welcome-stagger-5{animation-delay:1100ms}
+        @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
         /* Reduced motion */
-        @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}}
+        @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;animation-delay:0ms!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}.welcome-check-path{stroke-dashoffset:0!important}}
       `}</style>
     </div>
   );
