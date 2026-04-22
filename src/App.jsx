@@ -117,7 +117,7 @@ const Modal=({product,onClose,onAction,onComplete,actionLabel,hint,qty,onAdd,onR
         <button aria-label="Fechar" onClick={onClose} style={{position:"absolute",top:12,right:12,width:36,height:36,borderRadius:9999,background:"rgba(255,255,255,0.9)",border:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
       </div>
       <div style={{padding:20}}>
-        <div style={{fontFamily:fd,fontSize:24,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",lineHeight:1.2}}>{product.nome}</div>
+        <div style={{fontFamily:fd,fontSize:24,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",lineHeight:1.2}}>{product.nome}</div>
         <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:4}}>{product.peso}</div>
         <div style={{fontFamily:fb,fontSize:20,fontWeight:600,color:B[500],marginTop:8}}>{product.preco}</div>
         <div style={{height:1,background:W[200],margin:"16px 0"}}/>
@@ -369,7 +369,7 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
   useEffect(()=>{if(!isFirstVisit||!onSeen)return;const t=setTimeout(onSeen,5000);return()=>clearTimeout(t);},[isFirstVisit,onSeen]);
 
   return<div style={{padding:"24px 16px 16px",paddingBottom:pending.length>0?80:16}}>
-    <h1 style={{fontFamily:fd,fontSize:30,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",margin:"0 0 20px",lineHeight:1.1}}>{prefix}</h1>
+    <h1 style={{fontFamily:fd,fontSize:30,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",margin:"0 0 20px",lineHeight:1.1}}>{prefix}</h1>
 
     <CutoffBanner cutoff={cutoff}/>
 
@@ -385,7 +385,7 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
               ?<Badge label="confirmada" type="info"/>
               :null}
         </div>
-        <h2 style={{fontFamily:fd,fontSize:32,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",lineHeight:1,margin:0}}>{D.entrega.dia}</h2>
+        <h2 style={{fontFamily:fd,fontSize:32,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",lineHeight:1,margin:0}}>{D.entrega.dia}</h2>
         <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:4}}>{diasAteEntrega().texto}</div>
         <WeekTimeline/>
       </div>
@@ -427,7 +427,7 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
       <div onClick={()=>setSwapModal(false)} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
       <div ref={swapDialogRef} role="dialog" aria-modal="true" aria-label="Personalizar cesta da semana" style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:"16px 16px 0 0",zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",padding:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-          <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[800]}}>Personalizar cesta da semana</div>
+          <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500]}}>Personalizar cesta da semana</div>
           <button aria-label="Fechar" onClick={()=>setSwapModal(false)} style={{width:36,height:36,borderRadius:9999,background:W[100],border:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
         </div>
         <div style={{fontFamily:fb,fontSize:14,color:W[600],marginBottom:20,lineHeight:1.5}}>
@@ -504,7 +504,7 @@ const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,onSalvar})=>{
   const primeiroPao=D.pães.find(p=>assinaturaQtds[p.id]>0)||D.pães[0];
 
   return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[800],margin:0}}>Sua Assinatura</h2><Badge label="Ativa"/></div>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[500],margin:0}}>Sua Assinatura</h2><Badge label="Ativa"/></div>
     <div style={{background:B[50],borderRadius:12,padding:16,marginBottom:16,fontFamily:fb,fontSize:14,color:B[800],lineHeight:1.6}}>Toda semana você recebe pão fresco na porta da sua casa. O valor da assinatura é fixo. Em meses com 5 semanas, o pão extra é por nossa conta.</div>
     <Card style={{marginBottom:12}}><SL t="Minha assinatura"/>
       <div style={{display:"flex",gap:12,alignItems:"center"}}><ProductThumb src={primeiroPao.img} w={56} h={48} alt={primeiroPao.nome}/><div style={{flex:1}}><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{itensStr} / semana</div><div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:B[500],marginTop:4}}><AnimatedNumber value={valorMensalAtual}/>/mês</div></div></div>
@@ -530,7 +530,7 @@ const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,onSalvar})=>{
     {confirmModal&&<>
       <div onClick={()=>setConfirmModal(false)} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
       <div ref={confirmDialogRef} role="dialog" aria-modal="true" aria-label="Confirmar alteração da Assinatura" style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:"16px 16px 0 0",zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",padding:20}}>
-        <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[800],marginBottom:16}}>Confirmar alteração da Assinatura</div>
+        <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500],marginBottom:16}}>Confirmar alteração da Assinatura</div>
 
         <div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:4}}>Sua Assinatura vai mudar de:</div>
         <div style={{fontFamily:fb,fontSize:14,color:W[800],marginBottom:10}}>{composicaoToStr(assinaturaQtds)||"Sem pães"} · {fmt(orig)}/mês</div>
@@ -577,7 +577,7 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff})=>
   const totalExtrasAll=extrasCount(confirmed)+extrasCount(pending);
 
   return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
-    <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[800],margin:"0 0 4px"}}>Cardápio</h2>
+    <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[500],margin:"0 0 4px"}}>Cardápio</h2>
     <div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:12}}>Peça itens extras para esta semana</div>
     <DeadlineWarning/>
 
@@ -586,7 +586,7 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff})=>
     {D.extras.length>0?D.extras.map((ex,i)=><NovidadeCard key={i} extra={ex} qty={cntAll(ex.nome)} onCardClick={()=>setModal(ex)} onAdd={()=>addItem(ex)} onRemove={()=>removeItem(ex.nome)} cutoff={cutoff}/>):<EmptyState title="Novidade da semana" body="Nenhuma novidade esta semana."/>}
 
     <div style={{height:1,background:W[200],margin:"4px 0 20px"}}/>
-    <div style={{fontFamily:fd,fontSize:16,textTransform:"uppercase",color:B[800],letterSpacing:"0.02em",marginBottom:12}}>Nossos pães</div>
+    <div style={{fontFamily:fd,fontSize:16,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",marginBottom:12}}>Nossos pães</div>
 
     {D.pães.map((p,i)=>{const q=cntAll(p.nome);return<ProductCard key={i}
   product={{...p, preco:`${p.preco}/un`}}
@@ -610,7 +610,7 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff})=>
 const Perfil=({confirmed,hasPending,assinaturaQtds,cestaAtual,houveSwap,historicoAlteracoes=[]})=>{
   const[cpf,setCpf]=useState(false);const[pauseSt,setPauseSt]=useState('idle');const dados=[["Endereço","Ed. Boa Vista, Bl. A / 502"],["Dia de entrega","Quintas-feiras"],["WhatsApp","(21) 99876-5432"],["E-mail","beatriz@email.com"],["CPF",cpf?"123.456.789-00":"•••.•••.789-00"]];const confirmedExtras=confirmed.filter(p=>p.kind!=="swap");const confirmedTotal=totalOf(confirmed);const qtdTotal=Object.values(assinaturaQtds||{}).reduce((s,q)=>s+q,0);const assinVal=D.assinatura.valorMensal*qtdTotal;const cestaLabelPerfil=composicaoToStr(cestaAtual||assinaturaQtds||{})||"Sem pães configurados";
   return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
-    <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[800],margin:"0 0 20px"}}>Perfil</h2>
+    <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[500],margin:"0 0 20px"}}>Perfil</h2>
     <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}><div style={{width:48,height:48,borderRadius:9999,background:B[50],display:"flex",alignItems:"center",justifyContent:"center",border:`1px solid ${B[200]}`,flexShrink:0}}><img src="/images/grafismo_coracao.svg" alt="" aria-hidden="true" style={{width:28,height:28}}/></div><div><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800]}}>Beatriz Silva</div><div style={{fontFamily:fb,fontSize:12,color:W[500]}}>beatriz@email.com</div></div></div>
     <Card style={{marginBottom:12}}><SL t="Dados pessoais"/>{dados.map(([l,v],i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderBottom:i<dados.length-1?`1px solid ${W[100]}`:"none"}}><div><div style={{fontFamily:fb,fontSize:11,color:W[500],marginBottom:2}}>{l}</div><div style={{fontFamily:fb,fontSize:13,color:W[700]}}>{v}</div></div>{l==="CPF"?<button aria-label={cpf?"Ocultar CPF":"Mostrar CPF"} onClick={()=>setCpf(!cpf)} style={{background:"none",border:"none",cursor:"pointer",padding:4,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={cpf?ic.eyeOff:ic.eye} size={16} color={W[400]}/></button>:<I d={ic.chev} size={14} color={W[400]}/>}</div>)}</Card>
     <Card style={{marginBottom:12}}><SL t="Histórico de entregas e cobranças"/>

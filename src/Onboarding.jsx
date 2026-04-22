@@ -42,7 +42,7 @@ const GrafismoCoracao=({size=36})=>(
 );
 
 /* ─── Base ─── */
-const H=({children,size=24})=><div style={{fontFamily:fd,fontSize:size,textTransform:"uppercase",letterSpacing:"0.02em",color:B[800],margin:0}}>{children}</div>;
+const H=({children,size=24})=><div style={{fontFamily:fd,fontSize:size,textTransform:"uppercase",letterSpacing:"0.02em",color:B[500],margin:0}}>{children}</div>;
 const Label=({children,apoio})=><div style={{marginBottom:4}}><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[700]}}>{children}</div>{apoio&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:2}}>{apoio}</div>}</div>;
 const Input=({placeholder,value,onChange,type="text",error,onFocusExtra})=><input type={type} placeholder={placeholder} value={value} onChange={e=>onChange(e.target.value)} style={{width:"100%",padding:"12px 14px",fontSize:15,fontFamily:fb,border:`1.5px solid ${error?"#EF4444":W[200]}`,borderRadius:8,background:"#FFF",color:W[800],outline:"none",transition:"border-color 200ms"}} onFocus={e=>{e.target.style.borderColor=error?"#EF4444":B[400];onFocusExtra&&onFocusExtra();}} onBlur={e=>e.target.style.borderColor=error?"#EF4444":W[200]}/>;
 const Btn=({children,primary,disabled,onClick,style:es={}})=><button onClick={onClick} disabled={disabled} style={{width:"100%",padding:"14px 0",borderRadius:8,fontSize:15,fontWeight:600,fontFamily:fb,cursor:disabled?"default":"pointer",transition:"all 200ms",border:primary?"none":`1.5px solid ${W[300]}`,background:primary?(disabled?W[300]:B[500]):"transparent",color:primary?"#FFF":W[600],opacity:disabled?0.6:1,...es}}>{children}</button>;
@@ -203,7 +203,7 @@ const Step3=({data,assinatura})=>{
       </div>
 
       <div style={{marginBottom:16}}>
-        <div style={{fontFamily:fd,fontSize:14,textTransform:"uppercase",color:B[700],letterSpacing:"0.04em",marginBottom:8}}>Dados pessoais</div>
+        <div style={{fontFamily:fd,fontSize:14,textTransform:"uppercase",color:B[500],letterSpacing:"0.04em",marginBottom:8}}>Dados pessoais</div>
         <div style={{background:"#FFF",borderRadius:10,padding:"4px 14px",border:`1px solid ${W[200]}`}}>
           <Row label="Nome" value={data.nome||"."}/>
           <Row label="WhatsApp" value={data.whatsapp||"."}/>
@@ -215,7 +215,7 @@ const Step3=({data,assinatura})=>{
       </div>
 
       <div style={{marginBottom:16}}>
-        <div style={{fontFamily:fd,fontSize:14,textTransform:"uppercase",color:B[700],letterSpacing:"0.04em",marginBottom:8}}>Sua Assinatura</div>
+        <div style={{fontFamily:fd,fontSize:14,textTransform:"uppercase",color:B[500],letterSpacing:"0.04em",marginBottom:8}}>Sua Assinatura</div>
         <div style={{background:"#FFF",borderRadius:10,overflow:"hidden",border:`1px solid ${W[200]}`}}>
           {items.map(c=><div key={c.id} style={{display:"flex",alignItems:"stretch",borderBottom:`1px solid ${W[100]}`}}>
             <img src={c.img} alt={c.nome} style={{width:72,objectFit:"cover",display:"block"}}/>
