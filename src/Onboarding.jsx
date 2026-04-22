@@ -11,16 +11,16 @@ const IMG={
   logo:"/images/cora_logo_com_tag.svg",
   original:"/images/_original.jpg",
   integral:"/images/_integral.jpg",
-  multigraos:"/images/_multigraos.jpg",
-  brioche:"/images/_brioche.jpg",
   pattern:"/images/Cora_tile_grafismo.svg",
 };
 
-const CESTAS=[
-  {id:"original",nome:"Pão Original",peso:"580g",avulso:25,mensal:98,img:IMG.original,desc:"Farinha, água, sal e o levain da Cora. Fermentação longa de 36h. O pão que começou tudo.",ingredientes:"Farinha de trigo, água, sal, levain da Cora."},
-  {id:"integral",nome:"Pão Integral",peso:"614g",avulso:28,mensal:110,img:IMG.integral,desc:"100% integral com linhaça e girassol. Mesma fermentação longa, com sementes tostadas.",ingredientes:"Farinha integral, água, sal, levain, linhaça, girassol."},
-  {id:"multigraos",nome:"Multi Grãos",peso:"631g",avulso:32,mensal:126,img:IMG.multigraos,desc:"Aveia, centeio, gergelim e mel. Miolo denso, casca com gergelim tostado.",ingredientes:"Farinha de trigo, centeio, aveia, água, mel, sal, levain, gergelim."},
-  {id:"brioche",nome:"Brioche",peso:"400g",avulso:34,mensal:128,img:IMG.brioche,desc:"Manteiga, ovos e levain. Fermentação 18h. Miolo dourado, textura que desfia.",ingredientes:"Farinha, manteiga, ovos, açúcar, sal, levain, leite."},
+const VALOR_POR_PAO=99;
+const FRETE_MENSAL=15;
+const LIMITE_PAES=3;
+
+const ASSINATURA_OPCOES=[
+  {id:"original",nome:"Pão Original",peso:"615g",avulso:27,img:IMG.original,desc:"Farinha Superiore, água, sal e o levain da Cora. Fermentação longa. O pão que começou tudo.",ingredientes:"Farinha Superiore, farinha FV integral, água, sal, levain da Cora."},
+  {id:"integral",nome:"Pão Integral",peso:"615g",avulso:29,img:IMG.integral,desc:"60% farinha FV integral moída a pedra, 40% Mora. Azeite, fermentação natural.",ingredientes:"Farinha FV integral, farinha Mora, água, sal, levain, azeite, farelo de trigo."},
 ];
 
 /* ─── Base ─── */
@@ -30,7 +30,6 @@ const Input=({placeholder,value,onChange,type="text"})=><input type={type} place
 const Btn=({children,primary,disabled,onClick,style:es={}})=><button onClick={onClick} disabled={disabled} style={{width:"100%",padding:"14px 0",borderRadius:8,fontSize:15,fontWeight:600,fontFamily:fb,cursor:disabled?"default":"pointer",transition:"all 200ms",border:primary?"none":`1.5px solid ${W[300]}`,background:primary?(disabled?W[300]:B[500]):"transparent",color:primary?"#FFF":W[600],opacity:disabled?0.6:1,...es}}>{children}</button>;
 const Progress=({step})=><div style={{display:"flex",gap:6,padding:"0 16px"}}>{[1,2,3].map(s=><div key={s} style={{flex:1,height:3,borderRadius:2,transition:"all 300ms",background:s<=step?B[500]:W[200]}}/>)}</div>;
 const Field=({label,apoio,children})=><div style={{marginBottom:16}}><Label apoio={apoio}>{label}</Label>{children}</div>;
-const QtyBtn=({qty,onAdd,onRemove})=><div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}><button onClick={onRemove} style={{width:32,height:32,borderRadius:8,border:`1px solid ${W[300]}`,background:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center"}}>−</button><span style={{fontFamily:fb,fontSize:16,fontWeight:600,color:B[500],width:24,textAlign:"center"}}>{qty}</span><button onClick={onAdd} style={{width:32,height:32,borderRadius:8,border:`1px solid ${B[500]}`,background:B[50],cursor:"pointer",fontSize:18,color:B[500],display:"flex",alignItems:"center",justifyContent:"center"}}>+</button></div>;
 
 /* ═══ SPLASH ═══ */
 const Splash=({onStart})=>(
@@ -74,72 +73,76 @@ const Step1=({data,setData})=>(
     </Field>
     <div style={{height:1,background:W[200],margin:"4px 0 16px"}}/>
     <Field label="Endereço completo" apoio="Rua, número, bairro e cidade.">
-      <Input placeholder="Rua das Flores, 120 — Fonseca, Niterói" value={data.endereco} onChange={v=>setData({...data,endereco:v})}/>
+      <Input placeholder="Rua das Flores, 120, Fonseca, Niterói" value={data.endereco} onChange={v=>setData({...data,endereco:v})}/>
     </Field>
     <Field label="Complemento" apoio="Apartamento, bloco, portaria, referência.">
-      <Input placeholder="Bl. A, Apto 502 — deixar com o porteiro" value={data.complemento} onChange={v=>setData({...data,complemento:v})}/>
+      <Input placeholder="Bl. A, Apto 502. Deixar com o porteiro" value={data.complemento} onChange={v=>setData({...data,complemento:v})}/>
     </Field>
   </div>
 );
 
-/* ═══ STEP 2 — Cesta (cards iguais ao Cardápio) ═══ */
-const Step2=({cesta,setCesta})=>{
-  // cesta = {id, qty} map
-  const totalMensal=Object.entries(cesta).reduce((s,[id,qty])=>{const c=CESTAS.find(x=>x.id===id);return s+(c?c.mensal*qty:0);},0);
-  const totalItems=Object.values(cesta).reduce((s,q)=>s+q,0);
-  const frete=15;
+/* ═══ STEP 2 — Assinatura (cards iguais ao Cardápio) ═══ */
+const Step2=({assinatura,setAssinatura})=>{
+  // assinatura = {id: qty} map
+  const totalPaes=Object.values(assinatura).reduce((s,q)=>s+q,0);
+  const totalMensal=VALOR_POR_PAO*totalPaes;
+  const atingiuLimite=totalPaes>=LIMITE_PAES;
 
   const setQty=(id,q)=>{
-    const next={...cesta};
+    const outros=Object.entries(assinatura).filter(([k])=>k!==id).reduce((s,[,qtd])=>s+qtd,0);
+    if(outros+q>LIMITE_PAES) return;
+    const next={...assinatura};
     if(q<=0) delete next[id]; else next[id]=q;
-    setCesta(next);
+    setAssinatura(next);
   };
 
   return(
     <div>
       <div style={{marginBottom:16}}>
-        <H size={22}>Monte sua cesta</H>
-        <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:4}}>Escolha seus pães e quantos quer por semana. Pode trocar a qualquer momento.</div>
+        <H size={22}>Monte sua Assinatura</H>
+        <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:4}}>Escolha seus pães. Até 3 por semana. Pode trocar a qualquer momento.</div>
+        {atingiuLimite&&<div style={{fontFamily:fb,fontSize:12,color:B[700],background:B[50],border:`1px solid ${B[100]}`,borderRadius:8,padding:"8px 12px",marginTop:10,lineHeight:1.4}}>Você escolheu 3 pães, o máximo por semana.</div>}
       </div>
 
       {/* Cards iguais ao Cardápio — foto edge-to-edge esquerda */}
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
-        {CESTAS.map(c=>{
-          const qty=cesta[c.id]||0;
+        {ASSINATURA_OPCOES.map(c=>{
+          const qty=assinatura[c.id]||0;
+          const podeAdicionar=!atingiuLimite||qty>0;
           return<ProductCard key={c.id}
-            product={{...c, preco:`R$ ${c.mensal.toFixed(2).replace(".",",")}/mês`}}
+            product={{...c, preco:undefined}}
             qty={qty}
-            onAdd={()=>setQty(c.id,qty+1)}
+            onAdd={()=>{if(!atingiuLimite)setQty(c.id,qty+1);}}
             onRemove={()=>setQty(c.id,qty-1)}
-            ctaLabel="Quero"
+            ctaLabel={podeAdicionar?"Quero":"Limite atingido"}
           />;
         })}
       </div>
 
       {/* Resumo */}
-      {totalItems>0&&<div style={{background:W[100],borderRadius:10,padding:14,border:`1px solid ${W[200]}`}}>
-        {Object.entries(cesta).map(([id,qty])=>{
-          const c=CESTAS.find(x=>x.id===id);
+      {totalPaes>0&&<div style={{background:W[100],borderRadius:10,padding:14,border:`1px solid ${W[200]}`}}>
+        {Object.entries(assinatura).map(([id,qty])=>{
+          const c=ASSINATURA_OPCOES.find(x=>x.id===id);
           if(!c)return null;
           return<div key={id} style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
             <span style={{fontFamily:fb,fontSize:13,color:W[500]}}>{c.nome} × {qty}/semana</span>
-            <span style={{fontFamily:fb,fontSize:13,color:W[600]}}>{fmt(c.mensal*qty)}</span>
+            <span style={{fontFamily:fb,fontSize:13,color:W[600]}}>{fmt(VALOR_POR_PAO*qty)}</span>
           </div>;
         })}
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
           <span style={{fontFamily:fb,fontSize:13,color:W[500]}}>Frete mensal</span>
-          <span style={{fontFamily:fb,fontSize:13,color:W[600]}}>{fmt(frete)}</span>
+          <span style={{fontFamily:fb,fontSize:13,color:W[600]}}>{fmt(FRETE_MENSAL)}</span>
         </div>
         <div style={{height:1,background:W[200],marginBottom:8}}/>
         <div style={{display:"flex",justifyContent:"space-between"}}>
           <span style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800]}}>Total mensal</span>
-          <span style={{fontFamily:fb,fontSize:18,fontWeight:700,color:B[500]}}>{fmt(totalMensal+frete)}</span>
+          <span style={{fontFamily:fb,fontSize:18,fontWeight:700,color:B[500]}}>{fmt(totalMensal+FRETE_MENSAL)}</span>
         </div>
         <div style={{fontFamily:fb,fontSize:11,color:W[400],marginTop:6,lineHeight:1.4}}>Cobrado mensalmente no cartão. Em meses com 5 semanas, o pão extra é por nossa conta.</div>
       </div>}
 
       {/* Pagamento */}
-      {totalItems>0&&<div style={{marginTop:20}}>
+      {totalPaes>0&&<div style={{marginTop:20}}>
         <div style={{height:1,background:W[200],marginBottom:16}}/>
         <Label apoio="Seu cartão é cadastrado com segurança. A primeira cobrança acontece no início do mês.">Dados de pagamento</Label>
         <div style={{marginBottom:12}}><Input placeholder="Número do cartão" value="" onChange={()=>{}}/></div>
@@ -154,10 +157,10 @@ const Step2=({cesta,setCesta})=>{
 };
 
 /* ═══ STEP 3 — Revisão ═══ */
-const Step3=({data,cesta})=>{
-  const items=Object.entries(cesta).map(([id,qty])=>({...CESTAS.find(c=>c.id===id),qty})).filter(Boolean);
-  const totalMensal=items.reduce((s,c)=>s+c.mensal*c.qty,0);
-  const frete=15;
+const Step3=({data,assinatura})=>{
+  const items=Object.entries(assinatura).map(([id,qty])=>({...ASSINATURA_OPCOES.find(c=>c.id===id),qty})).filter(Boolean);
+  const totalPaes=items.reduce((s,c)=>s+c.qty,0);
+  const totalMensal=VALOR_POR_PAO*totalPaes;
   const genLabel={f:"Feminino",m:"Masculino",n:"Neutro"};
   const Row=({label,value})=><div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${W[100]}`}}><span style={{fontFamily:fb,fontSize:13,color:W[500]}}>{label}</span><span style={{fontFamily:fb,fontSize:13,fontWeight:500,color:W[800],textAlign:"right",maxWidth:"60%"}}>{value}</span></div>;
 
@@ -171,17 +174,17 @@ const Step3=({data,cesta})=>{
       <div style={{marginBottom:16}}>
         <div style={{fontFamily:fd,fontSize:14,textTransform:"uppercase",color:B[700],letterSpacing:"0.04em",marginBottom:8}}>Dados pessoais</div>
         <div style={{background:"#FFF",borderRadius:10,padding:"4px 14px",border:`1px solid ${W[200]}`}}>
-          <Row label="Nome" value={data.nome||"—"}/>
-          <Row label="WhatsApp" value={data.whatsapp||"—"}/>
-          <Row label="E-mail" value={data.email||"—"}/>
-          <Row label="Tratamento" value={genLabel[data.genero]||"—"}/>
-          <Row label="Endereço" value={data.endereco||"—"}/>
+          <Row label="Nome" value={data.nome||"."}/>
+          <Row label="WhatsApp" value={data.whatsapp||"."}/>
+          <Row label="E-mail" value={data.email||"."}/>
+          <Row label="Tratamento" value={genLabel[data.genero]||"."}/>
+          <Row label="Endereço" value={data.endereco||"."}/>
           {data.complemento&&<Row label="Complemento" value={data.complemento}/>}
         </div>
       </div>
 
       <div style={{marginBottom:16}}>
-        <div style={{fontFamily:fd,fontSize:14,textTransform:"uppercase",color:B[700],letterSpacing:"0.04em",marginBottom:8}}>Sua cesta</div>
+        <div style={{fontFamily:fd,fontSize:14,textTransform:"uppercase",color:B[700],letterSpacing:"0.04em",marginBottom:8}}>Sua Assinatura</div>
         <div style={{background:"#FFF",borderRadius:10,overflow:"hidden",border:`1px solid ${W[200]}`}}>
           {items.map(c=><div key={c.id} style={{display:"flex",alignItems:"stretch",borderBottom:`1px solid ${W[100]}`}}>
             <img src={c.img} alt={c.nome} style={{width:72,objectFit:"cover",display:"block"}}/>
@@ -192,24 +195,24 @@ const Step3=({data,cesta})=>{
           </div>)}
           <div style={{padding:"8px 14px 14px"}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontFamily:fb,fontSize:13,color:W[500]}}>Assinatura</span><span style={{fontFamily:fb,fontSize:13,color:W[600]}}>{fmt(totalMensal)}</span></div>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontFamily:fb,fontSize:13,color:W[500]}}>Frete</span><span style={{fontFamily:fb,fontSize:13,color:W[600]}}>{fmt(frete)}</span></div>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontFamily:fb,fontSize:13,color:W[500]}}>Frete</span><span style={{fontFamily:fb,fontSize:13,color:W[600]}}>{fmt(FRETE_MENSAL)}</span></div>
             <div style={{height:1,background:W[200],marginBottom:8}}/>
-            <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800]}}>Total mensal</span><span style={{fontFamily:fb,fontSize:18,fontWeight:700,color:B[500]}}>{fmt(totalMensal+frete)}</span></div>
+            <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800]}}>Total mensal</span><span style={{fontFamily:fb,fontSize:18,fontWeight:700,color:B[500]}}>{fmt(totalMensal+FRETE_MENSAL)}</span></div>
           </div>
         </div>
       </div>
 
       <div style={{background:B[50],borderRadius:10,padding:14,border:`1px solid ${B[100]}`}}>
         <div style={{fontFamily:fb,fontSize:13,color:B[700],fontWeight:500}}>Entrega toda quinta-feira</div>
-        <div style={{fontFamily:fb,fontSize:12,color:B[600],marginTop:4}}>Alterações na cesta até terça, 12h. Cancelamento sem taxa, a qualquer momento.</div>
+        <div style={{fontFamily:fb,fontSize:12,color:B[600],marginTop:4}}>Alterações na Assinatura até terça, 12h. Cancelamento sem taxa, a qualquer momento.</div>
       </div>
     </div>
   );
 };
 
 /* ═══ WELCOME (com pattern) ═══ */
-const Welcome=({data,cesta,onComplete})=>{
-  const items=Object.entries(cesta).map(([id,qty])=>({...CESTAS.find(c=>c.id===id),qty})).filter(Boolean);
+const Welcome=({data,assinatura,onComplete})=>{
+  const items=Object.entries(assinatura).map(([id,qty])=>({...ASSINATURA_OPCOES.find(c=>c.id===id),qty})).filter(Boolean);
   const nome=data.nome?data.nome.split(" ")[0]:"você";
   const saudacao=data.genero==="f"?"Bem-vinda":data.genero==="m"?"Bem-vindo":"Boas-vindas";
 
@@ -221,21 +224,23 @@ const Welcome=({data,cesta,onComplete})=>{
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={B[500]} strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>
         </div>
         <H size={26}>{saudacao}, {nome.toUpperCase()}!</H>
-        <div style={{fontFamily:fb,fontSize:15,color:W[600],marginTop:12,lineHeight:1.6,maxWidth:300,margin:"12px auto 0"}}>Sua assinatura está ativa. Sua primeira entrega será na próxima quinta-feira.</div>
+        <div style={{fontFamily:fb,fontSize:15,color:W[600],marginTop:12,lineHeight:1.6,maxWidth:300,margin:"12px auto 0"}}>Sua Assinatura está ativa. Sua primeira entrega será na próxima quinta-feira.</div>
 
         {items.length>0&&<div style={{background:W[100],borderRadius:12,overflow:"hidden",marginTop:24,width:"100%",border:`1px solid ${W[200]}`,textAlign:"left"}}>
-          {items.map(c=><div key={c.id}>
-            <img src={c.img} alt={c.nome} style={{width:"100%",height:140,objectFit:"cover",display:"block"}}/>
-            <div style={{padding:14}}>
-              <div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:4}}>Você vai receber</div>
-              <div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800]}}>{c.qty}× {c.nome} ({c.peso})</div>
-              <div style={{fontFamily:fb,fontSize:13,color:W[500],marginTop:2}}>Toda quinta, na porta do seu apartamento.</div>
+          <div style={{padding:"14px 14px 0"}}>
+            <div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:8}}>Você vai receber toda quinta</div>
+          </div>
+          {items.map((c,i)=><div key={c.id} style={{display:"flex",alignItems:"stretch",borderTop:i>0?`1px solid ${W[200]}`:"none"}}>
+            <img src={c.img} alt={c.nome} style={{width:72,objectFit:"cover",display:"block"}}/>
+            <div style={{flex:1,padding:12}}>
+              <div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800]}}>{c.qty}× {c.nome} ({c.peso})</div>
             </div>
           </div>)}
+          <div style={{padding:"10px 14px 14px",fontFamily:fb,fontSize:13,color:W[500]}}>Na porta do seu apartamento.</div>
         </div>}
 
         <div style={{fontFamily:fb,fontSize:13,color:B[600],marginTop:20,lineHeight:1.5,background:B[50],borderRadius:8,padding:12,width:"100%",textAlign:"left"}}>Você vai receber uma mensagem no WhatsApp com os detalhes. Qualquer dúvida, é só responder por lá.</div>
-        <div style={{marginTop:24,width:"100%"}}><Btn primary onClick={onComplete}>Acompanhe o seu pedido</Btn></div>
+        <div style={{marginTop:24,width:"100%"}}><Btn primary onClick={onComplete}>Acompanhe sua Assinatura</Btn></div>
       </div>
     </div>
   );
@@ -247,18 +252,17 @@ export default function CoraOnboarding({onComplete}){
   const[step,setStep]=useState(1);
   const[termos,setTermos]=useState(false);
   const[data,setData]=useState({nome:"",whatsapp:"",email:"",endereco:"",complemento:"",genero:""});
-  const cestaDaURL=(()=>{const p=new URLSearchParams(window.location.search);const id=p.get("cesta");return id?{[id]:1}:{};})();
-  const[cesta,setCesta]=useState(cestaDaURL); // {id: qty}
-  const[qtd,setQtd]=useState(1);
+  const assinaturaDaURL=(()=>{const p=new URLSearchParams(window.location.search);const id=p.get("produto")||p.get("cesta");return id?{[id]:1}:{};})();
+  const[assinatura,setAssinatura]=useState(assinaturaDaURL); // {id: qty}
 
   const canNext1=data.nome&&data.whatsapp&&data.email&&data.endereco&&data.genero;
-  const totalItems=Object.values(cesta).reduce((s,q)=>s+q,0);
+  const totalItems=Object.values(assinatura).reduce((s,q)=>s+q,0);
   const canNext2=totalItems>0;
   const canConfirm=termos;
 
-  const stepLabel=["Dados","Sua cesta","Confirmação"];
+  const stepLabel=["Dados","Sua Assinatura","Confirmação"];
 
-  const shell=(content,showProgress=false)=>(
+  const shell=(content)=>(
     <div style={{maxWidth:390,margin:"0 auto",minHeight:"100vh",background:W[50],display:"flex",flexDirection:"column"}}>
       {content}
       <style>{`@import url('https://fonts.googleapis.com/css2?family=League+Gothic&family=Montagu+Slab:wght@400;500;600;700&display=swap');*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}body{margin:0}img{max-width:100%}input,button{font-size:16px}::-webkit-scrollbar{width:0}input::placeholder{font-family:'Montagu Slab',Georgia,Palatino,serif}`}</style>
@@ -269,7 +273,7 @@ export default function CoraOnboarding({onComplete}){
 
   if(screen==="welcome") return shell(<>
     <div style={{padding:"10px 16px",background:"#FFF",borderBottom:`1px solid ${W[200]}`}}><img src={IMG.logo} alt="Cora" style={{height:28}}/></div>
-    <div style={{flex:1}}><Welcome data={data} cesta={cesta} onComplete={()=>onComplete&&onComplete(data)}/></div>
+    <div style={{flex:1}}><Welcome data={data} assinatura={assinatura} onComplete={()=>onComplete&&onComplete(data)}/></div>
   </>);
 
   return shell(<>
@@ -282,9 +286,9 @@ export default function CoraOnboarding({onComplete}){
     </div>
     <div style={{flex:1,overflowY:"auto",padding:16}}>
       {step===1&&<Step1 data={data} setData={setData}/>}
-      {step===2&&<Step2 cesta={cesta} setCesta={setCesta}/>}
+      {step===2&&<Step2 assinatura={assinatura} setAssinatura={setAssinatura}/>}
       {step===3&&<>
-        <Step3 data={data} cesta={cesta}/>
+        <Step3 data={data} assinatura={assinatura}/>
         <div onClick={()=>setTermos(!termos)} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"14px 0",cursor:"pointer",marginTop:8}}>
           <div style={{width:20,height:20,borderRadius:4,flexShrink:0,marginTop:1,border:termos?`2px solid ${B[500]}`:`2px solid ${W[300]}`,background:termos?B[500]:"#FFF",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 200ms"}}>{termos&&<span style={{color:"#FFF",fontSize:13,fontWeight:700}}>&#10003;</span>}</div>
           <div style={{fontFamily:fb,fontSize:13,color:W[600],lineHeight:1.5}}>Ao confirmar, aceito os termos de uso e a política de privacidade da Cora.</div>
