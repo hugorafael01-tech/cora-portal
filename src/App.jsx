@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import CoraOnboarding from "./Onboarding";
 import PreCadastro from "./pages/PreCadastro";
 import ProductCard from "./components/ProductCard";
@@ -81,8 +81,8 @@ const ProductThumb=({src,w=56,h=48,alt="",style:es})=><img src={src} alt={alt} s
 const Card=({children,style,onClick,ariaLabel})=>{const[h,setH]=useState(false);return<div role={onClick?"button":undefined} aria-label={ariaLabel} onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} style={{background:W[100],border:`1px solid ${h&&onClick?W[300]:W[200]}`,borderRadius:12,padding:16,transition:"border-color 150ms ease",...style}}>{children}</div>;};
 const SL=({t})=><div style={{fontFamily:fd,fontSize:15,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:8,lineHeight:1}}>{t}</div>;
 const Badge=({label,type="success"})=>{const s=ST[type]||ST.success;return<span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:12,fontWeight:500,fontFamily:fb,padding:"4px 10px",borderRadius:4,background:s.bg,color:s.t,border:`1px solid ${s.b}`}}><span style={{fontSize:8}}>●</span>{label}</span>;};
-const Btn=({children,primary,disabled,onClick,style:es,full,ariaLabel})=>{const[h,setH]=useState(false);return<button aria-label={ariaLabel} disabled={disabled} onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} style={{padding:"12px 20px",borderRadius:8,border:primary?"none":`1px solid ${h&&!disabled?B[600]:B[500]}`,background:primary?(disabled?W[200]:h?B[600]:B[500]):(h&&!disabled?B[50]:"none"),color:primary?(disabled?W[500]:"#FFF"):B[500],fontFamily:fb,fontSize:14,fontWeight:500,cursor:disabled?"default":"pointer",opacity:disabled?0.5:1,minHeight:44,width:full?"100%":"auto",transition:"all 150ms ease",...es}}>{children}</button>;};
-const QtyBtn=({qty,onAdd,onRemove,name})=><div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}><button aria-label={`Remover ${name}`} onClick={onRemove} className="qb" style={{width:32,height:32,borderRadius:8,border:`1px solid ${W[300]}`,background:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center"}}>−</button><span style={{fontFamily:fb,fontSize:16,fontWeight:600,color:B[500],width:24,textAlign:"center"}}>{qty}</span><button aria-label={`Adicionar ${name}`} onClick={onAdd} className="qb" style={{width:32,height:32,borderRadius:8,border:`1px solid ${B[500]}`,background:B[50],cursor:"pointer",fontSize:18,color:B[500],display:"flex",alignItems:"center",justifyContent:"center"}}>+</button></div>;
+const Btn=({children,primary,disabled,onClick,style:es,full,ariaLabel})=>{const[h,setH]=useState(false);return<button aria-label={ariaLabel} disabled={disabled} onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} className="press-scale" style={{padding:"12px 20px",borderRadius:8,border:primary?"none":`1px solid ${h&&!disabled?B[600]:B[500]}`,background:primary?(disabled?W[200]:h?B[600]:B[500]):(h&&!disabled?B[50]:"none"),color:primary?(disabled?W[500]:"#FFF"):B[500],fontFamily:fb,fontSize:14,fontWeight:500,cursor:disabled?"default":"pointer",opacity:disabled?0.5:1,minHeight:44,width:full?"100%":"auto",transition:"all 150ms ease",...es}}>{children}</button>;};
+const QtyBtn=({qty,onAdd,onRemove,name})=><div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}><button aria-label={`Remover ${name}`} onClick={onRemove} className="qb press-scale" style={{width:32,height:32,borderRadius:8,border:`1px solid ${W[300]}`,background:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center"}}>−</button><span style={{fontFamily:fb,fontSize:16,fontWeight:600,color:B[500],width:24,textAlign:"center"}}>{qty}</span><button aria-label={`Adicionar ${name}`} onClick={onAdd} className="qb press-scale" style={{width:32,height:32,borderRadius:8,border:`1px solid ${B[500]}`,background:B[50],cursor:"pointer",fontSize:18,color:B[500],display:"flex",alignItems:"center",justifyContent:"center"}}>+</button></div>;
 const Toast=({msg,vis})=>vis?<div role="status" aria-live="polite" style={{position:"fixed",bottom:72,left:16,right:16,maxWidth:358,margin:"0 auto",background:W[800],color:"#FFF",borderRadius:8,padding:"12px 16px",zIndex:60,fontFamily:fb,fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8,animation:"fadeUp 300ms ease"}}><I d={ic.check} size={16} color="#6EE7B7"/>{msg}</div>:null;
 const DeadlineWarning=()=><div style={{fontFamily:fb,fontSize:12,color:ST.warning.t,background:ST.warning.bg,padding:"8px 12px",borderRadius:8,marginBottom:20,display:"inline-flex",alignItems:"center",gap:8,border:`1px solid ${ST.warning.b}`}}><I d={ic.clock} size={14} color={ST.warning.t}/>Pedidos até terça, 12h, para entrega na quinta</div>;
 const CutoffMsg=()=><div style={{fontFamily:fb,fontSize:13,color:"#7A766E",marginTop:6}}>Prazo encerrado. Alterações valem a partir da próxima semana.</div>;
@@ -103,10 +103,12 @@ const ActionBtn=({children,loadingText,successText,onAction,onComplete,primary,d
 
 // ─── MODAL ───
 const Modal=({product,onClose,onAction,onComplete,actionLabel,hint,qty,onAdd,onRemove,cutoff})=>{
+  const dialogRef=useRef(null);
+  useModalA11y(dialogRef,!!product,onClose);
   if(!product)return null;
   return<>
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
-    <div role="dialog" aria-label={`Detalhes: ${product.nome}`} style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:"16px 16px 0 0",zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease"}}>
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={`Detalhes: ${product.nome}`} style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:"16px 16px 0 0",zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease"}}>
       <div style={{position:"relative"}}>
         <ProductImg src={product.img} h={220} alt={product.nome} rounded={false} style={{borderRadius:"16px 16px 0 0"}}/>
         <button aria-label="Fechar" onClick={onClose} style={{position:"absolute",top:12,right:12,width:36,height:36,borderRadius:9999,background:"rgba(255,255,255,0.9)",border:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
@@ -136,7 +138,7 @@ const NovidadeCard=({extra,qty,onCardClick,onAdd,onRemove,cutoff})=><Card style=
     <SL t="Novidade da semana"/>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}>
       <div style={{flex:1}}><div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800]}}>{extra.nome}</div><div style={{fontFamily:fb,fontSize:14,color:W[600],marginTop:4}}>{extra.preco}</div></div>
-      {cutoff?<button disabled className="bp" style={{padding:"10px 24px",borderRadius:8,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"default",minHeight:44,flexShrink:0,opacity:0.5}}>Quero</button>:qty===0?<button onClick={e=>{e.stopPropagation();onCardClick();}} className="bp" style={{padding:"10px 24px",borderRadius:8,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",minHeight:44,flexShrink:0}}>Quero</button>:<QtyBtn qty={qty} onAdd={()=>onAdd&&onAdd()} onRemove={()=>onRemove&&onRemove()} name={extra.nome}/>}
+      {cutoff?<button disabled className="bp press-scale" style={{padding:"10px 24px",borderRadius:8,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"default",minHeight:44,flexShrink:0,opacity:0.5}}>Quero</button>:qty===0?<button onClick={e=>{e.stopPropagation();onCardClick();}} className="bp press-scale" style={{padding:"10px 24px",borderRadius:8,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",minHeight:44,flexShrink:0}}>Quero</button>:<QtyBtn qty={qty} onAdd={()=>onAdd&&onAdd()} onRemove={()=>onRemove&&onRemove()} name={extra.nome}/>}
     </div>
     {cutoff&&<CutoffMsg/>}
   </div>
@@ -185,6 +187,54 @@ const addTo=(list,product,kind="extra")=>{const pn=kind==="swap"?0:(typeof produ
 const removeFrom=(list,nome)=>{const i=list.findIndex(p=>p.nome===nome&&p.kind!=="swap");if(i===-1)return list;return[...list.slice(0,i),...list.slice(i+1)];};
 const totalOf=list=>list.filter(p=>p.kind!=="swap").reduce((s,p)=>s+p.precoNum,0);
 const extrasCount=list=>list.filter(p=>p.kind!=="swap").length;
+
+// Hook de focus trap + ESC pra modais. `active` liga/desliga. `onClose` dispara no ESC.
+const useModalA11y=(ref,active,onClose)=>{
+  useEffect(()=>{
+    if(!active||!ref.current) return;
+    const el=ref.current;
+    const selectors='button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    const focusables=()=>Array.from(el.querySelectorAll(selectors)).filter(n=>n.offsetParent!==null);
+    // Foca primeiro elemento apos abrir
+    const prev=document.activeElement;
+    setTimeout(()=>{const list=focusables();list[0]?.focus();},10);
+    const onKey=(e)=>{
+      if(e.key==='Escape'){e.stopPropagation();onClose&&onClose();return;}
+      if(e.key!=='Tab') return;
+      const list=focusables();
+      if(list.length===0) return;
+      const first=list[0],last=list[list.length-1];
+      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+      else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+    };
+    document.addEventListener('keydown',onKey);
+    return()=>{document.removeEventListener('keydown',onKey);prev&&prev.focus&&prev.focus();};
+  },[active,ref,onClose]);
+};
+
+// Animated number: interpola entre valor anterior e atual em 400ms (easeOutCubic).
+// Respeita prefers-reduced-motion (usa o valor final direto).
+const AnimatedNumber=({value,duration=400,format=fmt})=>{
+  const[display,setDisplay]=useState(value);
+  const prevRef=useRef(value);
+  useEffect(()=>{
+    const reduced=typeof window!=="undefined"&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if(reduced){setDisplay(value);prevRef.current=value;return;}
+    const start=prevRef.current;const end=value;
+    if(start===end) return;
+    const t0=performance.now();let raf;
+    const tick=(t)=>{
+      const p=Math.min(1,(t-t0)/duration);
+      const ease=1-Math.pow(1-p,3);
+      setDisplay(start+(end-start)*ease);
+      if(p<1) raf=requestAnimationFrame(tick);
+      else prevRef.current=end;
+    };
+    raf=requestAnimationFrame(tick);
+    return()=>cancelAnimationFrame(raf);
+  },[value,duration]);
+  return<>{format(display)}</>;
+};
 
 // ═══ HOME ═══
 // Helpers para montar slots e converter entre qtdsMap <-> slots array
@@ -245,6 +295,8 @@ const WeekTimeline=({hoje=new Date().getDay(),diaEntrega=4})=>{
 const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,cestaSemana,cestaAtual,houveSwap,onSetCestaSemana,ehPrimeiroAcesso})=>{
   const[modal,setModal]=useState(null);
   const[swapModal,setSwapModal]=useState(false);
+  const swapDialogRef=useRef(null);
+  useModalA11y(swapDialogRef,swapModal,()=>setSwapModal(false));
   const[rascunhoSlots,setRascunhoSlots]=useState([]); // slots da cesta durante a edicao no modal
   const[toast,setToast]=useState(false);
   const[toastMsg,setToastMsg]=useState("");
@@ -339,7 +391,7 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
       </div>
       {/* Ação primária do card: Personalizar esta semana */}
       {!cutoff&&<div style={{padding:"12px 20px 16px",borderTop:`1px solid ${W[200]}`}}>
-        <button onClick={openSwapModal} style={{width:"100%",padding:"12px 16px",borderRadius:8,border:`1.5px solid ${B[500]}`,background:"transparent",color:B[500],fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",transition:"all 150ms ease"}} onMouseEnter={e=>e.currentTarget.style.background=B[50]} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>Personalizar esta semana</button>
+        <button onClick={openSwapModal} className="press-scale" style={{width:"100%",padding:"12px 16px",borderRadius:8,border:`1.5px solid ${B[500]}`,background:"transparent",color:B[500],fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",transition:"all 150ms ease"}} onMouseEnter={e=>e.currentTarget.style.background=B[50]} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>Personalizar esta semana</button>
       </div>}
       {/* Extras confirmados + detalhamento swap — seção interna do mesmo card */}
       {(temExtras||temSwap&&confirmedExtras.length>0)&&<div style={{borderTop:`1px solid ${W[200]}`,padding:"12px 16px"}}>
@@ -360,7 +412,7 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
     {/* Swap modal */}
     {swapModal&&<>
       <div onClick={()=>setSwapModal(false)} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
-      <div role="dialog" aria-label="Personalizar cesta da semana" style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:"16px 16px 0 0",zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",padding:20}}>
+      <div ref={swapDialogRef} role="dialog" aria-modal="true" aria-label="Personalizar cesta da semana" style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:"16px 16px 0 0",zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",padding:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
           <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[800]}}>Personalizar cesta da semana</div>
           <button aria-label="Fechar" onClick={()=>setSwapModal(false)} style={{width:36,height:36,borderRadius:9999,background:W[100],border:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
@@ -408,6 +460,8 @@ const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,onSalvar})=>{
   // Rascunho local SO durante a edicao. Ao salvar, chama onSalvar(rascunho). Ao cancelar, descarta.
   const[rascunho,setRascunho]=useState(assinaturaQtds);
   const[confirmModal,setConfirmModal]=useState(false);
+  const confirmDialogRef=useRef(null);
+  useModalA11y(confirmDialogRef,confirmModal,()=>setConfirmModal(false));
   const[saved,setSaved]=useState(false);const[showCalc,setShowCalc]=useState(false);
   const[addrSt,setAddrSt]=useState('idle');const[cardSt,setCardSt]=useState('idle');
 
@@ -440,7 +494,7 @@ const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,onSalvar})=>{
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[800],margin:0}}>Sua Assinatura</h2><Badge label="Ativa"/></div>
     <div style={{background:B[50],borderRadius:12,padding:16,marginBottom:16,fontFamily:fb,fontSize:14,color:B[800],lineHeight:1.6}}>Toda semana você recebe pão fresco na porta da sua casa. O valor da assinatura é fixo. Em meses com 5 semanas, o pão extra é por nossa conta.</div>
     <Card style={{marginBottom:12}}><SL t="Minha assinatura"/>
-      <div style={{display:"flex",gap:12,alignItems:"center"}}><ProductThumb src={primeiroPao.img} w={56} h={48} alt={primeiroPao.nome}/><div style={{flex:1}}><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{itensStr} / semana</div><div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:B[500],marginTop:4}}>{fmt(valorMensalAtual)}/mês</div></div></div>
+      <div style={{display:"flex",gap:12,alignItems:"center"}}><ProductThumb src={primeiroPao.img} w={56} h={48} alt={primeiroPao.nome}/><div style={{flex:1}}><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{itensStr} / semana</div><div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:B[500],marginTop:4}}><AnimatedNumber value={valorMensalAtual}/>/mês</div></div></div>
       {!editing&&<><Btn full disabled={cutoff} onClick={()=>setEditing(true)} style={{marginTop:12}}>Alterar minha assinatura</Btn>{cutoff&&<CutoffMsg/>}</>}
       {editing&&<div style={{marginTop:16,borderTop:`1px solid ${W[200]}`,paddingTop:16}}>
         <DeadlineWarning/>
@@ -450,7 +504,7 @@ const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,onSalvar})=>{
           <div style={{flex:1}}><div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800]}}>{p.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>({p.peso})</span></div></div>
           <div style={{display:"flex",alignItems:"center",gap:8}}><button onClick={()=>upd(p.id,-1)} disabled={q===0} className="qb" style={{width:32,height:32,borderRadius:8,border:`1px solid ${q>0?W[300]:W[200]}`,background:"none",cursor:q>0?"pointer":"default",fontSize:18,color:q>0?W[600]:W[300],display:"flex",alignItems:"center",justifyContent:"center",opacity:q===0?0.4:1}}>−</button><span style={{fontFamily:fb,fontSize:16,fontWeight:600,color:q>0?B[500]:W[400],width:24,textAlign:"center"}}>{q}</span><button onClick={()=>upd(p.id,1)} disabled={total>=3} className="qb" style={{width:32,height:32,borderRadius:8,border:`1px solid ${total<3?B[500]:W[200]}`,background:total<3?B[50]:"none",cursor:total<3?"pointer":"default",fontSize:18,color:total<3?B[500]:W[300],display:"flex",alignItems:"center",justifyContent:"center",opacity:total>=3?0.4:1}}>+</button></div>
         </div>;})}
-        <div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800],textAlign:"right",padding:"12px 0 4px"}}>Novo valor mensal: <span style={{color:B[500]}}>{fmt(mensal)}</span></div>
+        <div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800],textAlign:"right",padding:"12px 0 4px"}}>Novo valor mensal: <span style={{color:B[500]}}><AnimatedNumber value={mensal}/></span></div>
         {changed&&<><div style={{fontFamily:fb,fontSize:12,color:W[500],textAlign:"right",marginBottom:4}}>Antes: {fmt(orig)} → Depois: {fmt(mensal)}</div>
           {ehAumento&&<div onClick={()=>setShowCalc(!showCalc)} style={{background:B[50],borderRadius:8,padding:"10px 12px",marginBottom:12,cursor:"pointer",border:`1px solid ${B[100]}`}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontFamily:fb,fontSize:13,color:B[700]}}>Ajuste neste mês: <span style={{fontWeight:600}}>+{fmt(prop)}</span></div><I d={ic.chevDown} size={16} color={B[400]}/></div>{showCalc&&<div style={{marginTop:8,fontFamily:fb,fontSize:12,color:B[600],lineHeight:1.6,animation:"fadeUp 200ms ease"}}>Faltam {D.semanasRestantes} semanas neste mês.<br/>Diferença semanal: +{fmt(Math.abs(diff/4))}/semana<br/>Cobrado proporcionalmente na próxima fatura: +{fmt(prop)}</div>}</div>}
           {ehReducao&&<div style={{background:W[100],borderRadius:8,padding:"10px 12px",marginBottom:12,border:`1px solid ${W[200]}`,fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5}}>Até o fim de {mesAtualPt()}, você continuará recebendo {origTotal} {origTotal===1?"pão":"pães"} por semana. Sua nova Assinatura começa em 1º de {proximoMesPt()}.</div>}
@@ -462,7 +516,7 @@ const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,onSalvar})=>{
     {/* Modal de confirmacao */}
     {confirmModal&&<>
       <div onClick={()=>setConfirmModal(false)} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
-      <div role="dialog" aria-label="Confirmar alteração da Assinatura" style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:"16px 16px 0 0",zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",padding:20}}>
+      <div ref={confirmDialogRef} role="dialog" aria-modal="true" aria-label="Confirmar alteração da Assinatura" style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:"16px 16px 0 0",zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",padding:20}}>
         <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[800],marginBottom:16}}>Confirmar alteração da Assinatura</div>
 
         <div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:4}}>Sua Assinatura vai mudar de:</div>
@@ -670,10 +724,12 @@ const params = new URLSearchParams(window.location.search);
       <img src={IMG.logo} alt="Cora" style={{height:28}}/>
     </div>
     <main id="main-content" style={{flex:1,overflowY:"auto"}}>
-      {scr==="home"&&<Home onNav={handleNav} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} cestaSemana={cestaSemana} cestaAtual={cestaAtual} houveSwap={houveSwap} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso}/>}
-      {scr==="assinatura"&&<Assinatura onNav={handleNav} hasPending={hasPending} cutoff={cutoff} assinaturaQtds={assinaturaQtds} onSalvar={handleSalvarAssinatura}/>}
-      {scr==="cardapio"&&<Cardapio pending={pending} confirmed={confirmed} setPending={setPending} setConfirmed={setConfirmed} hasPending={hasPending} cutoff={cutoff}/>}
-      {scr==="perfil"&&<Perfil confirmed={confirmed} hasPending={hasPending} assinaturaQtds={assinaturaQtds} cestaAtual={cestaAtual} houveSwap={houveSwap} historicoAlteracoes={historicoAlteracoes}/>}
+      <div key={scr} className="tab-content">
+        {scr==="home"&&<Home onNav={handleNav} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} cestaSemana={cestaSemana} cestaAtual={cestaAtual} houveSwap={houveSwap} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso}/>}
+        {scr==="assinatura"&&<Assinatura onNav={handleNav} hasPending={hasPending} cutoff={cutoff} assinaturaQtds={assinaturaQtds} onSalvar={handleSalvarAssinatura}/>}
+        {scr==="cardapio"&&<Cardapio pending={pending} confirmed={confirmed} setPending={setPending} setConfirmed={setConfirmed} hasPending={hasPending} cutoff={cutoff}/>}
+        {scr==="perfil"&&<Perfil confirmed={confirmed} hasPending={hasPending} assinaturaQtds={assinaturaQtds} cestaAtual={cestaAtual} houveSwap={houveSwap} historicoAlteracoes={historicoAlteracoes}/>}
+      </div>
     </main>
     {/* RODAPÉ PERSISTENTE — visível em TODAS as telas */}
     <OrderFooter pending={pending} confirmed={confirmed} onConfirm={handleConfirm} onCancel={handleCancel} onNav={handleNav} cutoff={cutoff}/>
@@ -692,6 +748,12 @@ const params = new URLSearchParams(window.location.search);
       .bl:hover{background:${W[100]}!important}
       .lk:hover{text-decoration:underline}
       .qb:hover:not(:disabled){background:${W[100]}!important}
+      /* Page transitions cross-dissolve entre abas */
+      .tab-content{animation:tabIn 220ms ease-out}
+      @keyframes tabIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+      /* Press scale nos CTAs e botoes interativos */
+      .press-scale{transition:transform 120ms ease-out,background 150ms ease-out}
+      .press-scale:active:not(:disabled){transform:scale(0.97)}
       /* Focus visible universal: botoes, links, e elementos com role=button ou tabindex */
       button:focus-visible,
       a:focus-visible,
