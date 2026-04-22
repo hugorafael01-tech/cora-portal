@@ -333,7 +333,6 @@ export default function CoraOnboarding({onComplete}){
     <div style={{maxWidth:390,margin:"0 auto",minHeight:"100vh",background:W[50],display:"flex",flexDirection:"column"}}>
       {content}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=League+Gothic&family=Montagu+Slab:wght@400;500;600;700&display=swap');
         *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
         body{margin:0}
         img{max-width:100%}
