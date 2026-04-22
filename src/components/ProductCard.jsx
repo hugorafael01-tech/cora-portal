@@ -100,13 +100,13 @@ export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel=
         <div id={regionId} role="region" aria-label={`Detalhes de ${product.nome}`} style={{padding:"12px 16px 16px",borderTop:`1px solid ${W[200]}`,animation:"fadeUp 200ms ease"}}>
           {product.ingredientes&&(
             <div style={{marginBottom:10}}>
-              <div style={{fontFamily:fd,fontSize:12,textTransform:"uppercase",color:W[400],letterSpacing:"0.04em",marginBottom:4}}>Ingredientes</div>
+              <div style={{fontFamily:fd,fontSize:12,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:4}}>Ingredientes</div>
               <div style={{fontFamily:fb,fontSize:13,color:W[600],lineHeight:1.5}}>{product.ingredientes}</div>
             </div>
           )}
           {product.detalhe&&(
             <div>
-              <div style={{fontFamily:fd,fontSize:12,textTransform:"uppercase",color:W[400],letterSpacing:"0.04em",marginBottom:4}}>Sobre este pão</div>
+              <div style={{fontFamily:fd,fontSize:12,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:4}}>Sobre este pão</div>
               <div style={{fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.6}}>{product.detalhe}</div>
             </div>
           )}

@@ -116,9 +116,9 @@ const Modal=({product,onClose,onAction,onComplete,actionLabel,hint,qty,onAdd,onR
         <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:4}}>{product.peso}</div>
         <div style={{fontFamily:fb,fontSize:20,fontWeight:600,color:B[500],marginTop:8}}>{product.preco}</div>
         <div style={{height:1,background:W[200],margin:"16px 0"}}/>
-        {product.ingredientes&&<div style={{marginBottom:16}}><div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[400],letterSpacing:"0.04em",marginBottom:6}}>Ingredientes</div><div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6}}>{product.ingredientes}</div></div>}
+        {product.ingredientes&&<div style={{marginBottom:16}}><div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:6}}>Ingredientes</div><div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6}}>{product.ingredientes}</div></div>}
         {product.historia&&<div style={{marginBottom:16,fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.7}}>{product.historia}</div>}
-        {product.detalhe&&!product.historia&&<div style={{marginBottom:16}}><div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[400],letterSpacing:"0.04em",marginBottom:6}}>Sobre este pão</div><div style={{fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.6}}>{product.detalhe}</div></div>}
+        {product.detalhe&&!product.historia&&<div style={{marginBottom:16}}><div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:6}}>Sobre este pão</div><div style={{fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.6}}>{product.detalhe}</div></div>}
         <div style={{marginTop:4}}>
           {cutoff?<><Btn primary full disabled ariaLabel={actionLabel}>{actionLabel}</Btn><CutoffMsg/></>:qty>0?<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0"}}><div style={{fontFamily:fb,fontSize:14,color:ST.success.t,fontWeight:500,display:"flex",alignItems:"center",gap:6}}><I d={ic.check} size={16} color={ST.success.t}/>Na sua cesta</div><QtyBtn qty={qty} onAdd={onAdd} onRemove={onRemove} name={product.nome}/></div>:<>{onAction&&<ActionBtn primary full loadingText="Adicionando…" successText="Adicionado ✓" onAction={onAction} onComplete={onComplete} ariaLabel={actionLabel}>{actionLabel}</ActionBtn>}{hint&&<div style={{fontFamily:fb,fontSize:12,color:W[500],textAlign:"center",marginTop:8}}>{hint}</div>}</>}
         </div>
@@ -272,7 +272,7 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
           </div>
           <div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800]}}>{D.entrega.dia}</div>
           <div style={{fontFamily:fb,fontSize:13,color:W[600]}}>
-            {cestaLabel}{temExtras&&!temSwap&&<span style={{color:W[400]}}> · assinatura</span>}
+            {cestaLabel}{temExtras&&!temSwap&&<span style={{color:W[500]}}> · assinatura</span>}
           </div>
           {temSwap&&<div style={{fontFamily:fb,fontSize:12,color:W[600],lineHeight:1.4}}>
             Cesta editada só desta semana.{!temExtras&&<br/>}
@@ -294,7 +294,7 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
     </Card>
 
     {/* Novidade hero — edge-to-edge photo */}
-    {D.extras.length>0?<NovidadeCard extra={D.extras[0]} qty={cntAll(D.extras[0].nome)} onCardClick={()=>setModal(D.extras[0])} onAdd={()=>handleQtyChange(D.extras[0],1)} onRemove={()=>handleQtyChange(D.extras[0],-1)} cutoff={cutoff}/>:<Card style={{marginBottom:16,padding:20,textAlign:"center"}}><div style={{fontFamily:fd,fontSize:15,textTransform:"uppercase",color:W[400],marginBottom:8}}>Novidades da semana</div><div style={{fontFamily:fb,fontSize:14,color:W[500],lineHeight:1.6}}>Nenhuma novidade esta semana. Mas seu pão de sempre está garantido.</div></Card>}
+    {D.extras.length>0?<NovidadeCard extra={D.extras[0]} qty={cntAll(D.extras[0].nome)} onCardClick={()=>setModal(D.extras[0])} onAdd={()=>handleQtyChange(D.extras[0],1)} onRemove={()=>handleQtyChange(D.extras[0],-1)} cutoff={cutoff}/>:<Card style={{marginBottom:16,padding:20,textAlign:"center"}}><div style={{fontFamily:fd,fontSize:15,textTransform:"uppercase",color:W[500],marginBottom:8}}>Novidades da semana</div><div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6}}>Nenhuma novidade esta semana. Mas seu pão de sempre está garantido.</div></Card>}
 
     <div onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,textAlign:"center",padding:"8px 0",cursor:"pointer"}}>Ver cardápio completo ›</div>
 
@@ -486,7 +486,7 @@ const Perfil=({confirmed,hasPending,assinaturaQtds,cestaAtual,houveSwap,historic
   return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
     <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[800],margin:"0 0 20px"}}>Perfil</h2>
     <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}><div style={{width:48,height:48,borderRadius:9999,background:B[50],display:"flex",alignItems:"center",justifyContent:"center",fontFamily:fd,fontSize:20,color:B[500],textTransform:"uppercase"}}>B</div><div><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800]}}>Beatriz Silva</div><div style={{fontFamily:fb,fontSize:12,color:W[500]}}>beatriz@email.com</div></div></div>
-    <Card style={{marginBottom:12}}><SL t="Dados pessoais"/>{dados.map(([l,v],i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderBottom:i<dados.length-1?`1px solid ${W[100]}`:"none"}}><div><div style={{fontFamily:fb,fontSize:11,color:W[400],marginBottom:2}}>{l}</div><div style={{fontFamily:fb,fontSize:13,color:W[700]}}>{v}</div></div>{l==="CPF"?<button aria-label={cpf?"Ocultar CPF":"Mostrar CPF"} onClick={()=>setCpf(!cpf)} style={{background:"none",border:"none",cursor:"pointer",padding:4,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={cpf?ic.eyeOff:ic.eye} size={16} color={W[400]}/></button>:<I d={ic.chev} size={14} color={W[400]}/>}</div>)}</Card>
+    <Card style={{marginBottom:12}}><SL t="Dados pessoais"/>{dados.map(([l,v],i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderBottom:i<dados.length-1?`1px solid ${W[100]}`:"none"}}><div><div style={{fontFamily:fb,fontSize:11,color:W[500],marginBottom:2}}>{l}</div><div style={{fontFamily:fb,fontSize:13,color:W[700]}}>{v}</div></div>{l==="CPF"?<button aria-label={cpf?"Ocultar CPF":"Mostrar CPF"} onClick={()=>setCpf(!cpf)} style={{background:"none",border:"none",cursor:"pointer",padding:4,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={cpf?ic.eyeOff:ic.eye} size={16} color={W[400]}/></button>:<I d={ic.chev} size={14} color={W[400]}/>}</div>)}</Card>
     <Card style={{marginBottom:12}}><SL t="Histórico de entregas e cobranças"/>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><I d={ic.check} size={14} color={ST.success.t}/><span style={{fontFamily:fb,fontSize:13,fontWeight:500,color:ST.success.t}}>Tudo em dia</span></div>
       {(confirmedExtras.length>0||houveSwap)&&<div style={{padding:12,borderRadius:8,background:B[50],border:`1px solid ${B[200]}`,marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><span style={{fontFamily:fb,fontSize:12,color:B[700],fontWeight:500}}>Esta semana</span><Badge label="Confirmado" type="success"/></div>
@@ -509,8 +509,8 @@ const Perfil=({confirmed,hasPending,assinaturaQtds,cestaAtual,houveSwap,historic
           {alt.tipoMudanca==="reducao"&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:4}}>Vale a partir de 1º de {proximoMesPt()}</div>}
         </div>;
       })}
-      {D.hist.map((h,i)=><div key={i} style={{padding:"12px 0",borderBottom:i<D.hist.length-1?`1px solid ${W[100]}`:"none"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontFamily:fb,fontSize:12,color:W[400]}}>{h.sem}</span><Badge label={h.st} type={h.st==="Entregue"?"success":"info"}/></div><div style={{fontFamily:fb,fontSize:13,color:W[700],marginTop:4}}>{h.itens}</div>{h.extra&&<div style={{fontFamily:fb,fontSize:12,color:B[500],marginTop:4}}>+ {h.extra.nome} — {h.extra.valor}</div>}</div>)}
-      <div style={{marginTop:12,padding:12,borderRadius:8,background:W[50],border:`1px solid ${W[200]}`}}><div style={{fontFamily:fb,fontSize:12,color:W[400],marginBottom:4}}>Cobrança do mês</div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800]}}>{D.cob.mes} — {D.cob.valor}</span><Badge label="Pago"/></div></div>
+      {D.hist.map((h,i)=><div key={i} style={{padding:"12px 0",borderBottom:i<D.hist.length-1?`1px solid ${W[100]}`:"none"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontFamily:fb,fontSize:12,color:W[500]}}>{h.sem}</span><Badge label={h.st} type={h.st==="Entregue"?"success":"info"}/></div><div style={{fontFamily:fb,fontSize:13,color:W[700],marginTop:4}}>{h.itens}</div>{h.extra&&<div style={{fontFamily:fb,fontSize:12,color:B[500],marginTop:4}}>+ {h.extra.nome} — {h.extra.valor}</div>}</div>)}
+      <div style={{marginTop:12,padding:12,borderRadius:8,background:W[50],border:`1px solid ${W[200]}`}}><div style={{fontFamily:fb,fontSize:12,color:W[500],marginBottom:4}}>Cobrança do mês</div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800]}}>{D.cob.mes} — {D.cob.valor}</span><Badge label="Pago"/></div></div>
       <div style={{marginTop:8,padding:12,borderRadius:8,background:B[50],border:`1px solid ${B[100]}`}}><div style={{fontFamily:fb,fontSize:12,color:B[700],marginBottom:4}}>Próxima fatura (abril)</div><div style={{fontFamily:fb,fontSize:13,color:B[800],lineHeight:1.6}}>Assinatura: {fmt(assinVal)}<br/>+ Extras: {fmt(confirmedTotal||22)}<br/>+ Frete: R$ 15,00<br/><span style={{fontWeight:600}}>= {fmt(assinVal+15+(confirmedTotal||22))} (estimado)</span></div></div>
     </Card>
     <Card style={{marginBottom:12}}><SL t="Cartão"/><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[800]}}>{D.cartao.band} ••••{D.cartao.n}</div><div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:4}}>Próxima: {D.cartao.prox}</div></div><ActionBtn loadingText="Validando…" successText="Atualizado ✓" onAction={()=>simulate()} style={{padding:"8px 16px",fontSize:12}}>Atualizar</ActionBtn></div></Card>
@@ -605,20 +605,50 @@ const params = new URLSearchParams(window.location.search);
   if (!params.get("dev")) return <PreCadastro />;
   if(isOnboarding) return <CoraOnboarding onComplete={handleOnboardingComplete}/>;
 
-  return<div style={{fontFamily:fb,maxWidth:390,margin:"0 auto",background:W[50],minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+  return<div style={{fontFamily:fb,maxWidth:390,margin:"0 auto",background:W[50],minHeight:"100vh",display:"flex",flexDirection:"column",position:"relative"}}>
+    <a href="#main-content" className="skip-link">Pular para o conteúdo</a>
     <div style={{padding:"10px 16px",background:"#FFF",borderBottom:`1px solid ${W[200]}`,position:"sticky",top:0,zIndex:10}}>
       <img src={IMG.logo} alt="Cora" style={{height:28}}/>
     </div>
-    <div style={{flex:1,overflowY:"auto"}}>
+    <main id="main-content" style={{flex:1,overflowY:"auto"}}>
       {scr==="home"&&<Home onNav={handleNav} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} cestaSemana={cestaSemana} cestaAtual={cestaAtual} houveSwap={houveSwap} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso}/>}
       {scr==="assinatura"&&<Assinatura onNav={handleNav} hasPending={hasPending} cutoff={cutoff} assinaturaQtds={assinaturaQtds} onSalvar={handleSalvarAssinatura}/>}
       {scr==="cardapio"&&<Cardapio pending={pending} confirmed={confirmed} setPending={setPending} setConfirmed={setConfirmed} hasPending={hasPending} cutoff={cutoff}/>}
       {scr==="perfil"&&<Perfil confirmed={confirmed} hasPending={hasPending} assinaturaQtds={assinaturaQtds} cestaAtual={cestaAtual} houveSwap={houveSwap} historicoAlteracoes={historicoAlteracoes}/>}
-    </div>
+    </main>
     {/* RODAPÉ PERSISTENTE — visível em TODAS as telas */}
     <OrderFooter pending={pending} confirmed={confirmed} onConfirm={handleConfirm} onCancel={handleCancel} onNav={handleNav} cutoff={cutoff}/>
     <ConfirmedFooter vis={justConfirmed}/>
     <Nav active={scr} onNav={handleNav} badge={pending.length}/>
-    <style>{`*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior:none}img{max-width:100%}input,button{font-size:16px}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}.bp:hover{background:${B[600]}!important}.bw:hover{background:#1FAF54!important}.bl:hover{background:${W[100]}!important}.lk:hover{text-decoration:underline}.qb:hover:not(:disabled){background:${W[100]}!important}button:focus-visible{outline:none;box-shadow:0 0 0 3px ${B[50]},0 0 0 5px ${B[500]}}`}</style>
+    <style>{`
+      *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+      body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+      img{max-width:100%}
+      input,button{font-size:16px}
+      @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+      @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+      @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+      .bp:hover{background:${B[600]}!important}
+      .bw:hover{background:#1FAF54!important}
+      .bl:hover{background:${W[100]}!important}
+      .lk:hover{text-decoration:underline}
+      .qb:hover:not(:disabled){background:${W[100]}!important}
+      /* Focus visible universal: botoes, links, e elementos com role=button ou tabindex */
+      button:focus-visible,
+      a:focus-visible,
+      [role="button"]:focus-visible,
+      [role="dialog"]:focus-visible,
+      [tabindex]:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible{outline:none;box-shadow:0 0 0 3px ${B[50]},0 0 0 5px ${B[500]}}
+      /* Skip link a11y */
+      .skip-link{position:absolute;top:-40px;left:0;background:${B[500]};color:#FFF;padding:8px 16px;z-index:100;text-decoration:none;font-family:${fb};font-size:14px;border-radius:0 0 8px 0}
+      .skip-link:focus{top:0}
+      /* Reduced motion: respeita preferencia do sistema */
+      @media (prefers-reduced-motion: reduce){
+        *,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}
+      }
+    `}</style>
   </div>;
 }

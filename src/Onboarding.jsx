@@ -43,7 +43,7 @@ const GrafismoCoracao=({size=36})=>(
 
 /* ─── Base ─── */
 const H=({children,size=24})=><div style={{fontFamily:fd,fontSize:size,textTransform:"uppercase",letterSpacing:"0.02em",color:B[800],margin:0}}>{children}</div>;
-const Label=({children,apoio})=><div style={{marginBottom:4}}><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[700]}}>{children}</div>{apoio&&<div style={{fontFamily:fb,fontSize:12,color:W[400],marginTop:2}}>{apoio}</div>}</div>;
+const Label=({children,apoio})=><div style={{marginBottom:4}}><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[700]}}>{children}</div>{apoio&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:2}}>{apoio}</div>}</div>;
 const Input=({placeholder,value,onChange,type="text",error,onFocusExtra})=><input type={type} placeholder={placeholder} value={value} onChange={e=>onChange(e.target.value)} style={{width:"100%",padding:"12px 14px",fontSize:15,fontFamily:fb,border:`1.5px solid ${error?"#EF4444":W[200]}`,borderRadius:8,background:"#FFF",color:W[800],outline:"none",transition:"border-color 200ms"}} onFocus={e=>{e.target.style.borderColor=error?"#EF4444":B[400];onFocusExtra&&onFocusExtra();}} onBlur={e=>e.target.style.borderColor=error?"#EF4444":W[200]}/>;
 const Btn=({children,primary,disabled,onClick,style:es={}})=><button onClick={onClick} disabled={disabled} style={{width:"100%",padding:"14px 0",borderRadius:8,fontSize:15,fontWeight:600,fontFamily:fb,cursor:disabled?"default":"pointer",transition:"all 200ms",border:primary?"none":`1.5px solid ${W[300]}`,background:primary?(disabled?W[300]:B[500]):"transparent",color:primary?"#FFF":W[600],opacity:disabled?0.6:1,...es}}>{children}</button>;
 const Progress=({step})=><div style={{display:"flex",gap:6,padding:"0 16px"}}>{[1,2,3].map(s=><div key={s} style={{flex:1,height:3,borderRadius:2,transition:"all 300ms",background:s<=step?B[500]:W[200]}}/>)}</div>;
@@ -59,7 +59,7 @@ const Splash=({onStart})=>(
     </div>
 
     <div style={{marginTop:48,maxWidth:300,padding:"0 8px"}}>
-      <p style={{fontFamily:fb,fontSize:"clamp(22px, 6.5vw, 30px)",lineHeight:1.3,color:W[400],margin:0,fontWeight:400}}>
+      <p style={{fontFamily:fb,fontSize:"clamp(22px, 6.5vw, 30px)",lineHeight:1.3,color:W[500],margin:0,fontWeight:400}}>
         Feliz em te receber.
       </p>
       <p style={{fontFamily:fb,fontSize:"clamp(22px, 6.5vw, 30px)",lineHeight:1.3,color:W[800],margin:0,marginTop:4,fontWeight:500}}>
@@ -165,7 +165,7 @@ const Step2=({assinatura,setAssinatura})=>{
           <span style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800]}}>Total mensal</span>
           <span style={{fontFamily:fb,fontSize:18,fontWeight:700,color:B[500]}}>{fmt(totalMensal+FRETE_MENSAL)}</span>
         </div>
-        <div style={{fontFamily:fb,fontSize:11,color:W[400],marginTop:6,lineHeight:1.4}}>Cobrado mensalmente no cartão. Em meses com 5 semanas, o pão extra é por nossa conta.</div>
+        <div style={{fontFamily:fb,fontSize:11,color:W[500],marginTop:6,lineHeight:1.4}}>Cobrado mensalmente no cartão. Em meses com 5 semanas, o pão extra é por nossa conta.</div>
       </div>}
 
       {/* Pagamento */}
@@ -260,7 +260,7 @@ const Welcome=({data,assinatura,onComplete})=>{
               <div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800]}}>{c.qty}× {c.nome} ({c.peso})</div>
             </div>
           </div>)}
-          <div style={{padding:"10px 14px 14px",fontFamily:fb,fontSize:13,color:W[500],borderTop:`1px solid ${W[200]}`}}>Na porta do seu apartamento.</div>
+          <div style={{padding:"10px 14px 14px",fontFamily:fb,fontSize:13,color:W[500],borderTop:`1px solid ${W[200]}`}}>Na sua porta.</div>
         </div>}
 
         <div style={{fontFamily:fb,fontSize:13,color:B[600],marginTop:20,lineHeight:1.5,background:B[50],borderRadius:8,padding:12,width:"100%",textAlign:"left"}}>Você vai receber uma mensagem no WhatsApp com os detalhes. Qualquer dúvida, é só responder por lá.</div>
@@ -325,7 +325,19 @@ export default function CoraOnboarding({onComplete}){
   const shell=(content)=>(
     <div style={{maxWidth:390,margin:"0 auto",minHeight:"100vh",background:W[50],display:"flex",flexDirection:"column"}}>
       {content}
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=League+Gothic&family=Montagu+Slab:wght@400;500;600;700&display=swap');*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}body{margin:0}img{max-width:100%}input,button{font-size:16px}::-webkit-scrollbar{width:0}input::placeholder{font-family:'Montagu Slab',Georgia,Palatino,serif}`}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=League+Gothic&family=Montagu+Slab:wght@400;500;600;700&display=swap');
+        *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+        body{margin:0}
+        img{max-width:100%}
+        input,button{font-size:16px}
+        ::-webkit-scrollbar{width:0}
+        input::placeholder{font-family:'Montagu Slab',Georgia,Palatino,serif}
+        /* Focus visible universal */
+        button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[role="dialog"]:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;box-shadow:0 0 0 3px ${B[50]},0 0 0 5px ${B[500]}}
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}}
+      `}</style>
     </div>
   );
 
@@ -340,7 +352,7 @@ export default function CoraOnboarding({onComplete}){
     <div style={{background:"#FFF",padding:"12px 16px",borderBottom:`1px solid ${W[200]}`,flexShrink:0}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
         <img src={IMG.logo} alt="Cora" style={{height:24}}/>
-        <div style={{fontFamily:fb,fontSize:12,color:W[400]}}>{step}/3 · {stepLabel[step-1]}</div>
+        <div style={{fontFamily:fb,fontSize:12,color:W[500]}}>{step}/3 · {stepLabel[step-1]}</div>
       </div>
       <Progress step={step}/>
     </div>

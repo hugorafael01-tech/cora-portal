@@ -127,7 +127,7 @@ const SplashScreen = ({ onNext }) => (
           fontFamily: "'Montagu Slab', Georgia, serif",
           fontSize: "clamp(22px, 6.5vw, 30px)",
           lineHeight: 1.3,
-          color: W[400],
+          color: W[500],
           margin: 0,
           fontWeight: 400,
         }}
@@ -793,7 +793,7 @@ const ConfirmScreen = ({ nome }) => (
         style={{
           fontFamily: "'Montagu Slab', Georgia, serif",
           fontSize: 13,
-          color: W[400],
+          color: W[500],
           marginTop: 40,
         }}
       >
@@ -831,6 +831,10 @@ const PreCadastro = () => {
         />
       )}
       {step === 2 && <ConfirmScreen nome={firstName} />}
+      <style>{`
+        button:focus-visible,a:focus-visible,[role="button"]:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none!important;box-shadow:0 0 0 3px ${B[50]},0 0 0 5px ${B[500]}!important}
+        @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}}
+      `}</style>
     </div>
   );
 };
