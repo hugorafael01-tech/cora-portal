@@ -19,9 +19,12 @@ const VALOR_POR_PAO=99;
 const FRETE_MENSAL=15;
 const LIMITE_PAES=3;
 
+// Sem campo `ingredientes` nem `historia`: ProductCard oculta o accordion quando
+// nao ha conteudo extra. Quando o storytelling estiver pronto, adicionar `historia`
+// em cada produto e o accordion volta automaticamente.
 const ASSINATURA_OPCOES=[
-  {id:"original",nome:"Pão Original",peso:"615g",avulso:27,img:IMG.original,desc:"Mix de farinhas italiana e brasileira, água, sal e o levain da Cora. Fermentação lenta, crosta firme e miolo aberto.",ingredientes:"Farinha Superiore, farinha FV integral, água, sal, levain da Cora."},
-  {id:"integral",nome:"Pão Integral",peso:"615g",avulso:29,img:IMG.integral,desc:"100% integral, com um blend de farinhas brasileira e italiana que traz mais complexidade ao sabor. Azeite na massa, fermentação lenta e miolo que fica macio por dias.",ingredientes:"Farinha FV integral, farinha Mora, água, sal, levain, azeite, farelo de trigo."},
+  {id:"original",nome:"Pão Original",peso:"615g",avulso:27,img:IMG.original,desc:"Mix de farinhas italiana e brasileira, água, sal e o levain da Cora. Fermentação lenta, crosta firme e miolo aberto."},
+  {id:"integral",nome:"Pão Integral",peso:"615g",avulso:29,img:IMG.integral,desc:"100% integral, com um blend de farinhas brasileira e italiana que traz mais complexidade ao sabor. Azeite na massa, fermentação lenta e miolo que fica macio por dias."},
 ];
 
 /* ── Utilitários (reaproveitados do PreCadastro) ── */

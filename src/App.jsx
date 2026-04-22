@@ -439,6 +439,10 @@ export default function CoraPortal(){
   const cutoff=isPastCutoff();
   const isOnboarding=scr==="onboarding";
 
+  // NOTA: Sincronizacao mock-friendly. Se o usuario der refresh na pagina
+  // depois do onboarding, onboardingConfig volta a ser null e o Portal usa
+  // os defaults de D. Sera resolvido quando houver backend com persistencia
+  // (ou pela task 86e10mkby de refactor do estado da Assinatura).
   const handleOnboardingComplete=(payload)=>{
     // Retrocompat: payload pode ser só "data" (versao antiga) ou {data, assinatura}
     const data=payload?.data||payload;
