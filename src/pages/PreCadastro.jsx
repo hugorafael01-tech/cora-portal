@@ -800,7 +800,7 @@ const ConfirmScreen = ({ nome }) => (
           padding: "0 8px",
         }}
       >
-        Se curtiu a ideia, aproveita e compartilha com os seus amigos.
+        Se gostou da ideia, compartilhe com quem também pode gostar.
       </p>
 
       {/* Share CTA */}

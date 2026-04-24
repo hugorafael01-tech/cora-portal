@@ -270,7 +270,7 @@ const Welcome=({data,assinatura,onComplete})=>{
           <div style={{padding:"10px 14px 14px",fontFamily:fb,fontSize:13,color:W[500],borderTop:`1px solid ${W[200]}`}}>Na sua porta.</div>
         </div>}
 
-        <div className="welcome-stagger-4" style={{fontFamily:fb,fontSize:13,color:B[600],marginTop:20,lineHeight:1.5,background:B[50],borderRadius:8,padding:12,width:"100%",textAlign:"left"}}>Você vai receber uma mensagem no WhatsApp com os detalhes. Qualquer dúvida, é só responder por lá.</div>
+        <div className="welcome-stagger-4" style={{fontFamily:fb,fontSize:13,color:B[600],marginTop:20,lineHeight:1.5,background:B[50],borderRadius:8,padding:12,width:"100%",textAlign:"left"}}>Chega uma mensagem no WhatsApp com os detalhes. Qualquer dúvida, é só responder por lá.</div>
         <div className="welcome-stagger-5" style={{marginTop:24,width:"100%"}}><Btn primary onClick={onComplete}>Acompanhe sua Assinatura</Btn></div>
       </div>
     </div>
