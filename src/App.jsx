@@ -381,7 +381,7 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,marginBottom:12}}>
           <SL t="Cesta da semana"/>
           {temSwap
-            ?<span style={{fontFamily:fb,fontSize:11,fontWeight:500,padding:"3px 8px",borderRadius:4,background:W[200],color:W[800],whiteSpace:"nowrap"}}>editada só desta semana</span>
+            ?<span style={{fontFamily:fb,fontSize:11,fontWeight:500,padding:"3px 8px",borderRadius:4,background:W[200],color:W[800],whiteSpace:"nowrap"}}>só esta semana</span>
             :temExtras
               ?<Badge label="confirmada" type="info"/>
               :null}
@@ -398,7 +398,7 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
             {cestaLabel}{temExtras&&!temSwap&&<span style={{fontWeight:400,color:W[500]}}> · Assinatura</span>}
           </div>
           {temSwap&&<div style={{fontFamily:fb,fontSize:12,color:W[600],lineHeight:1.4}}>
-            Cesta editada só desta semana. Próxima semana volta ao normal.
+            Válida só nesta semana. Próxima semana volta ao normal.
           </div>}
           {!temSwap&&!temExtras&&<div style={{fontFamily:fb,fontSize:12,color:W[500]}}>Tudo certo. Essa é sua cesta da Assinatura.</div>}
         </div>
@@ -462,7 +462,10 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
 
 // ═══ ASSINATURA ═══
 // Helper pra montar a string "N Nome (peso) + N Nome (peso)" a partir de qtds map
-const composicaoToStr=(qtdsMap)=>Object.entries(qtdsMap).filter(([,q])=>q>0).map(([id,q])=>{const p=D.pães.find(x=>x.id===id);return p?`${q} ${p.nome} (${p.peso})`:"";}).filter(Boolean).join(" + ");
+// Pluraliza nome do pao em portugues: "Pão Original" -> "Pães Originais", "Pão Integral" -> "Pães Integrais"
+const pluralizarPao=(n,nome)=>n===1?nome:nome.replace(/\bPão\b/,"Pães").replace(/\bOriginal\b/,"Originais").replace(/\bIntegral\b/,"Integrais");
+
+const composicaoToStr=(qtdsMap)=>Object.entries(qtdsMap).filter(([,q])=>q>0).map(([id,q])=>{const p=D.pães.find(x=>x.id===id);return p?`${q} ${pluralizarPao(q,p.nome)} (${p.peso})`:"";}).filter(Boolean).join(" + ");
 
 // Helper para nome do proximo mes em portugues
 const MESES_PT=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
@@ -628,9 +631,6 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff})=>
 // ═══ PERFIL ═══
 // Helper: gera copy humana de uma entrada de historico de ciclo.
 // Retorna string conforme o tipo (aumento / reducao / troca).
-// Pluraliza nome do pao em portugues: "Pão Original" -> "Pães Originais", "Pão Integral" -> "Pães Integrais"
-const pluralizarPao=(n,nome)=>n===1?nome:nome.replace(/\bPão\b/,"Pães").replace(/\bOriginal\b/,"Originais").replace(/\bIntegral\b/,"Integrais");
-
 const copyEntradaCiclo=(entrada)=>{
   if(!entrada) return "";
   const {tipo,baseline,atual}=entrada;
@@ -659,7 +659,7 @@ const Perfil=({confirmed,hasPending,assinaturaQtds,cestaAtual,houveSwap,historic
     <Card style={{marginBottom:12}}><SL t="Histórico de entregas e cobranças"/>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><I d={ic.check} size={14} color={ST.success.t}/><span style={{fontFamily:fb,fontSize:13,fontWeight:500,color:ST.success.t}}>Tudo em dia</span></div>
       {(confirmedExtras.length>0||houveSwap)&&<div style={{padding:12,borderRadius:8,background:B[50],border:`1px solid ${B[200]}`,marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><span style={{fontFamily:fb,fontSize:12,color:B[700],fontWeight:500}}>Esta semana</span><Badge label="Confirmado" type="success"/></div>
-        <div style={{fontFamily:fb,fontSize:13,color:B[800]}}>{cestaLabelPerfil} · {houveSwap?"editada só desta semana":"Assinatura"}</div>
+        <div style={{fontFamily:fb,fontSize:13,color:B[800]}}>{cestaLabelPerfil} · {houveSwap?"só esta semana":"Assinatura"}</div>
         {Object.entries(confirmedExtras.reduce((a,p)=>{a[p.nome]=(a[p.nome]||0)+1;return a;},{})).map(([n,q])=><div key={n} style={{fontFamily:fb,fontSize:12,color:B[500],marginTop:4}}>+ {q}× {n} · {fmt(confirmedExtras.find(p=>p.nome===n).precoNum*q)}</div>)}
         {confirmedTotal>0&&<div style={{fontFamily:fb,fontSize:12,color:B[700],marginTop:4,fontWeight:500}}>Total extras: {fmt(confirmedTotal)}</div>}
       </div>}
