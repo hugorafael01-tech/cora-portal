@@ -27,9 +27,22 @@ const IMG={
   pattern:"/images/Cora_tile grafismo.svg",
 };
 
+// Calcula a proxima quinta-feira a partir de hoje.
+// Se hoje e quinta, retorna hoje (entrega em curso). Em qualquer outro dia,
+// retorna a proxima quinta seguinte.
+const _DIAS_SEMANA_FULL_PT=["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
+const _MESES_FULL_PT=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const proximaQuinta=(now=new Date())=>{
+  const d=new Date(now);
+  const diasAte=(4-d.getDay()+7)%7;
+  d.setDate(d.getDate()+diasAte);
+  return d;
+};
+const formatarDataEntrega=(d)=>`${_DIAS_SEMANA_FULL_PT[d.getDay()]}, ${d.getDate()} de ${_MESES_FULL_PT[d.getMonth()]}`;
+
 const D={
   nome:"Beatriz",
-  entrega:{dia:"Quinta, 23 de abril",produto:"1 Pão Original (615g)"},
+  entrega:{dia:formatarDataEntrega(proximaQuinta()),produto:"1 Pão Original (615g)"},
   assinatura:{itens:"1 Pão Original (615g) / semana",valorMensal:99,qtdPaes:1},
   ent:{dia:"Quintas",cond:"Ed. Boa Vista",bloco:"Bl. A / 502",frete:"R$ 15/mês"},
   cartao:{band:"Visa",n:"6411",prox:"1º de abril"},
@@ -46,7 +59,7 @@ const D={
     {id:"ciabatta",nome:"Ciabatta",peso:"533g",preco:"R$ 25,00",precoNum:25,img:IMG.ciabatta,desc:"Crosta fina, miolo aberto e leve.",ingredientes:"Farinha de trigo, água, sal, levain, azeite.",detalhe:"Massa de alta hidratação. Crosta fina e crocante, miolo com alvéolos grandes e textura leve."},
     {id:"brioche",nome:"Brioche",peso:"256g",preco:"R$ 32,00",precoNum:32,img:IMG.brioche,desc:"Manteiga francesa, textura amanteigada.",ingredientes:"Farinha, manteiga, ovos, açúcar, sal, levain, leite.",detalhe:"Massa enriquecida com manteiga. Fermentação 18h. Miolo dourado, textura que desfia."},
   ],
-  semana:{pedidosAbertos:false,cardapioProxima:["Pão Original","Pão Integral","Focaccia Genovesa"],entregaProxima:"Quinta, 30 de abril"},
+  semana:{pedidosAbertos:false,cardapioProxima:["Pão Original","Pão Integral","Focaccia Genovesa"],entregaProxima:formatarDataEntrega(proximaQuinta(new Date(Date.now()+7*24*60*60*1000)))},
   hist:[
     {sem:"Semana 28/03",itens:"1 Pão Original (615g)",st:"Pendente",extra:null},
     {sem:"Semana 21/03",itens:"1 Pão Original (615g)",st:"Entregue",extra:null},
