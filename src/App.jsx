@@ -50,8 +50,8 @@ const D={
   semanasRestantes:2,
   extras:[{id:"focaccia",nome:"Focaccia Genovesa",peso:"430g",preco:"R$ 22,00",precoNum:22,img:IMG.focaccia,ingredientes:"Farinha, água, azeite extra-virgem, sal, levain, cebola roxa, alecrim fresco.",historia:"A receita veio de Gênova, onde a focaccia é assunto sério. Lá, cada padeiro tem sua versão. A da Cora leva fermentação longa de 24h e azeite generoso. A cebola roxa carameliza no forno e o alecrim perfuma a cozinha inteira."}],
   pães:[
-    {id:"original",nome:"Pão Original",peso:"615g",preco:"R$ 27,00",precoNum:27,img:IMG.original,desc:"Fermentação natural, casca crocante, miolo macio.",ingredientes:"Farinha de trigo, água, sal, levain da Cora.",detalhe:"Fermentação longa de 36h. Apenas 4 ingredientes. Crosta firme, miolo aberto com alvéolos irregulares.",qtd:1},
-    {id:"integral",nome:"Pão Integral",peso:"615g",preco:"R$ 29,00",precoNum:29,img:IMG.integral,desc:"100% integral com blend de duas farinhas, azeite e fermentação lenta. Miolo macio que se mantém por dias.",ingredientes:"Farinha FV integral, farinha Mora, água, sal, levain, azeite, farelo de trigo.",detalhe:"100% farinha integral com blend de duas farinhas e azeite na massa. Fermentação lenta que garante miolo macio por dias.",qtd:0},
+    {id:"original",nome:"Pão Original",peso:"615g",preco:"R$ 27,00",precoNum:27,img:IMG.original,desc:"Fermentação natural, casca crocante, miolo macio.",qtd:1},
+    {id:"integral",nome:"Pão Integral",peso:"615g",preco:"R$ 29,00",precoNum:29,img:IMG.integral,desc:"100% integral com blend de duas farinhas, azeite e fermentação lenta. Miolo macio que se mantém por dias.",qtd:0},
   ],
   rotativos:[
     {id:"multigraos",nome:"Multigrãos",peso:"615g",preco:"R$ 32,00",precoNum:32,img:IMG.multigraos,desc:"Aveia, centeio, gergelim e mel.",ingredientes:"Farinha de trigo, centeio, aveia, água, mel, sal, levain, gergelim.",detalhe:"Cinco grãos na massa, mel na fermentação. Miolo denso, casca com gergelim tostado."},
