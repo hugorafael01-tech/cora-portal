@@ -305,7 +305,7 @@ const WeekTimeline=({hoje=new Date().getDay(),diaEntrega=4})=>{
   </svg>;
 };
 
-const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinaturaBaseline,cestaSemana,cestaAtual,houveSwap,onSetCestaSemana,ehPrimeiroAcesso})=>{
+const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinaturaBaseline,cestaSemana,cestaAtual,houveSwap,onSetCestaSemana,ehPrimeiroAcesso,historicoCicloAtual})=>{
   const[modal,setModal]=useState(null);
   const[swapModal,setSwapModal]=useState(false);
   const swapDialogRef=useRef(null);
@@ -405,6 +405,7 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
             Válida só nesta semana. Próxima semana volta ao normal.
           </div>}
           {!temSwap&&!temExtras&&<div style={{fontFamily:fb,fontSize:12,color:W[500]}}>Tudo certo. Essa é sua cesta da Assinatura.</div>}
+          {historicoCicloAtual?.tipo==="reducao"&&(()=>{const totalFuturo=Object.values(historicoCicloAtual.atual).reduce((s,q)=>s+q,0);return<div style={{fontFamily:fb,fontSize:12,color:B[600],marginTop:4,lineHeight:1.5}}>A partir de 1º de {proximoMesPt()}, sua Assinatura muda para {totalFuturo} {plural(totalFuturo,"pão","pães")} por semana.</div>;})()}
         </div>
       </div>
       {/* Ação primária do card: Personalizar esta semana */}
@@ -662,11 +663,12 @@ const Perfil=({confirmed,hasPending,assinaturaQtds,cestaAtual,houveSwap,historic
     <Card style={{marginBottom:12}}><SL t="Dados pessoais"/>{dados.map(([l,v],i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderBottom:i<dados.length-1?`1px solid ${W[100]}`:"none"}}><div><div style={{fontFamily:fb,fontSize:11,color:W[500],marginBottom:2}}>{l}</div><div style={{fontFamily:fb,fontSize:13,color:W[700]}}>{v}</div></div>{l==="CPF"?<button aria-label={cpf?"Ocultar CPF":"Mostrar CPF"} onClick={()=>setCpf(!cpf)} style={{background:"none",border:"none",cursor:"pointer",padding:4,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={cpf?ic.eyeOff:ic.eye} size={16} color={W[400]}/></button>:<I d={ic.chev} size={14} color={W[400]}/>}</div>)}</Card>
     <Card style={{marginBottom:12}}><SL t="Histórico de entregas e cobranças"/>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><I d={ic.check} size={14} color={ST.success.t}/><span style={{fontFamily:fb,fontSize:13,fontWeight:500,color:ST.success.t}}>Tudo em dia</span></div>
-      {(confirmedExtras.length>0||houveSwap)&&<div style={{padding:12,borderRadius:8,background:B[50],border:`1px solid ${B[200]}`,marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><span style={{fontFamily:fb,fontSize:12,color:B[700],fontWeight:500}}>Esta semana</span><Badge label="Confirmado" type="success"/></div>
+      {(()=>{const reducaoPendente=historicoCicloAtual?.tipo==="reducao";const totalFuturo=reducaoPendente?Object.values(historicoCicloAtual.atual).reduce((s,q)=>s+q,0):0;return(confirmedExtras.length>0||houveSwap||reducaoPendente)&&<div style={{padding:12,borderRadius:8,background:B[50],border:`1px solid ${B[200]}`,marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><span style={{fontFamily:fb,fontSize:12,color:B[700],fontWeight:500}}>Esta semana</span><Badge label="Confirmado" type="success"/></div>
         <div style={{fontFamily:fb,fontSize:13,color:B[800]}}>{cestaLabelPerfil} · {houveSwap?"editada só nesta semana":"Assinatura"}</div>
         {Object.entries(confirmedExtras.reduce((a,p)=>{a[p.nome]=(a[p.nome]||0)+1;return a;},{})).map(([n,q])=><div key={n} style={{fontFamily:fb,fontSize:12,color:B[500],marginTop:4}}>+ {q}× {n} · {fmt(confirmedExtras.find(p=>p.nome===n).precoNum*q)}</div>)}
         {confirmedTotal>0&&<div style={{fontFamily:fb,fontSize:12,color:B[700],marginTop:4,fontWeight:500}}>Total extras: {fmt(confirmedTotal)}</div>}
-      </div>}
+        {reducaoPendente&&<div style={{fontFamily:fb,fontSize:12,color:B[600],marginTop:8,paddingTop:8,borderTop:`1px solid ${B[100]}`,lineHeight:1.5}}>A partir de 1º de {proximoMesPt()}, sua Assinatura muda para {totalFuturo} {plural(totalFuturo,"pão","pães")} por semana.</div>}
+      </div>;})()}
       {/* Ajuste do ciclo atual (uma unica entrada, ou null) */}
       {[...(historicoCicloAtual?[historicoCicloAtual]:[]),...historicoCiclosPassados].map((alt,i)=>{
         const d=new Date(alt.data);
@@ -762,11 +764,17 @@ export default function CoraPortal(){
   };
 
   // Derivados
-  // Cesta que chega NESTA semana: usa swap se houver, senao o BASELINE do ciclo
-  // (nao assinaturaQtds, pois reducoes/alteracoes so valem no proximo ciclo).
-  const cestaAtual=cestaSemana??assinaturaBaseline;
-  // Swap e diferenca contra o baseline (nao contra assinaturaQtds futuro)
-  const houveSwap=cestaSemana!==null&&JSON.stringify(cestaSemana)!==JSON.stringify(assinaturaBaseline);
+  // Alteracao pendente de Assinatura (reducao valem so no proximo ciclo).
+  // Aumento e troca valem imediatamente (cobra proporcional ou sem custo).
+  const reducaoPendente=historicoCicloAtual?.tipo==="reducao";
+  // Cesta que chega NESTA semana:
+  //   - com swap: cestaSemana
+  //   - com reducao pendente: baseline (cliente continua recebendo o que ja pagou)
+  //   - caso contrario: assinaturaQtds (aumento/troca ja valem)
+  const cestaAtual=cestaSemana??(reducaoPendente?assinaturaBaseline:assinaturaQtds);
+  // Swap comparado contra o que seria a cesta sem swap (baseline se reducao, senao assinatura)
+  const cestaSemSwap=reducaoPendente?assinaturaBaseline:assinaturaQtds;
+  const houveSwap=cestaSemana!==null&&JSON.stringify(cestaSemana)!==JSON.stringify(cestaSemSwap);
 
   const addPending=p=>setPending(prev=>addTo(prev,p,"extra"));
   const removePending=n=>setPending(prev=>removeFrom(prev,n));
@@ -825,7 +833,7 @@ const params = new URLSearchParams(window.location.search);
     </div>
     <main id="main-content" style={{flex:1,overflowY:"auto"}}>
       <div key={scr} className="tab-content">
-        {scr==="home"&&<Home onNav={handleNav} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaSemana={cestaSemana} cestaAtual={cestaAtual} houveSwap={houveSwap} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso}/>}
+        {scr==="home"&&<Home onNav={handleNav} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaSemana={cestaSemana} cestaAtual={cestaAtual} houveSwap={houveSwap} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} historicoCicloAtual={historicoCicloAtual}/>}
         {scr==="assinatura"&&<Assinatura onNav={handleNav} hasPending={hasPending} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} onSalvar={handleSalvarAssinatura}/>}
         {scr==="cardapio"&&<Cardapio pending={pending} confirmed={confirmed} setPending={setPending} setConfirmed={setConfirmed} hasPending={hasPending} cutoff={cutoff}/>}
         {scr==="perfil"&&<Perfil confirmed={confirmed} hasPending={hasPending} assinaturaQtds={assinaturaQtds} cestaAtual={cestaAtual} houveSwap={houveSwap} historicoCicloAtual={historicoCicloAtual} historicoCiclosPassados={historicoCiclosPassados}/>}
