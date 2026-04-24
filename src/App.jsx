@@ -37,7 +37,7 @@ const D={
   extras:[{id:"focaccia",nome:"Focaccia Genovesa",peso:"430g",preco:"R$ 22,00",precoNum:22,img:IMG.focaccia,ingredientes:"Farinha, água, azeite extra-virgem, sal, levain, cebola roxa, alecrim fresco.",historia:"A receita veio de Gênova, onde a focaccia é assunto sério. Lá, cada padeiro tem sua versão. A da Cora leva fermentação longa de 24h e azeite generoso. A cebola roxa carameliza no forno e o alecrim perfuma a cozinha inteira."}],
   pães:[
     {id:"original",nome:"Pão Original",peso:"615g",preco:"R$ 27,00",precoNum:27,img:IMG.original,desc:"Fermentação natural, casca crocante, miolo macio.",ingredientes:"Farinha de trigo, água, sal, levain da Cora.",detalhe:"Fermentação longa de 36h. Apenas 4 ingredientes. Crosta firme, miolo aberto com alvéolos irregulares.",qtd:1},
-    {id:"integral",nome:"Pão Integral",peso:"615g",preco:"R$ 29,00",precoNum:29,img:IMG.integral,desc:"100% integral, sementes de linhaça e girassol.",ingredientes:"Farinha integral, água, sal, levain, linhaça, girassol.",detalhe:"100% farinha integral. Mesma fermentação longa, com sementes tostadas que dão crocância.",qtd:0},
+    {id:"integral",nome:"Pão Integral",peso:"615g",preco:"R$ 29,00",precoNum:29,img:IMG.integral,desc:"100% integral com blend de duas farinhas, azeite e fermentação lenta. Miolo macio que se mantém por dias.",ingredientes:"Farinha FV integral, farinha Mora, água, sal, levain, azeite, farelo de trigo.",detalhe:"100% farinha integral com blend de duas farinhas e azeite na massa. Fermentação lenta que garante miolo macio por dias.",qtd:0},
   ],
   rotativos:[
     {id:"multigraos",nome:"Multigrãos",peso:"615g",preco:"R$ 32,00",precoNum:32,img:IMG.multigraos,desc:"Aveia, centeio, gergelim e mel.",ingredientes:"Farinha de trigo, centeio, aveia, água, mel, sal, levain, gergelim.",detalhe:"Cinco grãos na massa, mel na fermentação. Miolo denso, casca com gergelim tostado."},
@@ -500,7 +500,8 @@ const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,assinaturaBaseline,onS
   const diffVsBaseline=mensal-mensalBaseline;
   const propVsBaseline=ehAumentoVsBaseline?Math.abs(diffVsBaseline/4*D.semanasRestantes):0;
 
-  const upd=(id,d)=>setRascunho(prev=>{const v=(prev[id]||0)+d;const t=total+d;if(v<0||t>3)return prev;return{...prev,[id]:v};});
+  // Limites: min 1 pao (nao pode zerar a Assinatura), max 3 paes/semana.
+  const upd=(id,d)=>setRascunho(prev=>{const v=(prev[id]||0)+d;const t=total+d;if(v<0||t>3||t<1)return prev;return{...prev,[id]:v};});
   const handleSaveClick=()=>setConfirmModal(true);
   const handleConfirmAlteracao=()=>{
     const tipo=ehAumentoVsBaseline?"aumento":(ehReducaoVsBaseline?"reducao":"troca");
@@ -523,10 +524,10 @@ const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,assinaturaBaseline,onS
       {editing&&<div style={{marginTop:16,borderTop:`1px solid ${W[200]}`,paddingTop:16}}>
         <DeadlineWarning/>
         <div style={{fontFamily:fb,fontSize:12,color:W[500],marginBottom:12}}>Limite: 3 pães/semana ({total}/3)</div>
-        {D.pães.map((p,i)=>{const q=rascunho[p.id]||0;return<div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:i<D.pães.length-1?`1px solid ${W[100]}`:"none"}}>
+        {D.pães.map((p,i)=>{const q=rascunho[p.id]||0;const minusDisabled=q===0||total<=1;const plusDisabled=total>=3;return<div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:i<D.pães.length-1?`1px solid ${W[100]}`:"none"}}>
           <ProductThumb src={p.img} w={48} h={40} alt={p.nome}/>
           <div style={{flex:1}}><div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800]}}>{p.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>({p.peso})</span></div></div>
-          <div style={{display:"flex",alignItems:"center",gap:8}}><button onClick={()=>upd(p.id,-1)} disabled={q===0} className="qb" style={{width:32,height:32,borderRadius:8,border:`1px solid ${q>0?W[300]:W[200]}`,background:"none",cursor:q>0?"pointer":"default",fontSize:18,color:q>0?W[600]:W[300],display:"flex",alignItems:"center",justifyContent:"center",opacity:q===0?0.4:1}}>−</button><span style={{fontFamily:fb,fontSize:16,fontWeight:600,color:q>0?B[500]:W[400],width:24,textAlign:"center"}}>{q}</span><button onClick={()=>upd(p.id,1)} disabled={total>=3} className="qb" style={{width:32,height:32,borderRadius:8,border:`1px solid ${total<3?B[500]:W[200]}`,background:total<3?B[50]:"none",cursor:total<3?"pointer":"default",fontSize:18,color:total<3?B[500]:W[300],display:"flex",alignItems:"center",justifyContent:"center",opacity:total>=3?0.4:1}}>+</button></div>
+          <div style={{display:"flex",alignItems:"center",gap:8}}><button onClick={()=>upd(p.id,-1)} disabled={minusDisabled} className="qb" style={{width:32,height:32,borderRadius:8,border:`1px solid ${minusDisabled?W[200]:W[300]}`,background:"none",cursor:minusDisabled?"default":"pointer",fontSize:18,color:minusDisabled?W[300]:W[600],display:"flex",alignItems:"center",justifyContent:"center",opacity:minusDisabled?0.4:1}}>−</button><span style={{fontFamily:fb,fontSize:16,fontWeight:600,color:q>0?B[500]:W[400],width:24,textAlign:"center"}}>{q}</span><button onClick={()=>upd(p.id,1)} disabled={plusDisabled} className="qb" style={{width:32,height:32,borderRadius:8,border:`1px solid ${plusDisabled?W[200]:B[500]}`,background:plusDisabled?"none":B[50],cursor:plusDisabled?"default":"pointer",fontSize:18,color:plusDisabled?W[300]:B[500],display:"flex",alignItems:"center",justifyContent:"center",opacity:plusDisabled?0.4:1}}>+</button></div>
         </div>;})}
         <div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800],textAlign:"right",padding:"12px 0 4px"}}>Novo valor mensal: <span style={{color:B[500]}}><AnimatedNumber value={mensal}/></span></div>
         {changed&&<><div style={{fontFamily:fb,fontSize:12,color:W[500],textAlign:"right",marginBottom:4}}>Baseline do mês: {fmt(mensalBaseline)} → Novo: {fmt(mensal)}</div>
@@ -626,14 +627,16 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff})=>
 // ═══ PERFIL ═══
 // Helper: gera copy humana de uma entrada de historico de ciclo.
 // Retorna string conforme o tipo (aumento / reducao / troca).
+// Pluraliza nome do pao em portugues: "Pão Original" -> "Pães Originais", "Pão Integral" -> "Pães Integrais"
+const pluralizarPao=(n,nome)=>n===1?nome:nome.replace(/\bPão\b/,"Pães").replace(/\bOriginal\b/,"Originais").replace(/\bIntegral\b/,"Integrais");
+
 const copyEntradaCiclo=(entrada)=>{
   if(!entrada) return "";
   const {tipo,baseline,atual}=entrada;
-  const totalB=Object.values(baseline).reduce((s,q)=>s+q,0);
   const totalA=Object.values(atual).reduce((s,q)=>s+q,0);
   if(tipo==="aumento"){
     // Calcula quais paes foram adicionados (positivos no delta)
-    const add=[];D.pães.forEach(p=>{const d=(atual[p.id]||0)-(baseline[p.id]||0);if(d>0)add.push(`${d} ${d===1?p.nome:p.nome+"s"}`);});
+    const add=[];D.pães.forEach(p=>{const d=(atual[p.id]||0)-(baseline[p.id]||0);if(d>0)add.push(`${d} ${pluralizarPao(d,p.nome)}`);});
     return add.length?`Você adicionou ${add.join(" e ")} à sua Assinatura.`:`Você aumentou sua Assinatura para ${totalA} ${totalA===1?"pão":"pães"} por semana.`;
   }
   if(tipo==="reducao"){
@@ -641,13 +644,13 @@ const copyEntradaCiclo=(entrada)=>{
   }
   // troca: quantidade igual, composicao diferente
   const removido=[];const adicionado=[];
-  D.pães.forEach(p=>{const d=(atual[p.id]||0)-(baseline[p.id]||0);if(d>0)adicionado.push(`${d} ${d===1?p.nome:p.nome+"s"}`);else if(d<0)removido.push(`${-d} ${(-d)===1?p.nome:p.nome+"s"}`);});
+  D.pães.forEach(p=>{const d=(atual[p.id]||0)-(baseline[p.id]||0);if(d>0)adicionado.push(`${d} ${pluralizarPao(d,p.nome)}`);else if(d<0)removido.push(`${-d} ${pluralizarPao(-d,p.nome)}`);});
   if(removido.length&&adicionado.length) return `Você trocou ${removido.join(" e ")} por ${adicionado.join(" e ")} na sua Assinatura.`;
   return `Você ajustou a composição da sua Assinatura.`;
 };
 
 const Perfil=({confirmed,hasPending,assinaturaQtds,cestaAtual,houveSwap,historicoCicloAtual,historicoCiclosPassados=[]})=>{
-  const[cpf,setCpf]=useState(false);const[pauseSt,setPauseSt]=useState('idle');const dados=[["Endereço","Ed. Boa Vista, Bl. A / 502"],["Dia de entrega","Quintas-feiras"],["WhatsApp","(21) 99876-5432"],["E-mail","beatriz@email.com"],["CPF",cpf?"123.456.789-00":"•••.•••.789-00"]];const confirmedExtras=confirmed.filter(p=>p.kind!=="swap");const confirmedTotal=totalOf(confirmed);const qtdTotal=Object.values(assinaturaQtds||{}).reduce((s,q)=>s+q,0);const assinVal=D.assinatura.valorMensal*qtdTotal;const cestaLabelPerfil=composicaoToStr(cestaAtual||assinaturaQtds||{})||"Sem pães configurados";
+  const[cpf,setCpf]=useState(false);const dados=[["Endereço","Ed. Boa Vista, Bl. A / 502"],["Dia de entrega","Quintas-feiras"],["WhatsApp","(21) 99876-5432"],["E-mail","beatriz@email.com"],["CPF",cpf?"123.456.789-00":"•••.•••.789-00"]];const confirmedExtras=confirmed.filter(p=>p.kind!=="swap");const confirmedTotal=totalOf(confirmed);const qtdTotal=Object.values(assinaturaQtds||{}).reduce((s,q)=>s+q,0);const assinVal=D.assinatura.valorMensal*qtdTotal;const cestaLabelPerfil=composicaoToStr(cestaAtual||assinaturaQtds||{})||"Sem pães configurados";
   return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
     <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[500],margin:"0 0 20px"}}>Perfil</h2>
     <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}><div style={{width:48,height:48,borderRadius:9999,background:B[50],display:"flex",alignItems:"center",justifyContent:"center",border:`1px solid ${B[200]}`,flexShrink:0}}><img src="/images/grafismo_coracao.svg" alt="" aria-hidden="true" style={{width:28,height:28}}/></div><div><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800]}}>Beatriz Silva</div><div style={{fontFamily:fb,fontSize:12,color:W[500]}}>beatriz@email.com</div></div></div>
@@ -678,7 +681,12 @@ const Perfil=({confirmed,hasPending,assinaturaQtds,cestaAtual,houveSwap,historic
       <div style={{marginTop:8,padding:12,borderRadius:8,background:B[50],border:`1px solid ${B[100]}`}}><div style={{fontFamily:fb,fontSize:12,color:B[700],marginBottom:4}}>Próxima fatura (abril)</div><div style={{fontFamily:fb,fontSize:13,color:B[800],lineHeight:1.6}}>Assinatura: {fmt(assinVal)}<br/>+ Extras: {fmt(confirmedTotal||22)}<br/>+ Frete: R$ 15,00<br/><span style={{fontWeight:600}}>= {fmt(assinVal+15+(confirmedTotal||22))} (estimado)</span></div></div>
     </Card>
     <Card style={{marginBottom:12}}><SL t="Cartão"/><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[800]}}>{D.cartao.band} ••••{D.cartao.n}</div><div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:4}}>Próxima: {D.cartao.prox}</div></div><ActionBtn loadingText="Validando…" successText="Atualizado ✓" onAction={()=>simulate()} style={{padding:"8px 16px",fontSize:12}}>Atualizar</ActionBtn></div></Card>
-    <Card style={{marginBottom:12}}><div style={{fontFamily:fb,fontSize:14,color:W[700],marginBottom:12,lineHeight:1.5}}>Precisa pausar ou cancelar? Fale pelo WhatsApp.</div><button disabled={pauseSt!=='idle'} onClick={async()=>{if(pauseSt!=='idle')return;setPauseSt('loading');await simulate();setPauseSt('success');setTimeout(()=>setPauseSt('idle'),1500);}} className="bw" style={{width:"100%",padding:"12px 0",borderRadius:8,background:pauseSt==='success'?'#D1FAE5':'#25D366',color:pauseSt==='success'?'#065F46':'#FFF',border:pauseSt==='success'?'1px solid #6EE7B7':'none',fontFamily:fb,fontSize:14,fontWeight:500,cursor:pauseSt!=='idle'?'default':'pointer',display:"flex",alignItems:"center",justifyContent:"center",gap:8,minHeight:44,opacity:pauseSt==='loading'?0.5:1,transition:'all 150ms ease'}}>{pauseSt==='idle'&&<I d={ic.msg} size={18} color="#FFF"/>}{pauseSt==='loading'?'Processando…':pauseSt==='success'?'Confirmada ✓':'Falar pelo WhatsApp'}</button></Card>
+    {/* Pausar ou Cancelar — separador visual e secao formal com link WhatsApp */}
+    <div style={{borderTop:`1px solid ${W[200]}`,marginTop:24,paddingTop:24,marginBottom:12}}>
+      <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",marginBottom:8}}>Pausar ou Cancelar</div>
+      <div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6,marginBottom:16}}>Se precisar pausar por um tempo ou cancelar sua Assinatura, fale com a gente pelo WhatsApp. Sem taxa, a qualquer momento.</div>
+      <a href="https://wa.me/5521999999999?text=Oi%2C%20gostaria%20de%20pausar%2Fcancelar%20minha%20Assinatura" target="_blank" rel="noopener noreferrer" className="press-scale" style={{display:"block",width:"100%",padding:"12px 16px",borderRadius:8,border:`1.5px solid ${B[500]}`,background:"transparent",color:B[500],fontFamily:fb,fontSize:14,fontWeight:500,textAlign:"center",textDecoration:"none",transition:"all 150ms ease",minHeight:44,lineHeight:"20px"}} onMouseEnter={e=>e.currentTarget.style.background=B[50]} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>Falar com a Cora no WhatsApp</a>
+    </div>
     <button className="bl" style={{width:"100%",padding:"12px 0",borderRadius:8,background:"none",color:W[500],border:`1px solid ${W[300]}`,fontFamily:fb,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,minHeight:44}}><I d={ic.logout} size={16} color={W[500]}/>Sair da conta</button>
   </div>;
 };

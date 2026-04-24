@@ -24,7 +24,7 @@ const LIMITE_PAES=3;
 // em cada produto e o accordion volta automaticamente.
 const ASSINATURA_OPCOES=[
   {id:"original",nome:"Pão Original",peso:"615g",avulso:27,img:IMG.original,desc:"Mix de farinhas italiana e brasileira, água, sal e o levain da Cora. Fermentação lenta, crosta firme e miolo aberto."},
-  {id:"integral",nome:"Pão Integral",peso:"615g",avulso:29,img:IMG.integral,desc:"100% integral, com um blend de farinhas brasileira e italiana que traz mais complexidade ao sabor. Azeite na massa, fermentação lenta e miolo que fica macio por dias."},
+  {id:"integral",nome:"Pão Integral",peso:"615g",avulso:29,img:IMG.integral,desc:"100% integral com blend de duas farinhas, azeite e fermentação lenta. Miolo macio que se mantém por dias."},
 ];
 
 /* ── Utilitários (reaproveitados do PreCadastro) ── */
