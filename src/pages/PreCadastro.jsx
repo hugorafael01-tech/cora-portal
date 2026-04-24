@@ -786,7 +786,7 @@ const ConfirmScreen = ({ nome }) => (
           padding: "0 8px",
         }}
       >
-        Quando as entregas começarem, você vai ser das primeiras pessoas a saber.
+        Quando as entregas começarem, você é das primeiras a saber.
       </p>
 
       <p

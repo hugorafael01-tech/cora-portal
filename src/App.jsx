@@ -560,7 +560,7 @@ const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,assinaturaBaseline,onS
         {estaVoltandoAoBaseline&&<div style={{fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5,marginBottom:20}}>Você voltou à sua Assinatura original deste mês. Nenhuma cobrança ou crédito adicional.</div>}
         {ehAumentoVsBaseline&&<div style={{fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5,marginBottom:20}}>Você será cobrado <strong>+{fmt(propVsBaseline)}</strong> neste mês (pelos dias restantes). Sua próxima fatura completa de {fmt(mensal)} será em 1º de {proximoMesPt()}.</div>}
         {ehReducaoVsBaseline&&<div style={{fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5,marginBottom:20}}>Até o fim de {mesAtualPt()}, você continua recebendo {totalBaseline} {plural(totalBaseline,"pão","pães")} por semana. Sua nova Assinatura começa em 1º de {proximoMesPt()}: {total} {plural(total,"pão","pães")} por semana.</div>}
-        {ehTrocaVsBaseline&&<div style={{fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5,marginBottom:20}}>O valor mensal continua o mesmo.</div>}
+        {ehTrocaVsBaseline&&<div style={{fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5,marginBottom:20}}>Mesma quantidade de pães, só muda quais. O valor mensal continua o mesmo.</div>}
 
         <div style={{display:"flex",gap:8}}>
           <Btn onClick={()=>setConfirmModal(false)} style={{flex:1}}>Voltar</Btn>
