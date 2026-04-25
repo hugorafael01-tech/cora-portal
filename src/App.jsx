@@ -716,9 +716,10 @@ export default function CoraPortal(){
   const skipOnboarding = window.location.search.includes("skip=true");
   const [scr, setScr] = useState(skipOnboarding ? "home" : "onboarding");
   const mainRef=useRef(null);
-  // Reset scroll do <main> ao trocar de aba (evita abrir a tela nova
-  // na mesma altura em que a anterior estava).
-  useEffect(()=>{mainRef.current?.scrollTo({top:0});},[scr]);
+  // Reset scroll ao trocar de aba. Cobre os dois casos porque o root usa
+  // minHeight:100vh (nao height) — o scroll acaba caindo na window quando
+  // o conteudo passa do viewport, e no <main> quando ha overflow interno.
+  useEffect(()=>{mainRef.current?.scrollTo({top:0});window.scrollTo({top:0});},[scr]);
   const[pending,setPending]=useState([]);
   const[confirmed,setConfirmed]=useState([]);
   const[justConfirmed,setJustConfirmed]=useState(false);
