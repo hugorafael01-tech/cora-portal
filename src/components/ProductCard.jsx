@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { B, W, fb, fd } from "../tokens";
+import { B, W, fb, fd, radii } from "../tokens";
 
 const QtyBtn=({qty,onAdd,onRemove,name,addDisabled=false})=>(
   <div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-    <button aria-label={`Remover ${name}`} onClick={onRemove} style={{width:32,height:32,borderRadius:8,border:`1px solid ${W[300]}`,background:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+    <button aria-label={`Remover ${name}`} onClick={onRemove} style={{width:32,height:32,borderRadius:radii.md,border:`1px solid ${W[300]}`,background:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
     <span style={{fontFamily:fb,fontSize:16,fontWeight:600,color:B[500],width:24,textAlign:"center"}}>{qty}</span>
-    <button aria-label={`Adicionar ${name}`} onClick={onAdd} disabled={addDisabled} style={{width:32,height:32,borderRadius:8,border:`1px solid ${addDisabled?W[200]:B[500]}`,background:addDisabled?"transparent":B[50],cursor:addDisabled?"default":"pointer",fontSize:18,color:addDisabled?W[300]:B[500],display:"flex",alignItems:"center",justifyContent:"center",opacity:addDisabled?0.5:1}}>+</button>
+    <button aria-label={`Adicionar ${name}`} onClick={onAdd} disabled={addDisabled} style={{width:32,height:32,borderRadius:radii.md,border:`1px solid ${addDisabled?W[200]:B[500]}`,background:addDisabled?"transparent":B[50],cursor:addDisabled?"default":"pointer",fontSize:18,color:addDisabled?W[300]:B[500],display:"flex",alignItems:"center",justifyContent:"center",opacity:addDisabled?0.5:1}}>+</button>
   </div>
 );
 
@@ -40,7 +40,7 @@ export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel=
     <div style={{
       background:W[100],
       border:`1px solid ${qty>0?B[200]:W[200]}`,
-      borderRadius:12,
+      borderRadius:radii.lg,
       overflow:"hidden",
       transition:"border-color 200ms, opacity 200ms",
       marginBottom:8,
@@ -57,7 +57,7 @@ export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel=
           onClick={hasDetails?()=>setExpanded(e=>!e):undefined}
           style={{
             width:88, objectFit:"cover", display:"block", flexShrink:0,
-            borderRadius:expanded?"12px 0 0 0":"12px 0 0 12px",
+            borderRadius:expanded?`${radii.lg} 0 0 0`:`${radii.lg} 0 0 ${radii.lg}`,
             cursor:hasDetails?"pointer":"default",
           }}
         />
@@ -86,16 +86,16 @@ export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel=
           </div>
 
           {cutoff||(disabled&&qty===0)
-            ?<button disabled style={{padding:"8px 16px",borderRadius:8,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:12,fontWeight:500,cursor:"default",flexShrink:0,minHeight:40,opacity:0.5}}>{ctaLabel}</button>
+            ?<button disabled style={{padding:"8px 16px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:12,fontWeight:500,cursor:"default",flexShrink:0,minHeight:40,opacity:0.5}}>{ctaLabel}</button>
             :showCta
-            ?<button disabled={ctaSt!=='idle'} onClick={handleCta} style={{padding:"8px 16px",borderRadius:8,border:ctaSt==='success'?'1px solid #6EE7B7':'none',background:ctaSt==='success'?'#D1FAE5':B[500],color:ctaSt==='success'?'#065F46':'#FFF',fontFamily:fb,fontSize:12,fontWeight:500,cursor:ctaSt!=='idle'?'default':'pointer',flexShrink:0,minHeight:40,opacity:ctaSt==='loading'?0.5:1,transition:'all 150ms ease'}}>{ctaSt==='loading'?loadingText:ctaSt==='success'?successText:ctaLabel}</button>
+            ?<button disabled={ctaSt!=='idle'} onClick={handleCta} style={{padding:"8px 16px",borderRadius:radii.md,border:ctaSt==='success'?'1px solid #6EE7B7':'none',background:ctaSt==='success'?'#D1FAE5':B[500],color:ctaSt==='success'?'#065F46':'#FFF',fontFamily:fb,fontSize:12,fontWeight:500,cursor:ctaSt!=='idle'?'default':'pointer',flexShrink:0,minHeight:40,opacity:ctaSt==='loading'?0.5:1,transition:'all 150ms ease'}}>{ctaSt==='loading'?loadingText:ctaSt==='success'?successText:ctaLabel}</button>
             :<QtyBtn qty={qty} onAdd={onAdd} onRemove={onRemove} name={product.nome} addDisabled={disabled}/>
           }
         </div>
       </div>
 
       {cutoff&&<div style={{padding:"0 12px 8px",fontFamily:fb,fontSize:13,color:"#7A766E"}}>Prazo encerrado. Alterações valem a partir da próxima semana.</div>}
-      {ctaErr&&<div style={{padding:"4px 12px 8px",fontFamily:fb,fontSize:13,color:'#9A3412',background:'#FFEDD5',borderRadius:8,margin:"0 12px 8px"}}>{ctaErr}</div>}
+      {ctaErr&&<div style={{padding:"4px 12px 8px",fontFamily:fb,fontSize:13,color:'#9A3412',background:'#FFEDD5',borderRadius:radii.md,margin:"0 12px 8px"}}>{ctaErr}</div>}
 
       {/* Detalhe expandido */}
       {expanded&&hasDetails&&(

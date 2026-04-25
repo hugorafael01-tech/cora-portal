@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import ProductCard from "./components/ProductCard";
-import { B, W, fd, fb, fmt } from "./tokens";
+import { B, W, fd, fb, fmt, radii } from "./tokens";
 
 /* ═══════════════════════════════════════════════════════════════
    CORA . Onboarding v5
@@ -44,9 +44,9 @@ const GrafismoCoracao=({size=36})=>(
 /* ─── Base ─── */
 const H=({children,size=24})=><div style={{fontFamily:fd,fontSize:size,textTransform:"uppercase",letterSpacing:"0.02em",color:B[500],margin:0}}>{children}</div>;
 const Label=({children,apoio})=><div style={{marginBottom:4}}><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[700]}}>{children}</div>{apoio&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:2}}>{apoio}</div>}</div>;
-const Input=({placeholder,value,onChange,type="text",error,onFocusExtra})=><input type={type} placeholder={placeholder} value={value} onChange={e=>onChange(e.target.value)} style={{width:"100%",padding:"12px 14px",fontSize:15,fontFamily:fb,border:`1.5px solid ${error?"#EF4444":W[200]}`,borderRadius:8,background:"#FFF",color:W[800],outline:"none",transition:"border-color 200ms"}} onFocus={e=>{e.target.style.borderColor=error?"#EF4444":B[400];onFocusExtra&&onFocusExtra();}} onBlur={e=>e.target.style.borderColor=error?"#EF4444":W[200]}/>;
-const Btn=({children,primary,disabled,onClick,style:es={}})=><button onClick={onClick} disabled={disabled} style={{width:"100%",padding:"14px 0",borderRadius:8,fontSize:15,fontWeight:600,fontFamily:fb,cursor:disabled?"default":"pointer",transition:"all 200ms",border:primary?"none":`1.5px solid ${W[300]}`,background:primary?(disabled?W[300]:B[500]):"transparent",color:primary?"#FFF":W[600],opacity:disabled?0.6:1,...es}}>{children}</button>;
-const Progress=({step})=><div style={{display:"flex",gap:6,padding:"0 16px"}}>{[1,2,3].map(s=><div key={s} style={{flex:1,height:3,borderRadius:2,transition:"all 300ms",background:s<=step?B[500]:W[200]}}/>)}</div>;
+const Input=({placeholder,value,onChange,type="text",error,onFocusExtra})=><input type={type} placeholder={placeholder} value={value} onChange={e=>onChange(e.target.value)} style={{width:"100%",padding:"12px 14px",fontSize:15,fontFamily:fb,border:`1.5px solid ${error?"#EF4444":W[200]}`,borderRadius:radii.md,background:"#FFF",color:W[800],outline:"none",transition:"border-color 200ms"}} onFocus={e=>{e.target.style.borderColor=error?"#EF4444":B[400];onFocusExtra&&onFocusExtra();}} onBlur={e=>e.target.style.borderColor=error?"#EF4444":W[200]}/>;
+const Btn=({children,primary,disabled,onClick,style:es={}})=><button onClick={onClick} disabled={disabled} style={{width:"100%",padding:"14px 0",borderRadius:radii.md,fontSize:15,fontWeight:600,fontFamily:fb,cursor:disabled?"default":"pointer",transition:"all 200ms",border:primary?"none":`1.5px solid ${W[300]}`,background:primary?(disabled?W[300]:B[500]):"transparent",color:primary?"#FFF":W[600],opacity:disabled?0.6:1,...es}}>{children}</button>;
+const Progress=({step})=><div style={{display:"flex",gap:6,padding:"0 16px"}}>{[1,2,3].map(s=><div key={s} style={{flex:1,height:3,borderRadius:radii.xs,transition:"all 300ms",background:s<=step?B[500]:W[200]}}/>)}</div>;
 const Field=({label,apoio,children,error})=><div style={{marginBottom:16}}><Label apoio={apoio}>{label}</Label>{children}{error&&<div style={{fontSize:13,color:"#DC2626",fontFamily:fb,marginTop:4}}>{error}</div>}</div>;
 
 /* ═══ SPLASH . Redesenhado alinhado com PreCadastro ═══ */
@@ -67,7 +67,7 @@ const Splash=({onStart})=>(
       </p>
     </div>
 
-    <button onClick={onStart} style={{marginTop:48,width:200,height:52,borderRadius:8,border:"none",background:B[500],color:"#FFF",fontSize:16,fontWeight:600,fontFamily:fb,cursor:"pointer",transition:"background 150ms"}} onMouseOver={e=>e.currentTarget.style.background=B[600]} onMouseOut={e=>e.currentTarget.style.background=B[500]}>
+    <button onClick={onStart} style={{marginTop:48,width:200,height:52,borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontSize:16,fontWeight:600,fontFamily:fb,cursor:"pointer",transition:"background 150ms"}} onMouseOver={e=>e.currentTarget.style.background=B[600]} onMouseOut={e=>e.currentTarget.style.background=B[500]}>
       Vamos
     </button>
 
@@ -96,7 +96,7 @@ const Step1=({data,setData,errors,clearError})=>(
     <Field label="Como gostaria de ser tratado(a)?" apoio="Para a gente acertar na saudação.">
       <div style={{display:"flex",gap:8,marginTop:4}}>
         {[{id:"f",label:"Feminino"},{id:"m",label:"Masculino"},{id:"n",label:"Neutro"}].map(g=>(
-          <button key={g.id} onClick={()=>setData({...data,genero:g.id})} style={{flex:1,padding:"10px 0",borderRadius:8,fontSize:13,fontFamily:fb,fontWeight:500,cursor:"pointer",transition:"all 200ms",border:data.genero===g.id?`2px solid ${B[500]}`:`1.5px solid ${W[200]}`,background:data.genero===g.id?B[50]:"#FFF",color:data.genero===g.id?B[700]:W[500]}}>{g.label}</button>
+          <button key={g.id} onClick={()=>setData({...data,genero:g.id})} style={{flex:1,padding:"10px 0",borderRadius:radii.md,fontSize:13,fontFamily:fb,fontWeight:500,cursor:"pointer",transition:"all 200ms",border:data.genero===g.id?`2px solid ${B[500]}`:`1.5px solid ${W[200]}`,background:data.genero===g.id?B[50]:"#FFF",color:data.genero===g.id?B[700]:W[500]}}>{g.label}</button>
         ))}
       </div>
     </Field>
@@ -129,7 +129,7 @@ const Step2=({assinatura,setAssinatura})=>{
       <div style={{marginBottom:16}}>
         <H size={22}>Monte sua Assinatura</H>
         <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:4}}>Escolha entre 1 e 3 pães pra receber toda semana, na sua porta. Você pode alterar quando quiser.</div>
-        {atingiuLimite&&<div style={{fontFamily:fb,fontSize:12,color:B[700],background:B[50],border:`1px solid ${B[100]}`,borderRadius:8,padding:"8px 12px",marginTop:10,lineHeight:1.4}}>Você escolheu 3 pães, o máximo por semana.</div>}
+        {atingiuLimite&&<div style={{fontFamily:fb,fontSize:12,color:B[700],background:B[50],border:`1px solid ${B[100]}`,borderRadius:radii.md,padding:"8px 12px",marginTop:10,lineHeight:1.4}}>Você escolheu 3 pães, o máximo por semana.</div>}
       </div>
 
       {/* Cards #FFF interativos. ProductCard mostra accordion quando tem ingredientes */}
@@ -151,7 +151,7 @@ const Step2=({assinatura,setAssinatura})=>{
       </div>
 
       {/* Resumo (contêiner W[100]) */}
-      {totalPaes>0&&<div style={{background:W[100],borderRadius:10,padding:14,border:`1px solid ${W[200]}`}}>
+      {totalPaes>0&&<div style={{background:W[100],borderRadius:radii.lg,padding:14,border:`1px solid ${W[200]}`}}>
         {Object.entries(assinatura).map(([id,qty])=>{
           const c=ASSINATURA_OPCOES.find(x=>x.id===id);
           if(!c)return null;
@@ -204,7 +204,7 @@ const Step3=({data,assinatura})=>{
 
       <div style={{marginBottom:16}}>
         <div style={{fontFamily:fd,fontSize:14,textTransform:"uppercase",color:B[500],letterSpacing:"0.04em",marginBottom:8}}>Dados pessoais</div>
-        <div style={{background:"#FFF",borderRadius:10,padding:"4px 14px",border:`1px solid ${W[200]}`}}>
+        <div style={{background:"#FFF",borderRadius:radii.lg,padding:"4px 14px",border:`1px solid ${W[200]}`}}>
           <Row label="Nome" value={data.nome||"."}/>
           <Row label="WhatsApp" value={data.whatsapp||"."}/>
           <Row label="E-mail" value={data.email||"."}/>
@@ -216,7 +216,7 @@ const Step3=({data,assinatura})=>{
 
       <div style={{marginBottom:16}}>
         <div style={{fontFamily:fd,fontSize:14,textTransform:"uppercase",color:B[500],letterSpacing:"0.04em",marginBottom:8}}>Sua Assinatura</div>
-        <div style={{background:"#FFF",borderRadius:10,overflow:"hidden",border:`1px solid ${W[200]}`}}>
+        <div style={{background:"#FFF",borderRadius:radii.lg,overflow:"hidden",border:`1px solid ${W[200]}`}}>
           {items.map(c=><div key={c.id} style={{display:"flex",alignItems:"stretch",borderBottom:`1px solid ${W[100]}`}}>
             <img src={c.img} alt={c.nome} style={{width:72,objectFit:"cover",display:"block"}}/>
             <div style={{flex:1,padding:12}}>
@@ -233,7 +233,7 @@ const Step3=({data,assinatura})=>{
         </div>
       </div>
 
-      <div style={{background:B[50],borderRadius:10,padding:14,border:`1px solid ${B[100]}`}}>
+      <div style={{background:B[50],borderRadius:radii.lg,padding:14,border:`1px solid ${B[100]}`}}>
         <div style={{fontFamily:fb,fontSize:13,color:B[700],fontWeight:500}}>Entrega toda quinta-feira</div>
         <div style={{fontFamily:fb,fontSize:12,color:B[600],marginTop:4}}>Alterações na Assinatura até terça, 12h. Cancelamento sem taxa, a qualquer momento.</div>
       </div>
@@ -251,7 +251,7 @@ const Welcome=({data,assinatura,onComplete})=>{
   return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 24px",textAlign:"center",minHeight:"100%",background:W[50]}}>
       <div style={{width:"100%"}}>
-        <div className="welcome-check" style={{width:64,height:64,borderRadius:32,background:B[50],display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",border:`2px solid ${B[200]}`}}>
+        <div className="welcome-check" style={{width:64,height:64,borderRadius:radii.full,background:B[50],display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",border:`2px solid ${B[200]}`}}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={B[500]} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 6L9 17l-5-5" className="welcome-check-path"/>
           </svg>
@@ -259,7 +259,7 @@ const Welcome=({data,assinatura,onComplete})=>{
         <div className="welcome-stagger-1"><H size={26}>{saudacao}, {nome.toUpperCase()}.</H></div>
         <div className="welcome-stagger-2" style={{fontFamily:fb,fontSize:15,color:W[600],marginTop:12,lineHeight:1.6,maxWidth:300,margin:"12px auto 0"}}>Sua Assinatura está ativa. Sua primeira entrega será na próxima quinta-feira.</div>
 
-        {items.length>0&&<div className="welcome-stagger-3" style={{background:"#FFF",borderRadius:12,overflow:"hidden",marginTop:24,width:"100%",border:`1px solid ${W[200]}`,textAlign:"left"}}>
+        {items.length>0&&<div className="welcome-stagger-3" style={{background:"#FFF",borderRadius:radii.lg,overflow:"hidden",marginTop:24,width:"100%",border:`1px solid ${W[200]}`,textAlign:"left"}}>
           <div style={{padding:"14px 14px 8px",fontFamily:fb,fontSize:13,color:W[500]}}>Você vai receber toda quinta</div>
           {items.map(c=><div key={c.id} style={{display:"flex",alignItems:"stretch",borderTop:`1px solid ${W[200]}`}}>
             <img src={c.img} alt={c.nome} style={{width:72,objectFit:"cover",display:"block"}}/>
@@ -270,7 +270,7 @@ const Welcome=({data,assinatura,onComplete})=>{
           <div style={{padding:"10px 14px 14px",fontFamily:fb,fontSize:13,color:W[500],borderTop:`1px solid ${W[200]}`}}>Na sua porta.</div>
         </div>}
 
-        <div className="welcome-stagger-4" style={{fontFamily:fb,fontSize:13,color:B[600],marginTop:20,lineHeight:1.5,background:B[50],borderRadius:8,padding:12,width:"100%",textAlign:"left"}}>Vai chegar uma mensagem no WhatsApp com os detalhes. Qualquer dúvida, é só responder por lá.</div>
+        <div className="welcome-stagger-4" style={{fontFamily:fb,fontSize:13,color:B[600],marginTop:20,lineHeight:1.5,background:B[50],borderRadius:radii.md,padding:12,width:"100%",textAlign:"left"}}>Vai chegar uma mensagem no WhatsApp com os detalhes. Qualquer dúvida, é só responder por lá.</div>
         <div className="welcome-stagger-5" style={{marginTop:24,width:"100%"}}><Btn primary onClick={onComplete}>Acompanhe sua Assinatura</Btn></div>
       </div>
     </div>
@@ -381,7 +381,7 @@ export default function CoraOnboarding({onComplete}){
       {step===3&&<>
         <Step3 data={data} assinatura={assinatura}/>
         <div onClick={()=>setTermos(!termos)} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"14px 0",cursor:"pointer",marginTop:8}}>
-          <div style={{width:20,height:20,borderRadius:4,flexShrink:0,marginTop:1,border:termos?`2px solid ${B[500]}`:`2px solid ${W[300]}`,background:termos?B[500]:"#FFF",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 200ms"}}>{termos&&<span style={{color:"#FFF",fontSize:13,fontWeight:700}}>&#10003;</span>}</div>
+          <div style={{width:20,height:20,borderRadius:radii.xs,flexShrink:0,marginTop:1,border:termos?`2px solid ${B[500]}`:`2px solid ${W[300]}`,background:termos?B[500]:"#FFF",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 200ms"}}>{termos&&<span style={{color:"#FFF",fontSize:13,fontWeight:700}}>&#10003;</span>}</div>
           <div style={{fontFamily:fb,fontSize:13,color:W[600],lineHeight:1.5}}>Ao confirmar, aceito os termos de uso e a política de privacidade da Cora.</div>
         </div>
       </>}
@@ -392,7 +392,7 @@ export default function CoraOnboarding({onComplete}){
         <input type="text" id="website" name="website" value={website} onChange={e=>setWebsite(e.target.value)} tabIndex={-1} autoComplete="off"/>
       </div>
 
-      <div ref={formErrorRef} style={{display:"none",padding:"12px 16px",borderRadius:8,background:"#FEF2F2",border:"1px solid #FECACA",color:"#991B1B",fontFamily:fb,fontSize:14,marginTop:16,lineHeight:1.5}}>
+      <div ref={formErrorRef} style={{display:"none",padding:"12px 16px",borderRadius:radii.md,background:"#FEF2F2",border:"1px solid #FECACA",color:"#991B1B",fontFamily:fb,fontSize:14,marginTop:16,lineHeight:1.5}}>
         Preencha os campos obrigatórios acima.
       </div>
     </div>

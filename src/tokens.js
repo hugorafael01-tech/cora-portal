@@ -60,11 +60,14 @@ export const altitude = {
 };
 
 // ─── RAIOS ───
-// Nunca pill (`999px`) em botões. Máximo `r12`.
+// Escala oficial Cora. Único `--radius-full` aceito é em círculos genuínos
+// (✕ de modal, badge numérico, avatar). Nunca pill em botões.
 export const radii = {
-  r4:  4,
-  r8:  8,
-  r12: 12,
+  xs:   '4px',   // badges, checkboxes, pílulas pequenas
+  md:   '8px',   // botões, inputs, sub-blocos dentro de cards
+  lg:   '12px',  // cards
+  xl:   '16px',  // modais, bottom-sheets (apenas cantos superiores)
+  full: '9999px',// círculos genuínos
 };
 
 // ─── MOTION ───

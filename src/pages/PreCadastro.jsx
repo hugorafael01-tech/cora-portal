@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { B, W } from "../tokens";
+import { B, W, radii } from "../tokens";
 import { haptic } from "../utils/haptic";
 
 /* ══════════════════════════════════════════
@@ -157,7 +157,7 @@ const SplashScreen = ({ onNext }) => (
         marginTop: 48,
         width: 200,
         height: 52,
-        borderRadius: 8,
+        borderRadius: radii.md,
         border: "none",
         background: B[500],
         color: "#FFF",
@@ -273,7 +273,7 @@ const FormScreen = ({ onSubmit }) => {
   const inputStyle = (field) => ({
     width: "100%",
     height: 48,
-    borderRadius: 8,
+    borderRadius: radii.md,
     border: `1.5px solid ${errors[field] ? "#EF4444" : W[300]}`,
     padding: "0 16px",
     fontSize: 16,
@@ -432,7 +432,7 @@ const FormScreen = ({ onSubmit }) => {
                     display: "flex",
                     gap: 14,
                     padding: 12,
-                    borderRadius: 12,
+                    borderRadius: radii.lg,
                     border: `1.5px solid ${
                       selected ? B[500] : W[200]
                     }`,
@@ -452,7 +452,7 @@ const FormScreen = ({ onSubmit }) => {
                     style={{
                       width: 80,
                       height: 80,
-                      borderRadius: 8,
+                      borderRadius: radii.md,
                       objectFit: "cover",
                       flexShrink: 0,
                     }}
@@ -485,7 +485,7 @@ const FormScreen = ({ onSubmit }) => {
                         style={{
                           width: 24,
                           height: 24,
-                          borderRadius: 6,
+                          borderRadius: radii.xs,
                           border: `2px solid ${selected ? B[500] : W[300]}`,
                           background: selected ? B[500] : "transparent",
                           display: "flex",
@@ -603,7 +603,7 @@ const FormScreen = ({ onSubmit }) => {
             style={{
               width: 22,
               height: 22,
-              borderRadius: 4,
+              borderRadius: radii.xs,
               border: `2px solid ${optinMailing ? B[500] : W[300]}`,
               background: optinMailing ? B[500] : "transparent",
               display: "flex",
@@ -638,14 +638,14 @@ const FormScreen = ({ onSubmit }) => {
           </span>
         </div>
 
-        {submitError && <div style={{padding:"12px 16px",borderRadius:8,background:"#FFEDD5",color:"#9A3412",fontFamily:"'Montagu Slab', Georgia, serif",fontSize:14,marginBottom:16,lineHeight:1.5}}>{submitError}</div>}
+        {submitError && <div style={{padding:"12px 16px",borderRadius:radii.md,background:"#FFEDD5",color:"#9A3412",fontFamily:"'Montagu Slab', Georgia, serif",fontSize:14,marginBottom:16,lineHeight:1.5}}>{submitError}</div>}
 
         <div
           ref={formErrorRef}
           style={{
             display: "none",
             padding: "12px 16px",
-            borderRadius: 8,
+            borderRadius: radii.md,
             background: "#FEF2F2",
             border: "1px solid #FECACA",
             color: "#991B1B",
@@ -665,7 +665,7 @@ const FormScreen = ({ onSubmit }) => {
           style={{
             width: "100%",
             height: 52,
-            borderRadius: 8,
+            borderRadius: radii.md,
             border: "none",
             background: loading ? B[600] : B[500],
             color: "#FFF",
@@ -736,7 +736,7 @@ const ConfirmScreen = ({ nome }) => (
         style={{
           width: 72,
           height: 72,
-          borderRadius: "50%",
+          borderRadius: radii.full,
           background: B[500],
           display: "flex",
           alignItems: "center",
@@ -809,7 +809,7 @@ const ConfirmScreen = ({ nome }) => (
         style={{
           marginTop: 24,
           padding: "12px 24px",
-          borderRadius: 8,
+          borderRadius: radii.md,
           border: `1.5px solid ${B[500]}`,
           background: "transparent",
           color: B[500],
