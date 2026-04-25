@@ -18,12 +18,12 @@ const ST={success:{bg:"#D1FAE5",t:"#065F46",b:"#6EE7B7"},warning:{bg:"#FEF3C7",t
 
 const IMG={
   logo:"/images/cora_logo_com_tag.svg",
-  original:"/images/_original.jpg",
-  integral:"/images/_integral.jpg",
-  multigraos:"/images/_multigraos.jpg",
-  brioche:"/images/_brioche.jpg",
-  focaccia:"/images/_focaccia.jpg",
-  ciabatta:"/images/_ciabatta.jpg",
+  original:"/images/_original.webp",
+  integral:"/images/_integral.webp",
+  multigraos:"/images/_multigraos.webp",
+  brioche:"/images/_brioche.webp",
+  focaccia:"/images/_focaccia.webp",
+  ciabatta:"/images/_ciabatta.webp",
   pattern:"/images/Cora_tile grafismo.svg",
 };
 

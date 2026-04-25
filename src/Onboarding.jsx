@@ -10,8 +10,8 @@ import { B, W, fd, fb, fmt, radii } from "./tokens";
 const IMG={
   logo:"/images/cora_logo_com_tag.svg",
   logoTag:"/images/cora_logo_com_tag.svg",
-  original:"/images/_original.jpg",
-  integral:"/images/_integral.jpg",
+  original:"/images/_original.webp",
+  integral:"/images/_integral.webp",
   coracao:"/images/grafismo_coracao.svg",
 };
 

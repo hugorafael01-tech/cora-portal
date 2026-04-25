@@ -15,42 +15,42 @@ const PRODUCTS = [
     id: "original",
     nome: "Pão Original",
     peso: "580g",
-    img: "/images/_original.jpg",
+    img: "/images/_original.webp",
     desc: "Mix de farinhas italiana e brasileira, água, sal e o levain da Cora. Fermentação lenta, crosta firme e miolo aberto.",
   },
   {
     id: "integral",
     nome: "Pão Integral",
     peso: "614g",
-    img: "/images/_integral.jpg",
+    img: "/images/_integral.webp",
     desc: "100% integral, com um blend de farinhas brasileira e italiana que traz mais complexidade ao sabor. Azeite na massa, fermentação lenta e miolo que fica macio por dias.",
   },
   {
     id: "multigraos",
     nome: "Multigrãos",
     peso: "631g",
-    img: "/images/_multigraos.jpg",
+    img: "/images/_multigraos.webp",
     desc: "Sete sementes torradas e escaldadas misturadas a farinha italiana e ao levain da Cora. Massa de alta hidratação, cheia de textura e sabor em cada fatia.",
   },
   {
     id: "focaccia",
     nome: "Focaccia Genovesa",
     peso: "400g",
-    img: "/images/_focaccia.jpg",
+    img: "/images/_focaccia.webp",
     desc: "Massa de fermentação lenta com azeite generoso e o levain da Cora, coberta com cebola roxa, alecrim fresco e sal grosso.",
   },
   {
     id: "brioche",
     nome: "Brioche",
     peso: "400g",
-    img: "/images/_brioche.jpg",
+    img: "/images/_brioche.webp",
     desc: "Farinha italiana, manteiga, ovos e mel encontram o levain da Cora numa massa amanteigada de fermentação natural, com miolo dourado que desfia.",
   },
   {
     id: "ciabatta",
     nome: "Ciabatta Rústica",
     peso: "400g",
-    img: "/images/_ciabatta.jpg",
+    img: "/images/_ciabatta.webp",
     desc: "Massa leve de alta hidratação com farinha italiana, azeite e o levain da Cora. Casca fina e miolo aerado, feito pra abrir no meio e virar sanduíche.",
   },
 ];
@@ -594,7 +594,7 @@ const FormScreen = ({ onSubmit }) => {
             display: "flex",
             gap: 10,
             alignItems: "flex-start",
-            marginBottom: 32,
+            marginBottom: 12,
             cursor: "pointer",
           }}
           onClick={() => setOptinMailing(!optinMailing)}
@@ -637,6 +637,18 @@ const FormScreen = ({ onSubmit }) => {
             Quero receber novidades da Cora pelo WhatsApp até as entregas começarem.
           </span>
         </div>
+
+        <p
+          style={{
+            fontFamily: "'Montagu Slab', Georgia, serif",
+            fontSize: 12,
+            color: W[600],
+            lineHeight: 1.6,
+            margin: "0 0 24px",
+          }}
+        >
+          Seus dados ficam guardados só pra te avisar quando a Cora abrir oficialmente. Pode pedir pra excluir a qualquer momento pelo WhatsApp.
+        </p>
 
         {submitError && <div style={{padding:"12px 16px",borderRadius:radii.md,background:"#FFEDD5",color:"#9A3412",fontFamily:"'Montagu Slab', Georgia, serif",fontSize:14,marginBottom:16,lineHeight:1.5}}>{submitError}</div>}
 
