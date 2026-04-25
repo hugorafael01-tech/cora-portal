@@ -715,6 +715,10 @@ const Perfil=({confirmed,hasPending,assinaturaQtds,cestaAtual,houveSwap,historic
 export default function CoraPortal(){
   const skipOnboarding = window.location.search.includes("skip=true");
   const [scr, setScr] = useState(skipOnboarding ? "home" : "onboarding");
+  const mainRef=useRef(null);
+  // Reset scroll do <main> ao trocar de aba (evita abrir a tela nova
+  // na mesma altura em que a anterior estava).
+  useEffect(()=>{mainRef.current?.scrollTo({top:0});},[scr]);
   const[pending,setPending]=useState([]);
   const[confirmed,setConfirmed]=useState([]);
   const[justConfirmed,setJustConfirmed]=useState(false);
@@ -844,7 +848,7 @@ const params = new URLSearchParams(window.location.search);
     <div style={{padding:"10px 16px",background:"#FFF",borderBottom:`1px solid ${W[200]}`,position:"sticky",top:0,zIndex:10}}>
       <img src={IMG.logo} alt="Cora" style={{height:28}}/>
     </div>
-    <main id="main-content" style={{flex:1,overflowY:"auto"}}>
+    <main ref={mainRef} id="main-content" style={{flex:1,overflowY:"auto"}}>
       <div key={scr} className="tab-content">
         {scr==="home"&&<Home onNav={handleNav} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaSemana={cestaSemana} cestaAtual={cestaAtual} houveSwap={houveSwap} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} historicoCicloAtual={historicoCicloAtual}/>}
         {scr==="assinatura"&&<Assinatura onNav={handleNav} hasPending={hasPending} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} onSalvar={handleSalvarAssinatura}/>}
