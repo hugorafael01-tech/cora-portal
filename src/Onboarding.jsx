@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import ProductCard from "./components/ProductCard";
 import { B, W, fd, fb, fmt, radii } from "./tokens";
 
@@ -288,6 +288,9 @@ export default function CoraOnboarding({onComplete}){
   const[errors,setErrors]=useState({});
   const[website,setWebsite]=useState(""); // honeypot
   const formErrorRef=useRef(null);
+  const scrollRef=useRef(null);
+  // Reset scroll ao trocar step/screen do onboarding (mesma logica do App).
+  useEffect(()=>{scrollRef.current?.scrollTo({top:0});window.scrollTo({top:0});},[step,screen]);
 
   const clearError=(field)=>{
     setErrors(prev=>{const n={...prev};delete n[field];return n;});
@@ -375,7 +378,7 @@ export default function CoraOnboarding({onComplete}){
       </div>
       <Progress step={step}/>
     </div>
-    <div style={{flex:1,overflowY:"auto",padding:16}}>
+    <div ref={scrollRef} style={{flex:1,overflowY:"auto",padding:16}}>
       {step===1&&<Step1 data={data} setData={setData} errors={errors} clearError={clearError}/>}
       {step===2&&<Step2 assinatura={assinatura} setAssinatura={setAssinatura}/>}
       {step===3&&<>
