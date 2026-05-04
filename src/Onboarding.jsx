@@ -46,7 +46,7 @@ const H=({children,size=24})=><div style={{fontFamily:fd,fontSize:size,textTrans
 const Label=({children,apoio})=><div style={{marginBottom:4}}><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[700]}}>{children}</div>{apoio&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:2}}>{apoio}</div>}</div>;
 const Input=({placeholder,value,onChange,type="text",error,onFocusExtra})=><input type={type} placeholder={placeholder} value={value} onChange={e=>onChange(e.target.value)} style={{width:"100%",padding:"12px 14px",fontSize:15,fontFamily:fb,border:`1.5px solid ${error?"#EF4444":W[200]}`,borderRadius:radii.md,background:"#FFF",color:W[800],outline:"none",transition:"border-color 200ms"}} onFocus={e=>{e.target.style.borderColor=error?"#EF4444":B[400];onFocusExtra&&onFocusExtra();}} onBlur={e=>e.target.style.borderColor=error?"#EF4444":W[200]}/>;
 const Btn=({children,primary,disabled,onClick,style:es={}})=><button onClick={onClick} disabled={disabled} style={{width:"100%",padding:"14px 0",borderRadius:radii.md,fontSize:15,fontWeight:600,fontFamily:fb,cursor:disabled?"default":"pointer",transition:"all 200ms",border:primary?"none":`1.5px solid ${W[300]}`,background:primary?(disabled?W[300]:B[500]):"transparent",color:primary?"#FFF":W[600],opacity:disabled?0.6:1,...es}}>{children}</button>;
-const Progress=({step})=><div style={{display:"flex",gap:6,padding:"0 16px"}}>{[1,2,3].map(s=><div key={s} style={{flex:1,height:3,borderRadius:radii.xs,transition:"all 300ms",background:s<=step?B[500]:W[200]}}/>)}</div>;
+const Progress=({step})=><div style={{display:"flex",gap:6,padding:"0 16px"}}>{[1,2].map(s=><div key={s} style={{flex:1,height:3,borderRadius:radii.xs,transition:"all 300ms",background:s<=step?B[500]:W[200]}}/>)}</div>;
 const Field=({label,apoio,children,error})=><div style={{marginBottom:16}}><Label apoio={apoio}>{label}</Label>{children}{error&&<div style={{fontSize:13,color:"#DC2626",fontFamily:fb,marginTop:4}}>{error}</div>}</div>;
 
 /* ═══ SPLASH . Redesenhado alinhado com PreCadastro ═══ */
@@ -110,10 +110,9 @@ const Step1=({data,setData,errors,clearError})=>(
   </div>
 );
 
-/* ═══ STEP 2 . Monte sua Assinatura ═══ */
+/* ═══ STEP 2 . Sua Assinatura ═══ */
 const Step2=({assinatura,setAssinatura})=>{
   const totalPaes=Object.values(assinatura).reduce((s,q)=>s+q,0);
-  const totalMensal=VALOR_POR_PAO*totalPaes;
   const atingiuLimite=totalPaes>=LIMITE_PAES;
 
   const setQty=(id,q)=>{
@@ -127,115 +126,23 @@ const Step2=({assinatura,setAssinatura})=>{
   return(
     <div>
       <div style={{marginBottom:16}}>
-        <H size={22}>Monte sua Assinatura</H>
-        <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:4}}>Escolha entre 1 e 3 pães pra receber toda semana, na sua porta. Você pode alterar quando quiser.</div>
-        {atingiuLimite&&<div style={{fontFamily:fb,fontSize:12,color:B[700],background:B[50],border:`1px solid ${B[100]}`,borderRadius:radii.md,padding:"8px 12px",marginTop:10,lineHeight:1.4}}>Você escolheu 3 pães, o máximo por semana.</div>}
+        <H size={30}>Sua Assinatura</H>
+        <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:6,lineHeight:1.5}}>Toda quinta, pão fresco na sua porta. Escolha entre 1 e 3 pães e altere quando quiser.</div>
       </div>
 
-      {/* Cards #FFF interativos. ProductCard mostra accordion quando tem ingredientes */}
-      <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
+      {/* Cards com seletor direto (sem botao 'Quero') — estados visuais via directQtySelector. */}
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {ASSINATURA_OPCOES.map(c=>{
           const qty=assinatura[c.id]||0;
-          // disabled = limite global atingido. No ProductCard:
-          // - qty===0: CTA 'Quero' fica desabilitado (total ja eh 3)
-          // - qty>0: botao + do QtyBtn fica desabilitado, - continua habilitado
           return<ProductCard key={c.id}
             product={{...c, preco:undefined}}
             qty={qty}
             disabled={atingiuLimite}
+            directQtySelector
             onAdd={()=>{if(!atingiuLimite)setQty(c.id,qty+1);}}
             onRemove={()=>setQty(c.id,qty-1)}
-            ctaLabel="Quero"
           />;
         })}
-      </div>
-
-      {/* Resumo (contêiner W[100]) */}
-      {totalPaes>0&&<div style={{background:W[100],borderRadius:radii.lg,padding:14,border:`1px solid ${W[200]}`}}>
-        {Object.entries(assinatura).map(([id,qty])=>{
-          const c=ASSINATURA_OPCOES.find(x=>x.id===id);
-          if(!c)return null;
-          return<div key={id} style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-            <span style={{fontFamily:fb,fontSize:13,color:W[500]}}>{c.nome} × {qty}/semana</span>
-            <span style={{fontFamily:fb,fontSize:13,color:W[600]}}>{fmt(VALOR_POR_PAO*qty)}</span>
-          </div>;
-        })}
-        <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-          <span style={{fontFamily:fb,fontSize:13,color:W[500]}}>Frete mensal</span>
-          <span style={{fontFamily:fb,fontSize:13,color:W[600]}}>{fmt(FRETE_MENSAL)}</span>
-        </div>
-        <div style={{height:1,background:W[200],marginBottom:8}}/>
-        <div style={{display:"flex",justifyContent:"space-between"}}>
-          <span style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800]}}>Total mensal</span>
-          <span style={{fontFamily:fb,fontSize:18,fontWeight:700,color:B[500]}}>{fmt(totalMensal+FRETE_MENSAL)}</span>
-        </div>
-        <div style={{fontFamily:fb,fontSize:11,color:W[500],marginTop:6,lineHeight:1.4}}>Cobrado mensalmente no cartão. Em meses com 5 semanas, o pão extra é por nossa conta.</div>
-      </div>}
-
-      {/* Pagamento */}
-      {totalPaes>0&&<div style={{marginTop:20}}>
-        <div style={{height:1,background:W[200],marginBottom:16}}/>
-        <Label apoio="Seu cartão é cadastrado com segurança. A primeira cobrança acontece no início do mês.">Dados de pagamento</Label>
-        <div style={{marginBottom:12}}><Input placeholder="Número do cartão" value="" onChange={()=>{}}/></div>
-        <div style={{display:"flex",gap:10,marginBottom:12}}>
-          <div style={{flex:1}}><Input placeholder="MM/AA" value="" onChange={()=>{}}/></div>
-          <div style={{flex:1}}><Input placeholder="CVV" value="" onChange={()=>{}}/></div>
-        </div>
-        <Field label="CPF" apoio="Para a nota fiscal."><Input placeholder="000.000.000-00" value="" onChange={()=>{}}/></Field>
-      </div>}
-    </div>
-  );
-};
-
-/* ═══ STEP 3 . Revisão ═══ */
-const Step3=({data,assinatura})=>{
-  const items=Object.entries(assinatura).map(([id,qty])=>({...ASSINATURA_OPCOES.find(c=>c.id===id),qty})).filter(Boolean);
-  const totalPaes=items.reduce((s,c)=>s+c.qty,0);
-  const totalMensal=VALOR_POR_PAO*totalPaes;
-  const genLabel={f:"Feminino",m:"Masculino",n:"Neutro"};
-  const Row=({label,value})=><div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${W[100]}`}}><span style={{fontFamily:fb,fontSize:13,color:W[500]}}>{label}</span><span style={{fontFamily:fb,fontSize:13,fontWeight:500,color:W[800],textAlign:"right",maxWidth:"60%"}}>{value}</span></div>;
-
-  return(
-    <div>
-      <div style={{marginBottom:16}}>
-        <H size={22}>Tudo certo?</H>
-        <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:4}}>Confira seus dados antes de confirmar. Você pode alterar tudo depois.</div>
-      </div>
-
-      <div style={{marginBottom:16}}>
-        <div style={{fontFamily:fd,fontSize:14,textTransform:"uppercase",color:B[500],letterSpacing:"0.04em",marginBottom:8}}>Dados pessoais</div>
-        <div style={{background:"#FFF",borderRadius:radii.lg,padding:"4px 14px",border:`1px solid ${W[200]}`}}>
-          <Row label="Nome" value={data.nome||"."}/>
-          <Row label="WhatsApp" value={data.whatsapp||"."}/>
-          <Row label="E-mail" value={data.email||"."}/>
-          <Row label="Tratamento" value={genLabel[data.genero]||"."}/>
-          <Row label="Endereço" value={data.endereco||"."}/>
-          {data.complemento&&<Row label="Complemento" value={data.complemento}/>}
-        </div>
-      </div>
-
-      <div style={{marginBottom:16}}>
-        <div style={{fontFamily:fd,fontSize:14,textTransform:"uppercase",color:B[500],letterSpacing:"0.04em",marginBottom:8}}>Sua Assinatura</div>
-        <div style={{background:"#FFF",borderRadius:radii.lg,overflow:"hidden",border:`1px solid ${W[200]}`}}>
-          {items.map(c=><div key={c.id} style={{display:"flex",alignItems:"stretch",borderBottom:`1px solid ${W[100]}`}}>
-            <img src={c.img} alt={c.nome} style={{width:72,objectFit:"cover",display:"block"}}/>
-            <div style={{flex:1,padding:12}}>
-              <div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800]}}>{c.nome}</div>
-              <div style={{fontFamily:fb,fontSize:12,color:W[500]}}>{c.peso} · {c.qty}/semana</div>
-            </div>
-          </div>)}
-          <div style={{padding:"8px 14px 14px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontFamily:fb,fontSize:13,color:W[500]}}>Assinatura</span><span style={{fontFamily:fb,fontSize:13,color:W[600]}}>{fmt(totalMensal)}</span></div>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontFamily:fb,fontSize:13,color:W[500]}}>Frete</span><span style={{fontFamily:fb,fontSize:13,color:W[600]}}>{fmt(FRETE_MENSAL)}</span></div>
-            <div style={{height:1,background:W[200],marginBottom:8}}/>
-            <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800]}}>Total mensal</span><span style={{fontFamily:fb,fontSize:18,fontWeight:700,color:B[500]}}>{fmt(totalMensal+FRETE_MENSAL)}</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div style={{background:B[50],borderRadius:radii.lg,padding:14,border:`1px solid ${B[100]}`}}>
-        <div style={{fontFamily:fb,fontSize:13,color:B[700],fontWeight:500}}>Entrega toda quinta-feira</div>
-        <div style={{fontFamily:fb,fontSize:12,color:B[600],marginTop:4}}>Alterações na Assinatura até terça, 12h. Cancelamento sem taxa, a qualquer momento.</div>
       </div>
     </div>
   );
@@ -281,7 +188,6 @@ const Welcome=({data,assinatura,onComplete})=>{
 export default function CoraOnboarding({onComplete}){
   const[screen,setScreen]=useState("splash");
   const[step,setStep]=useState(1);
-  const[termos,setTermos]=useState(false);
   const[data,setData]=useState({nome:"",whatsapp:"",email:"",endereco:"",complemento:"",genero:""});
   const assinaturaDaURL=(()=>{const p=new URLSearchParams(window.location.search);const id=p.get("produto")||p.get("cesta");return id?{[id]:1}:{};})();
   const[assinatura,setAssinatura]=useState(assinaturaDaURL);
@@ -322,15 +228,23 @@ export default function CoraOnboarding({onComplete}){
         },100);
         return;
       }
+      setStep(2);
+      return;
     }
-    setStep(step+1);
+    if(step===2){
+      // T2 confirmada -> vai pra Welcome. Persistencia em DB e disparo
+      // de e-mail entram na Fase 7 (backend).
+      setScreen("welcome");
+    }
   };
 
   const totalItems=Object.values(assinatura).reduce((s,q)=>s+q,0);
   const canNext2=totalItems>0;
-  const canConfirm=termos;
+  const atingiuLimite=totalItems>=LIMITE_PAES;
+  const valorPaes=VALOR_POR_PAO*totalItems;
+  const valorTotal=valorPaes+FRETE_MENSAL;
 
-  const stepLabel=["Dados","Sua Assinatura","Confirmação"];
+  const stepLabel=["SOBRE VOCÊ","SUA ASSINATURA"];
 
   const shell=(content)=>(
     <div style={{maxWidth:390,margin:"0 auto",minHeight:"100vh",background:W[50],display:"flex",flexDirection:"column"}}>
@@ -374,20 +288,13 @@ export default function CoraOnboarding({onComplete}){
     <div style={{background:"#FFF",padding:"12px 16px",borderBottom:`1px solid ${W[200]}`,flexShrink:0}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
         <img src={IMG.logo} alt="Cora" style={{height:24}}/>
-        <div style={{fontFamily:fb,fontSize:12,color:W[500]}}>{step}/3 · {stepLabel[step-1]}</div>
+        <div style={{fontFamily:fb,fontSize:12,color:W[500]}}>{step}/2 · {stepLabel[step-1]}</div>
       </div>
       <Progress step={step}/>
     </div>
     <div ref={scrollRef} style={{flex:1,overflowY:"auto",padding:16}}>
       {step===1&&<Step1 data={data} setData={setData} errors={errors} clearError={clearError}/>}
       {step===2&&<Step2 assinatura={assinatura} setAssinatura={setAssinatura}/>}
-      {step===3&&<>
-        <Step3 data={data} assinatura={assinatura}/>
-        <div onClick={()=>setTermos(!termos)} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"14px 0",cursor:"pointer",marginTop:8}}>
-          <div style={{width:20,height:20,borderRadius:radii.xs,flexShrink:0,marginTop:1,border:termos?`2px solid ${B[500]}`:`2px solid ${W[300]}`,background:termos?B[500]:"#FFF",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 200ms"}}>{termos&&<span style={{color:"#FFF",fontSize:13,fontWeight:700}}>&#10003;</span>}</div>
-          <div style={{fontFamily:fb,fontSize:13,color:W[600],lineHeight:1.5}}>Ao confirmar, aceito os termos de uso e a política de privacidade da Cora.</div>
-        </div>
-      </>}
 
       {/* Honeypot anti-bot (escondido fora de tela) */}
       <div style={{position:"absolute",left:"-9999px",opacity:0,height:0,overflow:"hidden"}} aria-hidden="true">
@@ -399,9 +306,30 @@ export default function CoraOnboarding({onComplete}){
         Preencha os campos obrigatórios acima.
       </div>
     </div>
-    <div style={{padding:"12px 16px",background:"#FFF",borderTop:`1px solid ${W[200]}`,flexShrink:0,display:"flex",gap:10}}>
-      {step>1&&<Btn onClick={()=>setStep(step-1)} style={{width:"auto",flex:"0 0 auto",padding:"14px 20px"}}>Voltar</Btn>}
-      {step<3?<Btn primary disabled={step===2&&!canNext2} onClick={handleNext}>Continuar</Btn>:<Btn primary disabled={!canConfirm} onClick={()=>setScreen("welcome")}>Confirmar assinatura</Btn>}
+    <div style={{padding:"12px 16px",background:"#FFF",borderTop:`1px solid ${W[200]}`,flexShrink:0}}>
+      {step===2?(
+        // Footer da T2: bloco de info financeira a esquerda (so com paes selecionados)
+        // + botoes a direita. Quando vazio: spacer mantem botoes na borda.
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          {totalItems>0?(
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontFamily:fb,fontSize:13,fontWeight:500,color:W[800],lineHeight:1.3}}>{totalItems} {totalItems===1?"pão":"pães"} por semana</div>
+              <div style={{fontFamily:fb,fontSize:12,color:W[600],marginTop:2,lineHeight:1.3}}>{fmt(valorPaes)}/mês · Frete {fmt(FRETE_MENSAL)}</div>
+              <div style={{fontFamily:fb,fontSize:14,fontWeight:700,color:B[700],marginTop:2,lineHeight:1.3}}>Total {fmt(valorTotal)}/mês</div>
+              {atingiuLimite&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:6,lineHeight:1.4}}>Máximo 3 pães por semana.</div>}
+            </div>
+          ):<div style={{flex:1}}/>}
+          <div style={{display:"flex",gap:10,flexShrink:0}}>
+            <Btn onClick={()=>setStep(1)} style={{width:"auto",flex:"0 0 auto",padding:"14px 20px"}}>Voltar</Btn>
+            <Btn primary disabled={!canNext2} onClick={handleNext} style={{width:"auto",flex:"0 0 auto",padding:"14px 24px"}}>Continuar</Btn>
+          </div>
+        </div>
+      ):(
+        <div style={{display:"flex",gap:10}}>
+          {step>1&&<Btn onClick={()=>setStep(step-1)} style={{width:"auto",flex:"0 0 auto",padding:"14px 20px"}}>Voltar</Btn>}
+          <Btn primary onClick={handleNext}>Continuar</Btn>
+        </div>
+      )}
     </div>
   </>);
 }
