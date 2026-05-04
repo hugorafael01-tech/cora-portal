@@ -53,6 +53,40 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 <!-- STATUS_MANUAL_START -->
 
-(nada registrado ainda)
+<!-- STATUS_MANUAL_START -->
+
+## Spec vigente
+- **Portal:** v3.0 (mar/2026) + Adendo v3.1 (mar/2026)
+- **Próxima consolidação prevista:** v4.0 (pós-testes de usabilidade)
+- **Local dos docs:** projeto do Claude (CORA_Portal_Assinante_Especificacao_v3.docx + CORA_Portal_Adendo_v3_1_Redesign.docx)
+
+## Observações sobre este arquivo
+- `package.json` com version `0.0.0` — produto é v3.2.7, não há versionamento formal no código. A decidir: adotar semver no package.json ou tratar versão só como conceito de produto.
+- Listagem de rotas/componentes pode estar incompleta (top-level apenas). Ajustar prompt na próxima regeneração se for o caso.
+
+## Decisões de produto aguardando Hugo
+- [x] Preços unitários dos pães extras na cesta semanal (hoje NULL no schema do backoffice)
+- [ ] Swap Original ↔ Integral é cost-neutral? Validar contra CORA_Fichas_Producao_v5.xlsx
+- [ ] Como cobranças de extras aparecem no billing do Asaas (linha única? linha separada?)
+- [ ] Conflito de posicionamento: 3 tiers antigos em posicionamento.md vs. modelo único R$99 + R$15 frete
+
+## Blockers externos (fora do repo)
+- [ ] Conta Asaas não criada — bloqueia integração de pagamento (task ClickUp: 86e0rgdhn)
+- [ ] Google Workspace hugo@acora.com.br — setup pendente
+- [ ] Definir Asaas CPF vs CNPJ antes de criar conta (task ClickUp: 86e0rghwq)
+
+## Gap spec × código (a reconciliar)
+- Spec v3.0 cita Stripe/Pagar.me como gateway → produto migrou pra Asaas. Atualizar seção 7.2 na próxima consolidação.
+- Bottom nav da spec v3.0 (Home, Demonstrativo, Cardápio, Perfil) substituída na v3.1 (Home, Sua Assinatura, Cardápio, Perfil). Verificar se código reflete v3.1.
+
+## Próximo foco acordado
+- Refactor do onboarding (briefing: docs/CORA_Briefing_Refactor_Onboarding.md)
+- Decisões-chave: 2 telas + Welcome (sem T3 de cartão), validação de cobertura por lista de bairros + whitelist, notificação por e-mail pro Hugo a cada novo pedido
+- Asaas via link de pagamento manual no MVP — não coletar cartão no portal
+
+## Última sessão de trabalho
+- **Data:** 2026-04-24
+- **Tema:** organização do fluxo de trabalho, auditoria do ClickUp, criação do PORTAL_STATUS.md
+- **Saída:** Claude Code gerou versão inicial do arquivo; pendências não-código mapeadas.
 
 <!-- STATUS_MANUAL_END -->

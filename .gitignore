@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# macOS — duplicatas geradas ao colar arquivos com nome existente
+* 2.*
+* 2
+
+# Outros projetos não devem morar aqui
+Projects/
+cora-backoffice-docs/

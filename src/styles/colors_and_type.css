@@ -1,0 +1,264 @@
+/* ═══════════════════════════════════════════════════════════════
+   CORA — Design Tokens (cores + tipografia)
+   Fonte única de verdade. Importe com:
+     <link rel="stylesheet" href="colors_and_type.css">
+   ═══════════════════════════════════════════════════════════════
+
+   PRINCÍPIOS
+   — Um azul só. Brand-500 (#2E55CD) é o protagonista.
+   — Flat, sempre. Sem gradientes, sem shadows, sem pill buttons.
+     (Exceção funcional: focus ring usa box-shadow por acessibilidade.)
+   — Hierarquia por cor de fundo: página (warm-50) → card (warm-100) → modal (#FFF).
+   — Tons quentes, nunca cinza puro. Warm-50 (#FAFAF8) como fundo, nunca #FFFFFF.
+   — League Gothic para títulos (sempre uppercase). Montagu Slab para corpo.
+*/
+
+/* League Gothic — variable font local (eixo wdth 75–100) */
+@font-face {
+  font-family: 'League Gothic';
+  src: url('fonts/LeagueGothic-Regular-VariableFont_wdth.ttf') format('truetype-variations'),
+       url('fonts/LeagueGothic-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-stretch: 75% 100%;
+  font-display: swap;
+}
+/* Instância condensed explícita, se preciso fixar largura */
+@font-face {
+  font-family: 'League Gothic Condensed';
+  src: url('fonts/LeagueGothic_Condensed-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'League Gothic SemiCondensed';
+  src: url('fonts/LeagueGothic_SemiCondensed-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+/* Montagu Slab — variable font local (fonts/ enviado pela marca) */
+@font-face {
+  font-family: 'Montagu Slab';
+  src: url('fonts/MontaguSlab-VariableFont_opsz_wght.ttf') format('truetype-variations'),
+       url('fonts/MontaguSlab-VariableFont_opsz_wght.ttf') format('truetype');
+  font-weight: 100 700;
+  font-style: normal;
+  font-display: swap;
+  /* opsz 24–144; browsers modernos ajustam automaticamente pelo size */
+}
+
+:root {
+  /* ── BRAND (azul — o protagonista) ───────────────────── */
+  --brand-50:  #EBEEFB;
+  --brand-100: #C4CDF4;
+  --brand-200: #8B9BE6;
+  --brand-400: #5670D8;
+  --brand-500: #2E55CD;   /* ★ cor primária — Royal Azure */
+  --brand-600: #2545A8;   /* hover */
+  --brand-700: #1D3787;
+  --brand-800: #172E6E;   /* headings sobre fundo claro */
+  --brand-900: #0F1E49;
+
+  /* ── ACCENTS (uso editorial, nunca estrutural) ─────────
+     Cores de expressão, não de interface. Jamais substituem
+     brand-* ou status-* em componentes de UI.
+     Pink     — JAMAIS para erro, pagamento, alerta ou produção.
+                Apenas marketing, hero, highlight editorial.
+                Vermelho vibrante ativa resposta de ameaça;
+                use --danger apenas em bloqueio crítico.
+     Sand     — calor e textura editorial (hero, ilustrações).
+                Não usar em componentes funcionais.
+     Prussian — fundo escuro alternativo, modo reverso.          */
+  --pink-50:   #FFE6E9;
+  --pink-200:  #FFB3BB;
+  --pink-500:  #FF5362;   /* ★ Bubblegum Pink — editorial apenas */
+  --pink-700:  #C7303E;
+
+  --sand-50:   #F6F3EA;
+  --sand-200:  #E2D9C0;
+  --sand-500:  #BFB48F;   /* ★ Sand — editorial apenas */
+  --sand-700:  #8C8261;
+
+  --ink-500:   #1A2543;   /* intermediário */
+  --ink-700:   #0B1532;   /* ★ Prussian Blue — fundo escuro */
+  --ink-900:   #050A1C;
+
+  /* ── WARM (tons quentes, nunca cinza puro) ───────────── */
+  --warm-50:  #FAFAF8;    /* ★ fundo de página */
+  --warm-100: #F5F4F0;    /* ★ fundo de card */
+  --warm-200: #E8E6E1;    /* bordas, divisores */
+  --warm-300: #D4D1CA;    /* bordas interativas, inputs */
+  --warm-400: #A8A49C;    /* texto terciário, labels */
+  --warm-500: #7A766E;    /* texto secundário */
+  --warm-600: #5C5850;    /* corpo de texto */
+  --warm-700: #3D3A34;    /* texto forte */
+  --warm-800: #2A2723;    /* headings em corpo de texto */
+
+  /* ── STATUS (raros, contextuais) ──────────────────────
+     Vermelho APENAS para alerta crítico bloqueante (ex. estoque zero).
+     Pagamento recusado usa laranja (atenção), não vermelho.           */
+  --success-bg:     #D1FAE5;
+  --success-text:   #065F46;
+  --success-border: #6EE7B7;
+
+  --warning-bg:     #FEF3C7;
+  --warning-text:   #92400E;
+  --warning-border: #FCD34D;
+
+  --info-bg:        #DBEAFE;
+  --info-text:      #1E40AF;
+  --info-border:    #93C5FD;
+
+  --danger-bg:      #FEE2E2;   /* use apenas em bloqueios críticos */
+  --danger-text:    #991B1B;
+  --danger-border:  #FCA5A5;
+
+  /* ── TIPOGRAFIA ───────────────────────────────────────
+     Duas vozes apenas. Jamais Inter, Roboto, Arial.              */
+  --font-display: 'League Gothic', Impact, 'Arial Narrow', sans-serif;
+  --font-body:    'Montagu Slab', Georgia, Palatino, serif;
+
+  /* Escala tipográfica — mobile first */
+  --text-display-xl: 56px;   /* hero */
+  --text-display-lg: 30px;   /* saudação */
+  --text-display-md: 26px;   /* section title */
+  --text-display-sm: 22px;   /* step title */
+
+  --text-body-lg:  18px;
+  --text-body:     16px;     /* mínimo mobile — teste da Sra. Beatriz */
+  --text-body-sm:  14px;
+  --text-caption:  13px;
+  --text-label:    12px;
+  --text-micro:    11px;
+
+  --leading-tight: 1.1;
+  --leading-snug:  1.3;
+  --leading-body:  1.6;      /* ★ padrão para Montagu Slab */
+
+  --tracking-display: 0.02em;
+  --tracking-label:   0.04em;
+
+  /* ── RAIOS ────────────────────────────────────────────
+     Border-radius infinito é proibido como decoração.
+     --radius-full existe APENAS para elementos genuinamente
+     circulares (ícones de ✕, badge numérico, avatar).
+     Botões retangulares NUNCA usam --radius-full.                */
+  --radius-xs:   4px;        /* badges, checkboxes, pílulas pequenas */
+  --radius-md:   8px;        /* botões, inputs, sub-blocos */
+  --radius-lg:   12px;       /* cards */
+  --radius-xl:   16px;       /* modais, bottom-sheets (cantos superiores) */
+  --radius-full: 9999px;     /* círculos apenas — ✕, badge, avatar */
+
+  /* ── ESPAÇAMENTO ─────────────────────────────────────  */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ── ANIMAÇÃO (sempre funcional, nunca decorativa) ──  */
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast: 150ms;
+  --dur-base: 200ms;
+  --dur-slow: 300ms;
+
+  /* ── ALVOS MÍNIMOS (acessibilidade) ─────────────────   */
+  --tap-target: 44px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ESTILOS SEMÂNTICOS (aplicam as voices)
+   ═══════════════════════════════════════════════════════════════ */
+
+html, body {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--warm-600);
+  background-color: var(--warm-50);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6,
+.heading,
+.display {
+  font-family: var(--font-display);
+  text-transform: uppercase;    /* ★ sempre */
+  letter-spacing: var(--tracking-display);
+  font-weight: 400;             /* League Gothic é condensada — não usar bold */
+  color: var(--brand-800);
+  line-height: var(--leading-tight);
+  margin: 0;
+}
+
+h1 { font-size: var(--text-display-lg); }
+h2 { font-size: var(--text-display-md); }
+h3 { font-size: var(--text-display-sm); }
+h4 { font-size: 18px; }
+
+/* Títulos secundários sobre fundo warm — versão com cor brand */
+.heading-accent { color: var(--brand-500); }
+
+/* Label (small caps display) — usado sobre cards */
+.label-display {
+  font-family: var(--font-display);
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  color: var(--warm-400);
+  letter-spacing: var(--tracking-label);
+  line-height: 1;
+}
+
+p, li, dd, dt, figcaption { font-family: var(--font-body); }
+p { margin: 0 0 var(--space-4); }
+strong, b { font-weight: 600; }
+
+/* Valores financeiros — sempre Montagu Slab, peso 600, brand-500 */
+.money {
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: var(--brand-500);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Código (raro — apenas em documentação) */
+code, pre {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.92em;
+  background: var(--warm-100);
+  border-radius: var(--radius-xs);
+  padding: 1px 5px;
+}
+
+a { color: var(--brand-500); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ═══════════════════════════════════════════════════════════════
+   FOCUS RING — acessível, azul sobre warm
+   Box-shadow é proibido em decoração (ver PRINCÍPIOS no topo),
+   mas é permitido aqui como exceção funcional — acessibilidade
+   por teclado exige um indicador visível de foco (WCAG 2.1 AA).
+   Não replicar este padrão em outros componentes.
+   ═══════════════════════════════════════════════════════════════ */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--brand-50), 0 0 0 5px var(--brand-500);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITÁRIOS
+   ═══════════════════════════════════════════════════════════════ */
+.bg-page    { background: var(--warm-50); }
+.bg-card    { background: var(--warm-100); }
+.bg-modal   { background: #FFFFFF; }
+.bg-brand   { background: var(--brand-500); }
+.bg-brand-tint { background: var(--brand-50); }
+
+.divider { height: 1px; background: var(--warm-200); border: 0; }
