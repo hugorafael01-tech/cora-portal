@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import ProductCard from "./components/ProductCard";
+import CEPField from "./components/CEPField";
+import CoverageBlocker from "./components/CoverageBlocker";
 import { B, W, fd, fb, fmt, radii } from "./tokens";
+import { formatWhatsApp, formatCPF, isValidWhatsApp, isValidEmail, isValidCPF, isValidCEP, isValidNome, isValidNumero } from "./utils/validators";
+import { estaCoberto, estaNaWhitelist } from "./utils/coverage";
+import { buildHugoCoverageLink } from "./config/contact";
+import { postWaitlist } from "./utils/api";
 
 /* ═══════════════════════════════════════════════════════════════
    CORA . Onboarding v5
@@ -27,14 +33,10 @@ const ASSINATURA_OPCOES=[
   {id:"integral",nome:"Pão Integral",peso:"700g",avulso:29,img:IMG.integral,desc:"Sabor de grão inteiro, miolo leve. Torrado pela manhã ou ao lado da salada no almoço.",sobre:"100% integral em blend de farinha brasileira e italiana. Levain da Cora, água, sal, azeite. Hidratação 75%."},
 ];
 
-/* ── Utilitários (reaproveitados do PreCadastro) ── */
+/* ── Utilitarios ── */
+// formatWhatsApp e similares vem de utils/validators.js. sanitize fica
+// local (defensivo: remove < e > antes de armazenar texto livre).
 const sanitize=(str)=>str.replace(/[<>]/g,"");
-const formatWhatsApp=(value)=>{
-  const digits=value.replace(/\D/g,"").slice(0,11);
-  if(digits.length<=2) return digits;
-  if(digits.length<=7) return `(${digits.slice(0,2)}) ${digits.slice(2)}`;
-  return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`;
-};
 
 /* ── Grafismo Coração (decorativo, reaproveitado do PreCadastro) ── */
 const GrafismoCoracao=({size=36})=>(
@@ -77,38 +79,178 @@ const Splash=({onStart})=>(
   </div>
 );
 
-/* ═══ STEP 1 . Dados pessoais + gênero ═══ */
-const Step1=({data,setData,errors,clearError})=>(
-  <div>
-    <div style={{marginBottom:20}}>
-      <H size={22}>Seus dados</H>
-      <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:4}}>Pra gente saber quem você é e onde entregar.</div>
-    </div>
-    <Field label="Nome completo" apoio="Como você gostaria de ser chamado(a)?" error={errors.nome}>
-      <Input placeholder="Ana Beatriz Souza" value={data.nome} onChange={v=>{setData({...data,nome:sanitize(v)});clearError("nome");}} error={errors.nome}/>
-    </Field>
-    <Field label="WhatsApp (com DDD)" apoio="Para confirmações de entrega e novidades." error={errors.whatsapp}>
-      <Input placeholder="(21) 99999-0000" value={data.whatsapp} onChange={v=>{setData({...data,whatsapp:formatWhatsApp(v)});clearError("whatsapp");}} type="tel" error={errors.whatsapp}/>
-    </Field>
-    <Field label="E-mail" apoio="Para login e comprovantes." error={errors.email}>
-      <Input placeholder="ana@email.com" value={data.email} onChange={v=>{setData({...data,email:sanitize(v)});clearError("email");}} type="email" error={errors.email}/>
-    </Field>
-    <Field label="Como gostaria de ser tratado(a)?" apoio="Para a gente acertar na saudação.">
-      <div style={{display:"flex",gap:8,marginTop:4}}>
-        {[{id:"f",label:"Feminino"},{id:"m",label:"Masculino"},{id:"n",label:"Neutro"}].map(g=>(
-          <button key={g.id} onClick={()=>setData({...data,genero:g.id})} style={{flex:1,padding:"10px 0",borderRadius:radii.md,fontSize:13,fontFamily:fb,fontWeight:500,cursor:"pointer",transition:"all 200ms",border:data.genero===g.id?`2px solid ${B[500]}`:`1.5px solid ${W[200]}`,background:data.genero===g.id?B[50]:"#FFF",color:data.genero===g.id?B[700]:W[500]}}>{g.label}</button>
-        ))}
-      </div>
-    </Field>
-    <div style={{height:1,background:W[200],margin:"4px 0 16px"}}/>
-    <Field label="Endereço completo" apoio="Rua, número, bairro e cidade." error={errors.endereco}>
-      <Input placeholder="Rua das Flores, 120, Fonseca, Niterói" value={data.endereco} onChange={v=>{setData({...data,endereco:sanitize(v)});clearError("endereco");}} error={errors.endereco}/>
-    </Field>
-    <Field label="Complemento" apoio="Apartamento, bloco, portaria, referência.">
-      <Input placeholder="Bl. A, Apto 502. Deixar com o porteiro" value={data.complemento} onChange={v=>setData({...data,complemento:sanitize(v)})}/>
-    </Field>
-  </div>
+/* ═══ STEP 1 . Sobre voce + Entrega ═══ */
+const SectionTitle=({children})=>(
+  <div style={{fontFamily:fd,fontSize:14,textTransform:"uppercase",color:B[500],letterSpacing:"0.04em",marginBottom:12,marginTop:4}}>{children}</div>
 );
+
+// Input controlado com mascara/sanitize externo + onBlur pra validacao inline.
+const FormInput=({placeholder,value,onChange,onBlur,type="text",error,readOnly,inputMode,autoComplete})=>(
+  <input
+    type={type}
+    inputMode={inputMode}
+    autoComplete={autoComplete}
+    placeholder={placeholder}
+    value={value}
+    readOnly={readOnly}
+    onChange={(e)=>onChange(e.target.value)}
+    onBlur={onBlur}
+    style={{
+      width:"100%",
+      padding:"12px 14px",
+      fontSize:15,
+      fontFamily:fb,
+      border:`1.5px solid ${error?"#EF4444":W[200]}`,
+      borderRadius:radii.md,
+      background:readOnly?W[100]:"#FFF",
+      color:readOnly?W[600]:W[800],
+      outline:"none",
+      transition:"border-color 200ms",
+    }}
+    onFocus={(e)=>{ if(readOnly) return; e.target.style.borderColor=error?"#EF4444":B[400]; }}
+  />
+);
+
+const Step1=({
+  data,
+  updateField,
+  handleBlur,
+  errors,
+  cepFallback,
+  coverageStatus,
+  viaCEPResolved,
+  onCEPResolve,
+  onTryOtherCEP,
+  onSubmitWaitlist,
+})=>{
+  const camposEntregaVisiveis=viaCEPResolved && coverageStatus!=="blocked";
+  return (
+    <div>
+      <div style={{marginBottom:20}}>
+        <H size={22}>Sobre você</H>
+        <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:6,lineHeight:1.5}}>Pra começar, conta pra gente quem é você e onde quer receber.</div>
+      </div>
+
+      <SectionTitle>Sobre você</SectionTitle>
+
+      <Field label="Como quer ser chamado(a)?" error={errors.nome}>
+        <FormInput placeholder="ex: Beatriz" value={data.nome}
+          onChange={(v)=>updateField("nome", sanitize(v))}
+          onBlur={()=>handleBlur("nome")}
+          autoComplete="given-name"
+          error={errors.nome}/>
+      </Field>
+
+      <Field label="WhatsApp" apoio="Para confirmações de entrega e novidades." error={errors.whatsapp}>
+        <FormInput placeholder="(21) 99999-9999" value={data.whatsapp}
+          onChange={(v)=>updateField("whatsapp", formatWhatsApp(v))}
+          onBlur={()=>handleBlur("whatsapp")}
+          type="tel" inputMode="tel" autoComplete="tel"
+          error={errors.whatsapp}/>
+      </Field>
+
+      <Field label="E-mail" apoio="Para login e comprovantes." error={errors.email}>
+        <FormInput placeholder="seu@email.com" value={data.email}
+          onChange={(v)=>updateField("email", sanitize(v))}
+          onBlur={()=>handleBlur("email")}
+          type="email" inputMode="email" autoComplete="email"
+          error={errors.email}/>
+      </Field>
+
+      <Field label="CPF" apoio="Para gerar sua cobrança." error={errors.cpf}>
+        <FormInput placeholder="000.000.000-00" value={data.cpf}
+          onChange={(v)=>updateField("cpf", formatCPF(v))}
+          onBlur={()=>handleBlur("cpf")}
+          inputMode="numeric"
+          error={errors.cpf}/>
+      </Field>
+
+      <div style={{height:1,background:W[200],margin:"8px 0 16px"}}/>
+
+      <SectionTitle>Entrega</SectionTitle>
+
+      <Field label="CEP" apoio="A gente preenche o resto pra você." error={errors.cep}>
+        <CEPField value={data.cep} onChange={(v)=>updateField("cep", v)} onResolve={onCEPResolve}/>
+      </Field>
+
+      {camposEntregaVisiveis && (
+        <>
+          <Field label="Rua" error={errors.rua}>
+            <FormInput placeholder="Preenchido pelo CEP" value={data.rua}
+              readOnly={!cepFallback}
+              onChange={(v)=>updateField("rua", sanitize(v))}
+              onBlur={()=>handleBlur("rua")}
+              error={errors.rua}/>
+          </Field>
+
+          <Field label="Bairro" error={errors.bairro}>
+            <FormInput placeholder="Preenchido pelo CEP" value={data.bairro}
+              readOnly={!cepFallback}
+              onChange={(v)=>updateField("bairro", sanitize(v))}
+              onBlur={()=>handleBlur("bairro")}
+              error={errors.bairro}/>
+            {(data.cidade||data.estado)&&(
+              <div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:4}}>{data.cidade}{data.estado?` · ${data.estado}`:""}</div>
+            )}
+          </Field>
+
+          <Field label="Número" error={errors.numero}>
+            <FormInput placeholder="123" value={data.numero}
+              onChange={(v)=>updateField("numero", sanitize(v))}
+              onBlur={()=>handleBlur("numero")}
+              inputMode="numeric"
+              error={errors.numero}/>
+          </Field>
+
+          <Field label="Complemento (opcional)" apoio="apto, bloco, casa, fundos…">
+            <FormInput placeholder="apto 502, bloco A" value={data.complemento}
+              onChange={(v)=>updateField("complemento", sanitize(v))}/>
+          </Field>
+        </>
+      )}
+
+      {coverageStatus==="blocked" && viaCEPResolved && (
+        <CoverageBlocker
+          whatsappFromForm={data.whatsapp}
+          cep={data.cep}
+          bairro={data.bairro}
+          cidade={data.cidade}
+          estado={data.estado}
+          onSubmitWaitlist={onSubmitWaitlist}
+          onTryOtherCEP={onTryOtherCEP}
+          whatsappLink={buildHugoCoverageLink(data.bairro)}
+        />
+      )}
+
+      {coverageStatus==="unconfirmed" && (
+        <div style={{
+          background:"#FEF3C7",
+          border:"1px solid #FCD34D",
+          borderRadius:radii.lg,
+          padding:"12px 14px",
+          marginTop:8,
+          fontFamily:fb,
+          fontSize:13,
+          color:"#92400E",
+          lineHeight:1.5,
+        }}>
+          Não conseguimos confirmar cobertura agora. Vamos seguir e a gente confirma com você no WhatsApp.
+        </div>
+      )}
+
+      <p style={{
+        fontFamily:fb,
+        fontSize:12,
+        color:W[600],
+        lineHeight:1.6,
+        marginTop:16,
+        marginBottom:24,
+      }}>
+        Seus dados são usados pra entregar seu pão e cobrar a Assinatura. Pode pedir pra excluir pelo WhatsApp.
+      </p>
+    </div>
+  );
+};
 
 /* ═══ STEP 2 . Sua Assinatura ═══ */
 const Step2=({assinatura,setAssinatura})=>{
@@ -188,44 +330,151 @@ const Welcome=({data,assinatura,onComplete})=>{
 export default function CoraOnboarding({onComplete}){
   const[screen,setScreen]=useState("splash");
   const[step,setStep]=useState(1);
-  const[data,setData]=useState({nome:"",whatsapp:"",email:"",endereco:"",complemento:"",genero:""});
+  const[data,setData]=useState({
+    nome:"", whatsapp:"", email:"", cpf:"",
+    cep:"", rua:"", numero:"", complemento:"",
+    bairro:"", cidade:"", estado:"",
+  });
   const assinaturaDaURL=(()=>{const p=new URLSearchParams(window.location.search);const id=p.get("produto")||p.get("cesta");return id?{[id]:1}:{};})();
   const[assinatura,setAssinatura]=useState(assinaturaDaURL);
   const[errors,setErrors]=useState({});
   const[website,setWebsite]=useState(""); // honeypot
-  const formErrorRef=useRef(null);
+  // Estado da T1 (cobertura + fallback do ViaCEP). Vive no pai pra
+  // preservar quando voltar de Step2 pra Step1.
+  const[cepFallback,setCepFallback]=useState(false);
+  const[coverageStatus,setCoverageStatus]=useState("idle"); // idle | ok | blocked | unconfirmed
+  const[viaCEPResolved,setViaCEPResolved]=useState(false);
   const scrollRef=useRef(null);
   // Reset scroll ao trocar step/screen do onboarding (mesma logica do App).
   useEffect(()=>{scrollRef.current?.scrollTo({top:0});window.scrollTo({top:0});},[step,screen]);
 
-  const clearError=(field)=>{
-    setErrors(prev=>{const n={...prev};delete n[field];return n;});
-    if(formErrorRef.current) formErrorRef.current.style.display='none';
+  // Validador puro por campo. Retorna mensagem de erro ou null/false.
+  const validateField=(field, value, ctx={})=>{
+    switch(field){
+      case "nome": return !isValidNome(value) ? "Mínimo 2 caracteres, sem números." : null;
+      case "whatsapp": return !isValidWhatsApp(value) ? "Confira o número com DDD." : null;
+      case "email": return !isValidEmail(value) ? "Informe um e-mail válido." : null;
+      case "cpf": return !isValidCPF(value) ? "CPF inválido." : null;
+      case "cep": return !isValidCEP(value) ? "Informe um CEP válido." : null;
+      case "numero": return !isValidNumero(value) ? "Informe o número." : null;
+      case "rua": return ctx.cepFallback && !value?.trim() ? "Informe a rua." : null;
+      case "bairro": return ctx.cepFallback && !value?.trim() ? "Informe o bairro." : null;
+      default: return null;
+    }
   };
 
-  const validateStep1=()=>{
-    const e={};
-    if(!data.nome.trim()||data.nome.trim().split(/\s+/).length<2) e.nome="Precisamos do nome e sobrenome.";
-    const digits=data.whatsapp.replace(/\D/g,"");
-    if(digits.length<10||digits.length>11) e.whatsapp="Confira o número com DDD.";
-    if(!data.email.trim()||!data.email.includes("@")) e.email="Informe um e-mail válido.";
-    if(!data.endereco.trim()) e.endereco="Informe seu endereço.";
-    if(!data.genero) e.genero="Selecione uma opção.";
-    setErrors(e);
-    return Object.keys(e).length===0;
+  // Validacao inline mista:
+  //  - onChange (via updateField): so revalida se o campo ja tinha erro
+  //  - onBlur: valida sempre
+  const updateField=(field, value)=>{
+    setData(prev=>{
+      const next={...prev,[field]:value};
+      // Reset dependentes do CEP quando CEP muda apos resolver.
+      if(field==="cep" && (prev.rua || prev.bairro || prev.cidade)){
+        next.rua=""; next.bairro=""; next.cidade=""; next.estado="";
+      }
+      return next;
+    });
+    if(field==="cep"){
+      // Limpa estados auxiliares ate o proximo resolve.
+      setViaCEPResolved(false);
+      setCepFallback(false);
+      setCoverageStatus("idle");
+    }
+    if(errors[field]){
+      const msg=validateField(field, value, {cepFallback});
+      setErrors(prev=>{
+        const next={...prev};
+        if(msg) next[field]=msg; else delete next[field];
+        return next;
+      });
+    }
   };
+
+  const handleBlur=(field)=>{
+    const msg=validateField(field, data[field], {cepFallback});
+    setErrors(prev=>{
+      const next={...prev};
+      if(msg) next[field]=msg; else delete next[field];
+      return next;
+    });
+  };
+
+  const handleCEPResolve=(result)=>{
+    setViaCEPResolved(true);
+    if(result.success){
+      setData(prev=>({
+        ...prev,
+        cep: prev.cep,
+        rua: result.rua||"",
+        bairro: result.bairro||"",
+        cidade: result.cidade||"",
+        estado: result.estado||"",
+      }));
+      setCepFallback(false);
+      const coberto=estaCoberto(result.bairro, result.cidade);
+      const naWhitelist=estaNaWhitelist({cpf:data.cpf, email:data.email, cep:result.cep});
+      setCoverageStatus(coberto || naWhitelist ? "ok" : "blocked");
+      // Limpa erro de CEP se havia
+      setErrors(prev=>{const n={...prev}; delete n.cep; return n;});
+    } else if(result.fallback){
+      // ViaCEP indisponivel — libera campos pra edicao manual e marca
+      // pra confirmacao manual no email pro Hugo (Opcao A).
+      setCepFallback(true);
+      setCoverageStatus("unconfirmed");
+      setData(prev=>({...prev, rua:"", bairro:"", cidade:"", estado:""}));
+      setErrors(prev=>{const n={...prev}; delete n.cep; return n;});
+    } else {
+      // CEP inexistente — esconde campos dependentes e nao deixa avancar
+      setCepFallback(false);
+      setCoverageStatus("idle");
+      setViaCEPResolved(false);
+      setData(prev=>({...prev, rua:"", bairro:"", cidade:"", estado:""}));
+    }
+  };
+
+  const handleTryOtherCEP=()=>{
+    setData(prev=>({...prev, cep:"", rua:"", bairro:"", cidade:"", estado:""}));
+    setViaCEPResolved(false);
+    setCepFallback(false);
+    setCoverageStatus("idle");
+  };
+
+  const handleSubmitWaitlist=async(payload)=>{
+    await postWaitlist({
+      ...payload,
+      nome: data.nome,
+      email: data.email,
+      cpf: data.cpf.replace(/\D/g,""),
+    });
+  };
+
+  // Forma derivada: form completo e valido pra habilitar Continuar?
+  const step1Valido=(()=>{
+    if(coverageStatus==="blocked") return false;
+    if(!viaCEPResolved) return false;
+    const camposBase=["nome","whatsapp","email","cpf","cep","numero"];
+    for(const f of camposBase){
+      if(validateField(f, data[f], {cepFallback})) return false;
+    }
+    if(cepFallback){
+      if(!data.rua?.trim()) return false;
+      if(!data.bairro?.trim()) return false;
+    }
+    return true;
+  })();
 
   const handleNext=()=>{
     if(website) return; // honeypot: bot detectado
-    if(formErrorRef.current) formErrorRef.current.style.display='none';
     if(step===1){
-      if(!validateStep1()){
-        setTimeout(()=>{
-          if(formErrorRef.current){
-            formErrorRef.current.style.display='block';
-            formErrorRef.current.scrollIntoView({behavior:'smooth',block:'center'});
-          }
-        },100);
+      if(!step1Valido){
+        // Defensivo: re-valida tudo pra exibir erros caso usuario clique mesmo desabilitado.
+        const e={};
+        ["nome","whatsapp","email","cpf","cep","numero","rua","bairro"].forEach(f=>{
+          const msg=validateField(f, data[f], {cepFallback});
+          if(msg) e[f]=msg;
+        });
+        setErrors(e);
         return;
       }
       setStep(2);
@@ -293,7 +542,18 @@ export default function CoraOnboarding({onComplete}){
       <Progress step={step}/>
     </div>
     <div ref={scrollRef} style={{flex:1,overflowY:"auto",padding:16}}>
-      {step===1&&<Step1 data={data} setData={setData} errors={errors} clearError={clearError}/>}
+      {step===1&&<Step1
+        data={data}
+        updateField={updateField}
+        handleBlur={handleBlur}
+        errors={errors}
+        cepFallback={cepFallback}
+        coverageStatus={coverageStatus}
+        viaCEPResolved={viaCEPResolved}
+        onCEPResolve={handleCEPResolve}
+        onTryOtherCEP={handleTryOtherCEP}
+        onSubmitWaitlist={handleSubmitWaitlist}
+      />}
       {step===2&&<Step2 assinatura={assinatura} setAssinatura={setAssinatura}/>}
 
       {/* Honeypot anti-bot (escondido fora de tela) */}
@@ -301,35 +561,33 @@ export default function CoraOnboarding({onComplete}){
         <label htmlFor="website">Website</label>
         <input type="text" id="website" name="website" value={website} onChange={e=>setWebsite(e.target.value)} tabIndex={-1} autoComplete="off"/>
       </div>
-
-      <div ref={formErrorRef} style={{display:"none",padding:"12px 16px",borderRadius:radii.md,background:"#FEF2F2",border:"1px solid #FECACA",color:"#991B1B",fontFamily:fb,fontSize:14,marginTop:16,lineHeight:1.5}}>
-        Preencha os campos obrigatórios acima.
-      </div>
     </div>
-    <div style={{padding:"12px 16px",background:"#FFF",borderTop:`1px solid ${W[200]}`,flexShrink:0}}>
-      {step===2?(
-        // Footer da T2: bloco de info financeira a esquerda (so com paes selecionados)
-        // + botoes a direita. Quando vazio: spacer mantem botoes na borda.
-        <div style={{display:"flex",alignItems:"center",gap:12}}>
-          {totalItems>0?(
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontFamily:fb,fontSize:13,fontWeight:500,color:W[800],lineHeight:1.3}}>{totalItems} {totalItems===1?"pão":"pães"} por semana</div>
-              <div style={{fontFamily:fb,fontSize:12,color:W[600],marginTop:2,lineHeight:1.3}}>{fmt(valorPaes)}/mês · Frete {fmt(FRETE_MENSAL)}</div>
-              <div style={{fontFamily:fb,fontSize:14,fontWeight:700,color:B[700],marginTop:2,lineHeight:1.3}}>Total {fmt(valorTotal)}/mês</div>
-              {atingiuLimite&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:6,lineHeight:1.4}}>Máximo 3 pães por semana.</div>}
+    {/* Footer condicional: T2 com info financeira; T1 simples; some quando CEP bloqueado em T1. */}
+    {!(step===1 && coverageStatus==="blocked") && (
+      <div style={{padding:"12px 16px",background:"#FFF",borderTop:`1px solid ${W[200]}`,flexShrink:0}}>
+        {step===2?(
+          // Footer da T2: bloco de info financeira a esquerda (so com paes selecionados)
+          // + botoes a direita. Quando vazio: spacer mantem botoes na borda.
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            {totalItems>0?(
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontFamily:fb,fontSize:13,fontWeight:500,color:W[800],lineHeight:1.3}}>{totalItems} {totalItems===1?"pão":"pães"} por semana</div>
+                <div style={{fontFamily:fb,fontSize:12,color:W[600],marginTop:2,lineHeight:1.3}}>{fmt(valorPaes)}/mês · Frete {fmt(FRETE_MENSAL)}</div>
+                <div style={{fontFamily:fb,fontSize:14,fontWeight:700,color:B[700],marginTop:2,lineHeight:1.3}}>Total {fmt(valorTotal)}/mês</div>
+                {atingiuLimite&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:6,lineHeight:1.4}}>Máximo 3 pães por semana.</div>}
+              </div>
+            ):<div style={{flex:1}}/>}
+            <div style={{display:"flex",gap:10,flexShrink:0}}>
+              <Btn onClick={()=>setStep(1)} style={{width:"auto",flex:"0 0 auto",padding:"14px 20px"}}>Voltar</Btn>
+              <Btn primary disabled={!canNext2} onClick={handleNext} style={{width:"auto",flex:"0 0 auto",padding:"14px 24px"}}>Continuar</Btn>
             </div>
-          ):<div style={{flex:1}}/>}
-          <div style={{display:"flex",gap:10,flexShrink:0}}>
-            <Btn onClick={()=>setStep(1)} style={{width:"auto",flex:"0 0 auto",padding:"14px 20px"}}>Voltar</Btn>
-            <Btn primary disabled={!canNext2} onClick={handleNext} style={{width:"auto",flex:"0 0 auto",padding:"14px 24px"}}>Continuar</Btn>
           </div>
-        </div>
-      ):(
-        <div style={{display:"flex",gap:10}}>
-          {step>1&&<Btn onClick={()=>setStep(step-1)} style={{width:"auto",flex:"0 0 auto",padding:"14px 20px"}}>Voltar</Btn>}
-          <Btn primary onClick={handleNext}>Continuar</Btn>
-        </div>
-      )}
-    </div>
+        ):(
+          <div style={{display:"flex",gap:10}}>
+            <Btn primary disabled={!step1Valido} onClick={handleNext}>Continuar</Btn>
+          </div>
+        )}
+      </div>
+    )}
   </>);
 }
