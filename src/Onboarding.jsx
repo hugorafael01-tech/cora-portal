@@ -176,7 +176,7 @@ const Step1=({
       {camposEntregaVisiveis && (
         <>
           <Field label="Rua" error={errors.rua}>
-            <FormInput placeholder="Preenchido pelo CEP" value={data.rua}
+            <FormInput placeholder={cepFallback?"Nome da rua":"Preenchido pelo CEP"} value={data.rua}
               readOnly={!cepFallback}
               onChange={(v)=>updateField("rua", sanitize(v))}
               onBlur={()=>handleBlur("rua")}
@@ -184,7 +184,7 @@ const Step1=({
           </Field>
 
           <Field label="Bairro" error={errors.bairro}>
-            <FormInput placeholder="Preenchido pelo CEP" value={data.bairro}
+            <FormInput placeholder={cepFallback?"Bairro":"Preenchido pelo CEP"} value={data.bairro}
               readOnly={!cepFallback}
               onChange={(v)=>updateField("bairro", sanitize(v))}
               onBlur={()=>handleBlur("bairro")}
