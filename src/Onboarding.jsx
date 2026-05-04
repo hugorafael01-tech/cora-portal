@@ -7,6 +7,7 @@ import { formatWhatsApp, formatCPF, isValidWhatsApp, isValidEmail, isValidCPF, i
 import { estaCoberto, estaNaWhitelist } from "./utils/coverage";
 import { buildHugoCoverageLink } from "./config/contact";
 import { postWaitlist } from "./utils/api";
+import { calcularPrimeiraEntrega, formatarPrimeiraEntrega } from "./utils/firstDelivery";
 
 /* ═══════════════════════════════════════════════════════════════
    CORA . Onboarding v5
@@ -292,35 +293,61 @@ const Step2=({assinatura,setAssinatura})=>{
 
 /* ═══ WELCOME . Check animado + stagger de entrada ═══ */
 const Welcome=({data,assinatura,onComplete})=>{
-  const items=Object.entries(assinatura).map(([id,qty])=>({...ASSINATURA_OPCOES.find(c=>c.id===id),qty})).filter(Boolean);
+  const items=Object.entries(assinatura)
+    .map(([id,qty])=>({...ASSINATURA_OPCOES.find(c=>c.id===id),qty}))
+    .filter(c=>c.qty>0);
   const nome=data.nome?data.nome.split(" ")[0]:"você";
-  const saudacao=data.genero==="f"?"Bem-vinda":data.genero==="m"?"Bem-vindo":"Boas-vindas";
+  // Recap de produtos (briefing 6.3):
+  //  - 1 tipo: "{N}× Pão Original (700g)"
+  //  - misto:  "1× Pão Original + 1× Pão Integral" (sem peso)
+  const recap=items.length===1
+    ? `${items[0].qty}× ${items[0].nome} (${items[0].peso})`
+    : items.map(c=>`${c.qty}× ${c.nome}`).join(" + ");
+  const fotoPrincipal=items[0]?.img;
+  const totalPaes=items.reduce((s,c)=>s+c.qty,0);
+  const totalMensal=totalPaes*VALOR_POR_PAO+FRETE_MENSAL;
+  const dataPrimeiraEntrega=formatarPrimeiraEntrega(calcularPrimeiraEntrega());
 
-  // Animacao: path do check tem length ~28. Anima de dashoffset 28 (invisivel) ate 0 (desenhado).
   return(
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 24px",textAlign:"center",minHeight:"100%",background:W[50]}}>
-      <div style={{width:"100%"}}>
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start",padding:"32px 24px 40px",textAlign:"center",minHeight:"100%",background:W[50]}}>
+      <div style={{width:"100%",maxWidth:340}}>
         <div className="welcome-check" style={{width:64,height:64,borderRadius:radii.full,background:B[50],display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",border:`2px solid ${B[200]}`}}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={B[500]} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 6L9 17l-5-5" className="welcome-check-path"/>
           </svg>
         </div>
-        <div className="welcome-stagger-1"><H size={26}>{saudacao}, {nome.toUpperCase()}.</H></div>
-        <div className="welcome-stagger-2" style={{fontFamily:fb,fontSize:15,color:W[600],marginTop:12,lineHeight:1.6,maxWidth:300,margin:"12px auto 0"}}>Sua Assinatura está ativa. Sua primeira entrega será na próxima quinta-feira.</div>
 
-        {items.length>0&&<div className="welcome-stagger-3" style={{background:"#FFF",borderRadius:radii.lg,overflow:"hidden",marginTop:24,width:"100%",border:`1px solid ${W[200]}`,textAlign:"left"}}>
-          <div style={{padding:"14px 14px 8px",fontFamily:fb,fontSize:13,color:W[500]}}>Você vai receber toda quinta</div>
-          {items.map(c=><div key={c.id} style={{display:"flex",alignItems:"stretch",borderTop:`1px solid ${W[200]}`}}>
-            <img src={c.img} alt={c.nome} style={{width:72,objectFit:"cover",display:"block"}}/>
-            <div style={{flex:1,padding:12}}>
-              <div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800]}}>{c.qty}× {c.nome} ({c.peso})</div>
+        <div className="welcome-stagger-1"><H size={26}>QUE BOM TER VOCÊ COM A GENTE, {nome.toUpperCase()}.</H></div>
+
+        <div className="welcome-stagger-2" style={{fontFamily:fb,fontSize:15,color:W[700],marginTop:12,lineHeight:1.6}}>
+          Recebemos sua assinatura.<br/>Toda quinta, a gente se vê.
+        </div>
+
+        {items.length>0 && (
+          <div className="welcome-stagger-3" style={{background:"#FFF",borderRadius:radii.lg,overflow:"hidden",marginTop:24,width:"100%",border:`1px solid ${W[200]}`,textAlign:"left"}}>
+            <div style={{padding:"10px 14px",background:W[50],fontFamily:fd,fontSize:13,textTransform:"uppercase",color:B[500],letterSpacing:"0.04em",borderBottom:`1px solid ${W[200]}`}}>Sua Assinatura</div>
+            <div style={{display:"flex",alignItems:"stretch"}}>
+              {fotoPrincipal && <img src={fotoPrincipal} alt="" aria-hidden="true" style={{width:72,objectFit:"cover",display:"block",flexShrink:0}}/>}
+              <div style={{flex:1,padding:12}}>
+                <div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800],lineHeight:1.4}}>{recap}</div>
+                <div style={{fontFamily:fb,fontSize:12,color:W[600],marginTop:4,lineHeight:1.4}}>Total {fmt(totalMensal)}/mês · Frete incluído</div>
+              </div>
             </div>
-          </div>)}
-          <div style={{padding:"10px 14px 14px",fontFamily:fb,fontSize:13,color:W[500],borderTop:`1px solid ${W[200]}`}}>Na sua porta.</div>
-        </div>}
+            <div style={{height:1,background:W[200]}}/>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px"}}>
+              <span style={{fontFamily:fb,fontSize:12,color:W[500]}}>Primeira entrega</span>
+              <span style={{fontFamily:fb,fontSize:13,fontWeight:600,color:W[800]}}>{dataPrimeiraEntrega}</span>
+            </div>
+          </div>
+        )}
 
-        <div className="welcome-stagger-4" style={{fontFamily:fb,fontSize:13,color:B[600],marginTop:20,lineHeight:1.5,background:B[50],borderRadius:radii.md,padding:12,width:"100%",textAlign:"left"}}>Vai chegar uma mensagem no WhatsApp com os detalhes. Qualquer dúvida, é só responder por lá.</div>
-        <div className="welcome-stagger-5" style={{marginTop:24,width:"100%"}}><Btn primary onClick={onComplete}>Acompanhe sua Assinatura</Btn></div>
+        <div className="welcome-stagger-4" style={{fontFamily:fb,fontSize:13,color:B[700],marginTop:16,lineHeight:1.5,background:B[50],border:`1px solid ${B[100]}`,borderRadius:radii.lg,padding:12,width:"100%",textAlign:"left"}}>
+          Em breve, você recebe no WhatsApp {data.whatsapp || "—"} o link pra fazer o primeiro pagamento.
+        </div>
+
+        <div className="welcome-stagger-5" style={{marginTop:24,width:"100%"}}>
+          <Btn primary onClick={onComplete}>Ir pro app</Btn>
+        </div>
       </div>
     </div>
   );

@@ -7,7 +7,20 @@ import ProductCard from "./components/ProductCard";
 import { isPastCutoff } from "./utils/cutoff";
 import { haptic } from "./utils/haptic";
 import { plural } from "./utils/plural";
+import { loadSubscription, saveSubscription, clearSubscription } from "./utils/subscription";
 import { B, W, fd, fb, fmt, radii } from "./tokens";
+
+// `?reset=true`: limpa subscription persistida e remove o param da URL.
+// Top-level (fora do componente) pra rodar antes de qualquer init de state.
+// Util pra QA durante teste de usabilidade.
+if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("reset") === "true") {
+  clearSubscription();
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("reset");
+    window.history.replaceState(null, "", url.toString());
+  } catch { /* noop */ }
+}
 
 /* CORA — Portal do Assinante — v3.2.7
    + Onboarding com splash, gênero, fotos reais, pattern
@@ -713,8 +726,12 @@ const Perfil=({confirmed,hasPending,assinaturaQtds,cestaAtual,houveSwap,historic
 
 // ═══ APP (rodapé persistente aqui) ═══
 export default function CoraPortal(){
-  const skipOnboarding = window.location.search.includes("skip=true");
+  // Subscription persistida (MVP via localStorage; Fase 7 troca por DB).
+  // Se existir, pula onboarding e vai direto pra Home.
+  const initialSubscription = loadSubscription();
+  const skipOnboarding = window.location.search.includes("skip=true") || !!initialSubscription;
   const [scr, setScr] = useState(skipOnboarding ? "home" : "onboarding");
+  const [subscription, setSubscription] = useState(initialSubscription);
   const mainRef=useRef(null);
   // Reset scroll ao trocar de aba. Cobre os dois casos porque o root usa
   // minHeight:100vh (nao height) — o scroll acaba caindo na window quando
@@ -723,23 +740,27 @@ export default function CoraPortal(){
   const[pending,setPending]=useState([]);
   const[confirmed,setConfirmed]=useState([]);
   const[justConfirmed,setJustConfirmed]=useState(false);
-  const[userData,setUserData]=useState(null);
+  const[userData,setUserData]=useState(initialSubscription?.data||null);
   const[isFirstVisit,setIsFirstVisit]=useState(true);
   const[onboardingConfig,setOnboardingConfig]=useState(null);
 
+  // Helper: monta {id:qty} para todos os paes definidos em D, herdando
+  // de uma fonte (assinatura da subscription persistida) ou caindo no mock.
+  const buildQtdsFrom=(source)=>{
+    const init={};
+    D.pães.forEach(p=>{init[p.id]=(source&&typeof source[p.id]==="number")?source[p.id]:(p.qtd||0);});
+    return init;
+  };
+
   // === REFACTOR: State da Assinatura agora vive aqui (fonte unica de verdade) ===
-  // NOTA: Mock-friendly. Refresh perde o state e volta ao default do mock
-  // (D.pães[].qtd). Sera resolvido quando houver backend com persistencia.
-  const [assinaturaQtds,setAssinaturaQtds]=useState(()=>{
-    const init={};D.pães.forEach(p=>{init[p.id]=p.qtd||0;});return init;
-  });
+  // Init prioriza initialSubscription.assinatura (persistida). Sem ela, usa
+  // o default mock de D.pães[].qtd.
+  const [assinaturaQtds,setAssinaturaQtds]=useState(()=>buildQtdsFrom(initialSubscription?.assinatura));
   // cestaSemana: null = segue a Assinatura. Objeto {id:qty} = cliente customizou esta semana.
   const [cestaSemana,setCestaSemana]=useState(null);
   // Baseline do ciclo: composicao ja cobrada no inicio do mes corrente.
   // So muda na virada de ciclo (1o do proximo mes, via simularViradaDeMes).
-  const [assinaturaBaseline,setAssinaturaBaseline]=useState(()=>{
-    const init={};D.pães.forEach(p=>{init[p.id]=p.qtd||0;});return init;
-  });
+  const [assinaturaBaseline,setAssinaturaBaseline]=useState(()=>buildQtdsFrom(initialSubscription?.assinatura));
   // Historico do ciclo atual: null quando assinaturaQtds === assinaturaBaseline.
   // Objeto unico (nao array) representando a diferenca liquida vs baseline.
   const [historicoCicloAtual,setHistoricoCicloAtual]=useState(null);
@@ -806,6 +827,15 @@ export default function CoraPortal(){
     // Retrocompat: payload pode ser só "data" (versao antiga) ou {data, assinatura}
     const data=payload?.data||payload;
     const assinatura=payload?.assinatura;
+    // Persiste subscription no localStorage (MVP). Fase 7 substitui por POST + DB.
+    const novaSubscription={
+      status:"pending_payment",
+      data,
+      assinatura:assinatura||{},
+      createdAt:new Date().toISOString(),
+    };
+    saveSubscription(novaSubscription);
+    setSubscription(novaSubscription);
     setUserData(data);
     if(assinatura&&Object.keys(assinatura).length>0){
       setOnboardingConfig({data,assinatura});
@@ -841,7 +871,9 @@ const params = new URLSearchParams(window.location.search);
   // Fallback minimo enquanto chunks lazy carregam. Usa grafismo da marca.
   const lazyFallback=<div style={{position:"fixed",inset:0,background:W[50],display:"flex",alignItems:"center",justifyContent:"center"}}><img src="/images/grafismo_coracao.svg" alt="Cora" style={{width:48,height:48,opacity:0.6}}/></div>;
   if (window.location.pathname === "/interesse") return <Suspense fallback={lazyFallback}><PreCadastro /></Suspense>;
-  if (!params.get("dev")) return <Suspense fallback={lazyFallback}><PreCadastro /></Suspense>;
+  // Sem subscription persistida e sem ?dev=1: PreCadastro. Subscription
+  // existente destrava o portal direto (funciona como sessao do MVP).
+  if (!subscription && !params.get("dev")) return <Suspense fallback={lazyFallback}><PreCadastro /></Suspense>;
   if(isOnboarding) return <Suspense fallback={lazyFallback}><CoraOnboarding onComplete={handleOnboardingComplete}/></Suspense>;
 
   return<div style={{fontFamily:fb,maxWidth:390,margin:"0 auto",background:W[50],minHeight:"100vh",display:"flex",flexDirection:"column",position:"relative"}}>

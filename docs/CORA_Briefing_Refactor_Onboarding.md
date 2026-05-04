@@ -381,7 +381,7 @@ Primeira entrega          Quinta, 7 de maio
 ─────────────────────────────────────
 
 ─── card brand-50 ───────────────────
-Em breve, você recebe no WhatsApp (21) 98765-4321 a sua proposta e o link pra fazer o primeiro pagamento.
+Em breve, você recebe no WhatsApp (21) 98765-4321 o link pra fazer o primeiro pagamento.
 ─────────────────────────────────────
 
 [ Ir pro app ]   (botão brand-500, rodapé)
@@ -704,7 +704,7 @@ Considerar o refactor completo quando:
 - Card detalhe: `Total R$ {valor}/mês · Frete incluído`
 - Card divider label: `Primeira entrega`
 - Card divider data: `{Dia da semana}, {DD} de {mês}`
-- Aviso WhatsApp: `Em breve, você recebe no WhatsApp {número} a sua proposta e o link pra fazer o primeiro pagamento.`
+- Aviso WhatsApp: `Em breve, você recebe no WhatsApp {número} o link pra fazer o primeiro pagamento.`
 - Botão: `Ir pro app`
 
 **Banner pendente (Home + 4 telas)**
