@@ -3,6 +3,8 @@ import { useState, useEffect, useRef, lazy, Suspense } from "react";
 // especificos. Lazy chunks separados reduzem o bundle inicial do Portal.
 const CoraOnboarding = lazy(() => import("./Onboarding"));
 const PreCadastro = lazy(() => import("./pages/PreCadastro"));
+// Playground temporario (Fase 3). Removido na Fase 4 junto com src/dev/.
+const T1Playground = lazy(() => import("./dev/T1Playground"));
 import ProductCard from "./components/ProductCard";
 import { isPastCutoff } from "./utils/cutoff";
 import { haptic } from "./utils/haptic";
@@ -840,6 +842,7 @@ export default function CoraPortal(){
 const params = new URLSearchParams(window.location.search);
   // Fallback minimo enquanto chunks lazy carregam. Usa grafismo da marca.
   const lazyFallback=<div style={{position:"fixed",inset:0,background:W[50],display:"flex",alignItems:"center",justifyContent:"center"}}><img src="/images/grafismo_coracao.svg" alt="Cora" style={{width:48,height:48,opacity:0.6}}/></div>;
+  if (params.get("dev") === "t1playground") return <Suspense fallback={lazyFallback}><T1Playground /></Suspense>;
   if (window.location.pathname === "/interesse") return <Suspense fallback={lazyFallback}><PreCadastro /></Suspense>;
   if (!params.get("dev")) return <Suspense fallback={lazyFallback}><PreCadastro /></Suspense>;
   if(isOnboarding) return <Suspense fallback={lazyFallback}><CoraOnboarding onComplete={handleOnboardingComplete}/></Suspense>;
