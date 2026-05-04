@@ -23,8 +23,8 @@ const LIMITE_PAES=3;
 // nao ha conteudo extra. Quando o storytelling estiver pronto, adicionar `historia`
 // em cada produto e o accordion volta automaticamente.
 const ASSINATURA_OPCOES=[
-  {id:"original",nome:"Pão Original",peso:"615g",avulso:27,img:IMG.original,desc:"Mix de farinhas italiana e brasileira, água, sal e o levain da Cora. Fermentação lenta, crosta firme e miolo aberto."},
-  {id:"integral",nome:"Pão Integral",peso:"615g",avulso:29,img:IMG.integral,desc:"100% integral com blend de duas farinhas, azeite e fermentação lenta. Miolo macio que se mantém por dias."},
+  {id:"original",nome:"Pão Original",peso:"700g",avulso:27,img:IMG.original,desc:"Pão de toda mesa. Vai com azeite, queijo, bruschetta de tomate ou o que você abrir na cozinha.",sobre:"Blend de farinha branca italiana e integral brasileira. Levain da Cora, água, sal. Hidratação 70%."},
+  {id:"integral",nome:"Pão Integral",peso:"700g",avulso:29,img:IMG.integral,desc:"Sabor de grão inteiro, miolo leve. Torrado pela manhã ou ao lado da salada no almoço.",sobre:"100% integral em blend de farinha brasileira e italiana. Levain da Cora, água, sal, azeite. Hidratação 75%."},
 ];
 
 /* ── Utilitários (reaproveitados do PreCadastro) ── */

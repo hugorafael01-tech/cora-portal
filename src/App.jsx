@@ -42,16 +42,16 @@ const formatarDataEntrega=(d)=>`${_DIAS_SEMANA_FULL_PT[d.getDay()]}, ${d.getDate
 
 const D={
   nome:"Beatriz",
-  entrega:{dia:formatarDataEntrega(proximaQuinta()),produto:"1 Pão Original (615g)"},
-  assinatura:{itens:"1 Pão Original (615g) / semana",valorMensal:99,qtdPaes:1},
+  entrega:{dia:formatarDataEntrega(proximaQuinta()),produto:"1 Pão Original (700g)"},
+  assinatura:{itens:"1 Pão Original (700g) / semana",valorMensal:99,qtdPaes:1},
   ent:{dia:"Quintas",cond:"Ed. Boa Vista",bloco:"Bl. A / 502",frete:"R$ 15/mês"},
   cartao:{band:"Visa",n:"6411",prox:"1º de abril"},
   cob:{mes:"Março",valor:"R$ 99,00",status:"Pago"},
   semanasRestantes:2,
   extras:[{id:"focaccia",nome:"Focaccia Genovesa",peso:"430g",preco:"R$ 22,00",precoNum:22,img:IMG.focaccia,ingredientes:"Farinha, água, azeite extra-virgem, sal, levain, cebola roxa, alecrim fresco.",historia:"A receita veio de Gênova, onde a focaccia é assunto sério. Lá, cada padeiro tem sua versão. A da Cora leva fermentação longa de 24h e azeite generoso. A cebola roxa carameliza no forno e o alecrim perfuma a cozinha inteira."}],
   pães:[
-    {id:"original",nome:"Pão Original",peso:"615g",preco:"R$ 27,00",precoNum:27,img:IMG.original,desc:"Mix de farinhas italiana e brasileira, água, sal e o levain da Cora. Fermentação lenta, crosta firme e miolo aberto.",qtd:1},
-    {id:"integral",nome:"Pão Integral",peso:"615g",preco:"R$ 29,00",precoNum:29,img:IMG.integral,desc:"100% integral com blend de duas farinhas, azeite e fermentação lenta. Miolo macio que se mantém por dias.",qtd:0},
+    {id:"original",nome:"Pão Original",peso:"700g",preco:"R$ 27,00",precoNum:27,img:IMG.original,desc:"Pão de toda mesa. Vai com azeite, queijo, bruschetta de tomate ou o que você abrir na cozinha.",sobre:"Blend de farinha branca italiana e integral brasileira. Levain da Cora, água, sal. Hidratação 70%.",qtd:1},
+    {id:"integral",nome:"Pão Integral",peso:"700g",preco:"R$ 29,00",precoNum:29,img:IMG.integral,desc:"Sabor de grão inteiro, miolo leve. Torrado pela manhã ou ao lado da salada no almoço.",sobre:"100% integral em blend de farinha brasileira e italiana. Levain da Cora, água, sal, azeite. Hidratação 75%.",qtd:0},
   ],
   rotativos:[
     {id:"multigraos",nome:"Multigrãos",peso:"615g",preco:"R$ 32,00",precoNum:32,img:IMG.multigraos,desc:"Aveia, centeio, gergelim e mel.",ingredientes:"Farinha de trigo, centeio, aveia, água, mel, sal, levain, gergelim.",detalhe:"Cinco grãos na massa, mel na fermentação. Miolo denso, casca com gergelim tostado."},
@@ -61,10 +61,10 @@ const D={
   ],
   semana:{pedidosAbertos:false,cardapioProxima:["Pão Original","Pão Integral","Focaccia Genovesa"],entregaProxima:formatarDataEntrega(proximaQuinta(new Date(Date.now()+7*24*60*60*1000)))},
   hist:[
-    {sem:"Semana 28/03",itens:"1 Pão Original (615g)",st:"Pendente",extra:null},
-    {sem:"Semana 21/03",itens:"1 Pão Original (615g)",st:"Entregue",extra:null},
-    {sem:"Semana 14/03",itens:"1 Pão Original (615g)",st:"Entregue",extra:{nome:"Focaccia Genovesa",valor:"R$ 22,00"}},
-    {sem:"Semana 07/03",itens:"1 Pão Original (615g)",st:"Entregue",extra:null},
+    {sem:"Semana 28/03",itens:"1 Pão Original (700g)",st:"Pendente",extra:null},
+    {sem:"Semana 21/03",itens:"1 Pão Original (700g)",st:"Entregue",extra:null},
+    {sem:"Semana 14/03",itens:"1 Pão Original (700g)",st:"Entregue",extra:{nome:"Focaccia Genovesa",valor:"R$ 22,00"}},
+    {sem:"Semana 07/03",itens:"1 Pão Original (700g)",st:"Entregue",extra:null},
   ],
 };
 const greet=()=>{const h=new Date().getHours();return h<12?"bom dia":h<18?"boa tarde":"boa noite";};
