@@ -68,25 +68,36 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 - [x] Preços unitários dos pães extras na cesta semanal (hoje NULL no schema do backoffice)
 - [ ] Swap Original ↔ Integral é cost-neutral? Validar contra CORA_Fichas_Producao_v5.xlsx
 - [ ] Como cobranças de extras aparecem no billing do Asaas (linha única? linha separada?)
-- [ ] Conflito de posicionamento: 3 tiers antigos em posicionamento.md vs. modelo único R$99 + R$15 frete
+- [x] Conflito de posicionamento: 3 tiers antigos em posicionamento.md vs. modelo único R$99 + R$15 frete — **resolvido: modelo único mantido**
 
 ## Blockers externos (fora do repo)
-- [ ] Conta Asaas não criada — bloqueia integração de pagamento (task ClickUp: 86e0rgdhn)
-- [ ] Google Workspace hugo@acora.com.br — setup pendente
-- [ ] Definir Asaas CPF vs CNPJ antes de criar conta (task ClickUp: 86e0rghwq)
+- [x] Conta Asaas — **criada** (task ClickUp: 86e0rgdhn)
+- [ ] Google Workspace hugo@acora.com.br — setup pendente. Fase 7 usa Gmail temporário (`hugorafael01@gmail.com` como `EMAIL_TO`; domínio default do Resend como `EMAIL_FROM`) até Workspace ficar pronto
+- [x] Definir Asaas CPF vs CNPJ antes de criar conta (task ClickUp: 86e0rghwq) — **resolvido**
 
 ## Gap spec × código (a reconciliar)
 - Spec v3.0 cita Stripe/Pagar.me como gateway → produto migrou pra Asaas. Atualizar seção 7.2 na próxima consolidação.
 - Bottom nav da spec v3.0 (Home, Demonstrativo, Cardápio, Perfil) substituída na v3.1 (Home, Sua Assinatura, Cardápio, Perfil). Verificar se código reflete v3.1.
 
 ## Próximo foco acordado
-- Refactor do onboarding (briefing: docs/CORA_Briefing_Refactor_Onboarding.md)
-- Decisões-chave: 2 telas + Welcome (sem T3 de cartão), validação de cobertura por lista de bairros + whitelist, notificação por e-mail pro Hugo a cada novo pedido
-- Asaas via link de pagamento manual no MVP — não coletar cartão no portal
+- **Fase 7 do refactor de onboarding** (backend): Supabase + Resend + endpoint serverless `POST /api/subscriptions`.
+- Briefing completo em `docs/CORA_Briefing_Refactor_Onboarding.md`.
+- Migration consolidada (subscriptions + coverage_waitlist + coverage_whitelist) já validada nesta sessão — vai virar `supabase/migrations/0001_initial.sql` na Fase 7.
+- Substituir stub `postWaitlist` (em `src/utils/api.js`) por fetch real. Adicionar `postSubscription`. Localstorage continua armazenando `subscription_id` retornado pelo POST.
+- E-mail transacional via Resend (provedor confirmado). `EMAIL_TO=hugorafael01@gmail.com` enquanto Google Workspace acora.com.br não estiver pronto.
+- Pré-requisito de credenciais: Supabase URL + service role key, Resend API key. Hugo providencia antes de começar.
 
 ## Última sessão de trabalho
-- **Data:** 2026-04-24
-- **Tema:** organização do fluxo de trabalho, auditoria do ClickUp, criação do PORTAL_STATUS.md
-- **Saída:** Claude Code gerou versão inicial do arquivo; pendências não-código mapeadas.
+- **Data:** 2026-05-05
+- **Tema:** Refactor onboarding Fases 0–6 (UI completa, falta backend)
+- **Saída:** branch `refactor/onboarding-fase-0` com 9 commits cobrindo:
+  - Fase 0: utils (validators, normalize, firstDelivery, coverage helpers), config (`COVERED_AREAS`, `HUGO_WHATSAPP`), pesos 615g→700g em Original/Integral, campo `sobre`.
+  - Fase 1: `ProductCard` ganha `directQtySelector` + alias `product.sobre`.
+  - Fase 2: T2 (Sua Assinatura) refeita, T3 eliminada, footer dinâmico, stepper 3→2.
+  - Fase 3: `CEPField`, `CoverageBlocker`, stub `postWaitlist`, playground temporário.
+  - Fase 4: T1 (Sobre você + Entrega) refeita, integra ViaCEP + cobertura + whitelist + Opção A pra fallback (`coverageUnconfirmed`), validação inline mista, microcopy LGPD, gênero removido.
+  - Fase 5: Welcome reformulada (saudação sem flexão, card recap com data calculada, aviso WhatsApp do user, botão "Ir pro app"). Persistência local via `src/utils/subscription.js` (chave `cora_subscription`). `?reset=true` pra QA. Subscription persistida destrava portal sem `?dev=1`.
+  - Fase 6: `PendingPaymentBanner` sticky junto com a logo. Bloqueio de extras no Cardápio E na Home (`lockedReason` no `ProductCard`/`NovidadeCard`). `OrderFooter` Confirmar disabled quando pendente. Swap "Personalizar esta semana" não bloqueia. `QtyBtn` local com auto-disable em qty=0.
+  - Pendente: branch ainda não mergeada em `main`. Aguardando teste no Preview do Vercel + push da Fase 7.
 
 <!-- STATUS_MANUAL_END -->
