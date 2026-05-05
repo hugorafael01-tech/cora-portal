@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, lazy, Suspense } from "react";
 const CoraOnboarding = lazy(() => import("./Onboarding"));
 const PreCadastro = lazy(() => import("./pages/PreCadastro"));
 import ProductCard from "./components/ProductCard";
+import PendingPaymentBanner from "./components/PendingPaymentBanner";
 import { isPastCutoff } from "./utils/cutoff";
 import { haptic } from "./utils/haptic";
 import { plural } from "./utils/plural";
@@ -112,7 +113,7 @@ const Card=({children,style,onClick,ariaLabel})=>{const[h,setH]=useState(false);
 const SL=({t})=><div style={{fontFamily:fd,fontSize:15,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:8,lineHeight:1}}>{t}</div>;
 const Badge=({label,type="success"})=>{const s=ST[type]||ST.success;return<span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:12,fontWeight:500,fontFamily:fb,padding:"4px 10px",borderRadius:radii.xs,background:s.bg,color:s.t,border:`1px solid ${s.b}`}}><span style={{fontSize:8}}>●</span>{label}</span>;};
 const Btn=({children,primary,disabled,onClick,style:es,full,ariaLabel})=>{const[h,setH]=useState(false);return<button aria-label={ariaLabel} disabled={disabled} onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} className="press-scale" style={{padding:"12px 20px",borderRadius:radii.md,border:primary?"none":`1px solid ${h&&!disabled?B[600]:B[500]}`,background:primary?(disabled?W[200]:h?B[600]:B[500]):(h&&!disabled?B[50]:"none"),color:primary?(disabled?W[500]:"#FFF"):B[500],fontFamily:fb,fontSize:14,fontWeight:500,cursor:disabled?"default":"pointer",opacity:disabled?0.5:1,minHeight:44,width:full?"100%":"auto",transition:"all 150ms ease",...es}}>{children}</button>;};
-const QtyBtn=({qty,onAdd,onRemove,name})=><div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}><button aria-label={`Remover ${name}`} onClick={onRemove} className="qb press-scale" style={{width:32,height:32,borderRadius:radii.md,border:`1px solid ${W[300]}`,background:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center"}}>−</button><span style={{fontFamily:fb,fontSize:16,fontWeight:600,color:B[500],width:24,textAlign:"center"}}>{qty}</span><button aria-label={`Adicionar ${name}`} onClick={onAdd} className="qb press-scale" style={{width:32,height:32,borderRadius:radii.md,border:`1px solid ${B[500]}`,background:B[50],cursor:"pointer",fontSize:18,color:B[500],display:"flex",alignItems:"center",justifyContent:"center"}}>+</button></div>;
+const QtyBtn=({qty,onAdd,onRemove,name})=>{const removeDisabled=qty<=0;return<div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}><button aria-label={`Remover ${name}`} onClick={onRemove} disabled={removeDisabled} className="qb press-scale" style={{width:32,height:32,borderRadius:radii.md,border:`1px solid ${W[300]}`,background:"none",cursor:removeDisabled?"not-allowed":"pointer",fontSize:18,color:removeDisabled?W[300]:W[600],display:"flex",alignItems:"center",justifyContent:"center",opacity:removeDisabled?0.35:1}}>−</button><span style={{fontFamily:fb,fontSize:16,fontWeight:600,color:B[500],width:24,textAlign:"center"}}>{qty}</span><button aria-label={`Adicionar ${name}`} onClick={onAdd} className="qb press-scale" style={{width:32,height:32,borderRadius:radii.md,border:`1px solid ${B[500]}`,background:B[50],cursor:"pointer",fontSize:18,color:B[500],display:"flex",alignItems:"center",justifyContent:"center"}}>+</button></div>;};
 const Toast=({msg,vis})=>vis?<div role="status" aria-live="polite" style={{position:"fixed",bottom:72,left:16,right:16,maxWidth:358,margin:"0 auto",background:W[800],color:"#FFF",borderRadius:radii.md,padding:"12px 16px",zIndex:60,fontFamily:fb,fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8,animation:"fadeUp 300ms ease"}}><I d={ic.check} size={16} color="#6EE7B7"/>{msg}</div>:null;
 const DeadlineWarning=()=><div style={{fontFamily:fb,fontSize:12,color:ST.warning.t,background:ST.warning.bg,padding:"8px 12px",borderRadius:radii.md,marginBottom:20,display:"inline-flex",alignItems:"center",gap:8,border:`1px solid ${ST.warning.b}`}}><I d={ic.clock} size={14} color={ST.warning.t}/>Pedidos até terça, 12h, para entrega na quinta</div>;
 const CutoffMsg=()=><div style={{fontFamily:fb,fontSize:13,color:"#7A766E",marginTop:6}}>Prazo encerrado. Alterações valem a partir da próxima semana.</div>;
@@ -129,6 +130,11 @@ const CutoffBanner=({cutoff})=>{
   </div>;
 };
 const simulate=()=>new Promise(r=>setTimeout(r,600));
+
+// Microcopy unica para bloqueio de extras enquanto subscription
+// esta com status pending_payment. Compartilhada por Home, Cardapio
+// e OrderFooter pra manter o tom consistente.
+const LOCK_REASON_PENDING="Disponível após confirmação do primeiro pagamento.";
 const ActionBtn=({children,loadingText,successText,onAction,onComplete,primary,disabled:extDisabled,full,style:es,ariaLabel})=>{const[st,setSt]=useState('idle');const[err,setErr]=useState('');const handle=async()=>{if(st!=='idle')return;setSt('loading');setErr('');try{await onAction();setSt('success');setTimeout(()=>{setSt('idle');onComplete?.();},1500);}catch(e){setErr(e.message||'Erro ao processar. Tente novamente.');setSt('idle');}};const busy=st==='loading'||st==='success';const label=st==='loading'?loadingText:st==='success'?successText:children;const stStyle=st==='success'?{background:'#D1FAE5',color:'#065F46',border:'1px solid #6EE7B7',opacity:1}:{};return<><Btn primary={st!=='success'&&primary} disabled={busy||extDisabled} onClick={handle} full={full} ariaLabel={ariaLabel} style={{...es,...stStyle}}>{label}</Btn>{err&&<div style={{fontFamily:fb,fontSize:13,color:'#9A3412',background:'#FFEDD5',padding:'8px 12px',borderRadius:radii.md,marginTop:6}}>{err}</div>}</>;};
 
 // ─── MODAL ───
@@ -162,17 +168,22 @@ const Modal=({product,onClose,onAction,onComplete,actionLabel,hint,qty,onAdd,onR
 const Nav=({active,onNav,badge})=>{const items=[{id:"home",label:"INÍCIO",icon:ic.home},{id:"assinatura",label:"ASSINATURA",icon:ic.wheat},{id:"cardapio",label:"CARDÁPIO",icon:ic.utensils},{id:"perfil",label:"PERFIL",icon:ic.user}];return<div style={{display:"flex",justifyContent:"space-around",alignItems:"center",padding:"8px 0 12px",borderTop:`1px solid ${W[200]}`,background:"#FFF",position:"sticky",bottom:0,zIndex:10,minHeight:56}}>{items.map(it=><button key={it.id} aria-label={`Ir para ${it.label}`} onClick={()=>onNav(it.id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,border:"none",background:"none",cursor:"pointer",minWidth:56,minHeight:44,padding:"4px 0",position:"relative"}}><I d={it.icon} size={22} color={active===it.id?B[500]:W[400]}/>{it.id==="cardapio"&&badge>0&&<span style={{position:"absolute",top:0,right:4,width:18,height:18,borderRadius:radii.full,background:B[500],color:"#FFF",fontFamily:fb,fontSize:10,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{badge}</span>}<span style={{fontFamily:fd,fontSize:11,letterSpacing:"0.02em",textTransform:"uppercase",color:active===it.id?B[500]:W[400]}}>{it.label}</span></button>)}</div>;};
 
 // ─── NOVIDADE CARD (edge-to-edge photo) ───
-const NovidadeCard=({extra,qty,onCardClick,onAdd,onRemove,cutoff})=><Card style={{padding:0,overflow:"hidden",cursor:"pointer",marginBottom:16}} onClick={onCardClick} ariaLabel={`Novidade: ${extra.nome}`}>
-  <ProductImg src={extra.img} h={200} alt={extra.nome} rounded={false}/>
-  <div style={{padding:16}}>
-    <SL t="Novidade da semana"/>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}>
-      <div style={{flex:1}}><div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800]}}>{extra.nome}</div><div style={{fontFamily:fb,fontSize:14,color:W[600],marginTop:4}}>{extra.preco}</div></div>
-      {cutoff?<button disabled className="bp press-scale" style={{padding:"10px 24px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"default",minHeight:44,flexShrink:0,opacity:0.5}}>Quero</button>:qty===0?<button onClick={e=>{e.stopPropagation();onCardClick();}} className="bp press-scale" style={{padding:"10px 24px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",minHeight:44,flexShrink:0}}>Quero</button>:<QtyBtn qty={qty} onAdd={()=>onAdd&&onAdd()} onRemove={()=>onRemove&&onRemove()} name={extra.nome}/>}
+const NovidadeCard=({extra,qty,onCardClick,onAdd,onRemove,cutoff,lockedReason})=>{
+  const isLocked=!!lockedReason;
+  const cardClickable=!isLocked;
+  return<Card style={{padding:0,overflow:"hidden",cursor:cardClickable?"pointer":"default",marginBottom:16}} onClick={cardClickable?onCardClick:undefined} ariaLabel={`Novidade: ${extra.nome}`}>
+    <ProductImg src={extra.img} h={200} alt={extra.nome} rounded={false}/>
+    <div style={{padding:16}}>
+      <SL t="Novidade da semana"/>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}>
+        <div style={{flex:1}}><div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800]}}>{extra.nome}</div><div style={{fontFamily:fb,fontSize:14,color:W[600],marginTop:4}}>{extra.preco}</div></div>
+        {(cutoff||isLocked)?<button disabled className="bp press-scale" style={{padding:"10px 24px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"default",minHeight:44,flexShrink:0,opacity:0.5}}>Quero</button>:qty===0?<button onClick={e=>{e.stopPropagation();onCardClick();}} className="bp press-scale" style={{padding:"10px 24px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",minHeight:44,flexShrink:0}}>Quero</button>:<QtyBtn qty={qty} onAdd={()=>onAdd&&onAdd()} onRemove={()=>onRemove&&onRemove()} name={extra.nome}/>}
+      </div>
+      {cutoff&&<CutoffMsg/>}
+      {isLocked&&!cutoff&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:6,lineHeight:1.4}}>{lockedReason}</div>}
     </div>
-    {cutoff&&<CutoffMsg/>}
-  </div>
-</Card>;
+  </Card>;
+};
 
 // ─── SOFT LIMIT WARNING (4+ extras) ───
 const ExtrasWarning=({count})=>{
@@ -183,7 +194,7 @@ const ExtrasWarning=({count})=>{
 };
 
 // ─── PERSISTENT ORDER FOOTER (lives in App, visible on all screens) ───
-const OrderFooter=({pending,confirmed,onConfirm,onCancel,onNav,cutoff})=>{
+const OrderFooter=({pending,confirmed,onConfirm,onCancel,onNav,cutoff,pendingPayment})=>{
   const total=totalOf(pending);
   const pCount=extrasCount(pending);
   if(pCount===0)return null;
@@ -196,9 +207,9 @@ const OrderFooter=({pending,confirmed,onConfirm,onCancel,onNav,cutoff})=>{
         </div>
         <div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800]}}>{fmt(total)}</div>
       </div>
-      <div style={{display:"flex",gap:8,flexShrink:0}}><Btn onClick={onCancel}>Cancelar</Btn><ActionBtn primary disabled={cutoff} loadingText="Adicionando…" successText="Adicionado ✓" onAction={()=>simulate()} onComplete={onConfirm}>Confirmar</ActionBtn></div>
+      <div style={{display:"flex",gap:8,flexShrink:0}}><Btn onClick={onCancel}>Cancelar</Btn><ActionBtn primary disabled={cutoff||pendingPayment} loadingText="Adicionando…" successText="Adicionado ✓" onAction={()=>simulate()} onComplete={onConfirm}>Confirmar</ActionBtn></div>
     </div>
-    {cutoff?<CutoffMsg/>:<div style={{fontFamily:fb,fontSize:11,color:W[500],marginTop:4}}>Além da sua Assinatura. Cobrado na próxima fatura.</div>}
+    {cutoff?<CutoffMsg/>:pendingPayment?<div style={{fontFamily:fb,fontSize:11,color:W[500],marginTop:4}}>Disponível após confirmação do primeiro pagamento.</div>:<div style={{fontFamily:fb,fontSize:11,color:W[500],marginTop:4}}>Além da sua Assinatura. Cobrado na próxima fatura.</div>}
     <ExtrasWarning count={totalExtrasCount}/>
   </div>;
 };
@@ -331,7 +342,7 @@ const WeekTimeline=({hoje=new Date().getDay(),diaEntrega=4})=>{
   </svg>;
 };
 
-const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinaturaBaseline,cestaSemana,cestaAtual,houveSwap,onSetCestaSemana,ehPrimeiroAcesso,historicoCicloAtual})=>{
+const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinaturaBaseline,cestaSemana,cestaAtual,houveSwap,onSetCestaSemana,ehPrimeiroAcesso,historicoCicloAtual,pendingPayment})=>{
   const[modal,setModal]=useState(null);
   const[swapModal,setSwapModal]=useState(false);
   const swapDialogRef=useRef(null);
@@ -450,7 +461,7 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
     </Card>
 
     {/* Novidade hero — edge-to-edge photo */}
-    {D.extras.length>0?<NovidadeCard extra={D.extras[0]} qty={cntAll(D.extras[0].nome)} onCardClick={()=>setModal(D.extras[0])} onAdd={()=>handleQtyChange(D.extras[0],1)} onRemove={()=>handleQtyChange(D.extras[0],-1)} cutoff={cutoff}/>:<EmptyState title="Novidades da semana" body="Nenhuma novidade esta semana. Seu pão de sempre está garantido."/>}
+    {D.extras.length>0?<NovidadeCard extra={D.extras[0]} qty={cntAll(D.extras[0].nome)} onCardClick={()=>setModal(D.extras[0])} onAdd={()=>handleQtyChange(D.extras[0],1)} onRemove={()=>handleQtyChange(D.extras[0],-1)} cutoff={cutoff} lockedReason={pendingPayment?LOCK_REASON_PENDING:undefined}/>:<EmptyState title="Novidades da semana" body="Nenhuma novidade esta semana. Seu pão de sempre está garantido."/>}
 
     <div onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,textAlign:"center",padding:"8px 0",cursor:"pointer"}}>Ver cardápio completo ›</div>
 
@@ -611,7 +622,7 @@ const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,assinaturaBaseline,onS
 };
 
 // ═══ CARDÁPIO ═══
-const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff})=>{
+const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff,pendingPayment})=>{
   const[modal,setModal]=useState(null);
   const[toastC,setToastC]=useState(false);
   const allItems=[...confirmed,...pending];const cntAll=n=>cntIn(allItems,n);
@@ -628,6 +639,7 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff})=>
   };
   const confirmedExtras=confirmed.filter(p=>p.kind!=="swap");
   const totalExtrasAll=extrasCount(confirmed)+extrasCount(pending);
+  const lockedReason=pendingPayment?LOCK_REASON_PENDING:undefined;
 
   return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
     <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[500],margin:"0 0 4px"}}>Cardápio</h2>
@@ -636,7 +648,7 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff})=>
 
     {confirmedExtras.length>0&&<div style={{background:ST.success.bg,borderRadius:radii.md,padding:"10px 12px",marginBottom:16,border:`1px solid ${ST.success.b}`,display:"flex",alignItems:"center",gap:8}}><I d={ic.check} size={16} color={ST.success.t}/><span style={{fontFamily:fb,fontSize:13,color:ST.success.t,fontWeight:500}}>{Object.entries(confirmedExtras.reduce((a,p)=>{a[p.nome]=(a[p.nome]||0)+1;return a;},{})).map(([n,q])=>`${q}× ${n}`).join(", ")} · confirmado</span></div>}
 
-    {D.extras.length>0?D.extras.map((ex,i)=><NovidadeCard key={i} extra={ex} qty={cntAll(ex.nome)} onCardClick={()=>setModal(ex)} onAdd={()=>addItem(ex)} onRemove={()=>removeItem(ex.nome)} cutoff={cutoff}/>):<EmptyState title="Novidade da semana" body="Nenhuma novidade esta semana."/>}
+    {D.extras.length>0?D.extras.map((ex,i)=><NovidadeCard key={i} extra={ex} qty={cntAll(ex.nome)} onCardClick={()=>setModal(ex)} onAdd={()=>addItem(ex)} onRemove={()=>removeItem(ex.nome)} cutoff={cutoff} lockedReason={lockedReason}/>):<EmptyState title="Novidade da semana" body="Nenhuma novidade esta semana."/>}
 
     <div style={{height:1,background:W[200],margin:"4px 0 20px"}}/>
     <div style={{fontFamily:fd,fontSize:16,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",marginBottom:12}}>Nossos pães</div>
@@ -648,6 +660,7 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff})=>
   onRemove={()=>removeItem(p.nome)}
   ctaLabel="Pedir"
   cutoff={cutoff}
+  lockedReason={lockedReason}
   loadingText="Adicionando…"
   successText="Adicionado ✓"
 />;})}
@@ -802,6 +815,11 @@ export default function CoraPortal(){
     setScr(tela);
   };
 
+  // Status de pagamento da subscription. MVP: deriva direto do state local.
+  // Fase 7 troca por GET no DB com cache. Apenas pending_payment dispara
+  // banner + bloqueio de extras (active/paused/cancelled = sem efeito).
+  const pendingPayment=subscription?.status==="pending_payment";
+
   // Derivados
   // Alteracao pendente de Assinatura (reducao valem so no proximo ciclo).
   // Aumento e troca valem imediatamente (cobra proporcional ou sem custo).
@@ -878,19 +896,24 @@ const params = new URLSearchParams(window.location.search);
 
   return<div style={{fontFamily:fb,maxWidth:390,margin:"0 auto",background:W[50],minHeight:"100vh",display:"flex",flexDirection:"column",position:"relative"}}>
     <a href="#main-content" className="skip-link">Pular para o conteúdo</a>
-    <div style={{padding:"10px 16px",background:"#FFF",borderBottom:`1px solid ${W[200]}`,position:"sticky",top:0,zIndex:10}}>
-      <img src={IMG.logo} alt="Cora" style={{height:28}}/>
+    {/* Bloco sticky: logo + banner pendente. Banner integrado ao
+        sticky pra nao sair do viewport quando a Home faz scroll inicial. */}
+    <div style={{position:"sticky",top:0,zIndex:10}}>
+      <div style={{padding:"10px 16px",background:"#FFF",borderBottom:`1px solid ${W[200]}`}}>
+        <img src={IMG.logo} alt="Cora" style={{height:28}}/>
+      </div>
+      <PendingPaymentBanner/>
     </div>
     <main ref={mainRef} id="main-content" style={{flex:1,overflowY:"auto"}}>
       <div key={scr} className="tab-content">
-        {scr==="home"&&<Home onNav={handleNav} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaSemana={cestaSemana} cestaAtual={cestaAtual} houveSwap={houveSwap} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} historicoCicloAtual={historicoCicloAtual}/>}
+        {scr==="home"&&<Home onNav={handleNav} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaSemana={cestaSemana} cestaAtual={cestaAtual} houveSwap={houveSwap} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} historicoCicloAtual={historicoCicloAtual} pendingPayment={pendingPayment}/>}
         {scr==="assinatura"&&<Assinatura onNav={handleNav} hasPending={hasPending} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} onSalvar={handleSalvarAssinatura}/>}
-        {scr==="cardapio"&&<Cardapio pending={pending} confirmed={confirmed} setPending={setPending} setConfirmed={setConfirmed} hasPending={hasPending} cutoff={cutoff}/>}
+        {scr==="cardapio"&&<Cardapio pending={pending} confirmed={confirmed} setPending={setPending} setConfirmed={setConfirmed} hasPending={hasPending} cutoff={cutoff} pendingPayment={pendingPayment}/>}
         {scr==="perfil"&&<Perfil confirmed={confirmed} hasPending={hasPending} assinaturaQtds={assinaturaQtds} cestaAtual={cestaAtual} houveSwap={houveSwap} historicoCicloAtual={historicoCicloAtual} historicoCiclosPassados={historicoCiclosPassados}/>}
       </div>
     </main>
     {/* RODAPÉ PERSISTENTE — visível em TODAS as telas */}
-    <OrderFooter pending={pending} confirmed={confirmed} onConfirm={handleConfirm} onCancel={handleCancel} onNav={handleNav} cutoff={cutoff}/>
+    <OrderFooter pending={pending} confirmed={confirmed} onConfirm={handleConfirm} onCancel={handleCancel} onNav={handleNav} cutoff={cutoff} pendingPayment={pendingPayment}/>
     <ConfirmedFooter vis={justConfirmed}/>
     <Nav active={scr} onNav={handleNav} badge={pending.length}/>
     <style>{`

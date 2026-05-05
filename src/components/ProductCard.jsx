@@ -25,8 +25,11 @@ const QtyBtn=({qty,onAdd,onRemove,name,addDisabled=false})=>{
     ctaLabel           — string, ex: "Pedir", "Quero", "Tenho interesse"
     directQtySelector  — bool. true: nunca mostra CTA, sempre QtyBtn (− desabilita em qty=0).
                          Usado pela T2 do Onboarding. Default false (Cardápio).
+    lockedReason       — string opcional. Quando set: CTA fica disabled e
+                         microcopy aparece abaixo. Usado no MVP pra bloquear
+                         extras enquanto subscription.status === 'pending_payment'.
 */
-export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel="Pedir", cutoff=false, disabled=false, basketIds=[], loadingText, successText, directQtySelector=false }) {
+export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel="Pedir", cutoff=false, disabled=false, basketIds=[], loadingText, successText, directQtySelector=false, lockedReason }) {
   const [expanded, setExpanded] = useState(false);
   const [ctaSt, setCtaSt] = useState('idle');
   const [ctaErr, setCtaErr] = useState('');
@@ -98,7 +101,7 @@ export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel=
             </div>
           </div>
 
-          {(cutoff||(disabled&&qty===0))&&!directQtySelector
+          {(cutoff||lockedReason||(disabled&&qty===0))&&!directQtySelector
             ?<button disabled style={{padding:"8px 16px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:12,fontWeight:500,cursor:"default",flexShrink:0,minHeight:40,opacity:0.5}}>{ctaLabel}</button>
             :showCta
             ?<button disabled={ctaSt!=='idle'} onClick={handleCta} style={{padding:"8px 16px",borderRadius:radii.md,border:ctaSt==='success'?'1px solid #6EE7B7':'none',background:ctaSt==='success'?'#D1FAE5':B[500],color:ctaSt==='success'?'#065F46':'#FFF',fontFamily:fb,fontSize:12,fontWeight:500,cursor:ctaSt!=='idle'?'default':'pointer',flexShrink:0,minHeight:40,opacity:ctaSt==='loading'?0.5:1,transition:'all 150ms ease'}}>{ctaSt==='loading'?loadingText:ctaSt==='success'?successText:ctaLabel}</button>
@@ -108,6 +111,7 @@ export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel=
       </div>
 
       {cutoff&&<div style={{padding:"0 12px 8px",fontFamily:fb,fontSize:13,color:"#7A766E"}}>Prazo encerrado. Alterações valem a partir da próxima semana.</div>}
+      {lockedReason&&!cutoff&&<div style={{padding:"0 12px 8px",fontFamily:fb,fontSize:12,color:W[500],lineHeight:1.4}}>{lockedReason}</div>}
       {ctaErr&&<div style={{padding:"4px 12px 8px",fontFamily:fb,fontSize:13,color:'#9A3412',background:'#FFEDD5',borderRadius:radii.md,margin:"0 12px 8px"}}>{ctaErr}</div>}
 
       {/* Detalhe expandido */}
