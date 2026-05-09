@@ -8,7 +8,7 @@ import PendingPaymentBanner from "./components/PendingPaymentBanner";
 import { isPastCutoff } from "./utils/cutoff";
 import { haptic } from "./utils/haptic";
 import { plural } from "./utils/plural";
-import { loadSubscription, saveSubscription, clearSubscription } from "./utils/subscription";
+import { loadSubscription, saveSubscription, clearSubscription, reconcileSubscription } from "./utils/subscription";
 import { B, W, fd, fb, fmt, radii } from "./tokens";
 
 // `?reset=true`: limpa subscription persistida e remove o param da URL.
@@ -753,7 +753,9 @@ export default function CoraPortal(){
   const[pending,setPending]=useState([]);
   const[confirmed,setConfirmed]=useState([]);
   const[justConfirmed,setJustConfirmed]=useState(false);
-  const[userData,setUserData]=useState(initialSubscription?.data||null);
+  // Shape novo (Fase 7): subscription eh flat — nome/whatsapp/email/cpf
+  // ficam no topo, endereco aninhado em endereco, itens em itens.
+  const[userData,setUserData]=useState(initialSubscription||null);
   const[isFirstVisit,setIsFirstVisit]=useState(true);
   const[onboardingConfig,setOnboardingConfig]=useState(null);
 
@@ -766,14 +768,14 @@ export default function CoraPortal(){
   };
 
   // === REFACTOR: State da Assinatura agora vive aqui (fonte unica de verdade) ===
-  // Init prioriza initialSubscription.assinatura (persistida). Sem ela, usa
+  // Init prioriza initialSubscription.itens (persistida). Sem ela, usa
   // o default mock de D.pães[].qtd.
-  const [assinaturaQtds,setAssinaturaQtds]=useState(()=>buildQtdsFrom(initialSubscription?.assinatura));
+  const [assinaturaQtds,setAssinaturaQtds]=useState(()=>buildQtdsFrom(initialSubscription?.itens));
   // cestaSemana: null = segue a Assinatura. Objeto {id:qty} = cliente customizou esta semana.
   const [cestaSemana,setCestaSemana]=useState(null);
   // Baseline do ciclo: composicao ja cobrada no inicio do mes corrente.
   // So muda na virada de ciclo (1o do proximo mes, via simularViradaDeMes).
-  const [assinaturaBaseline,setAssinaturaBaseline]=useState(()=>buildQtdsFrom(initialSubscription?.assinatura));
+  const [assinaturaBaseline,setAssinaturaBaseline]=useState(()=>buildQtdsFrom(initialSubscription?.itens));
   // Historico do ciclo atual: null quando assinaturaQtds === assinaturaBaseline.
   // Objeto unico (nao array) representando a diferenca liquida vs baseline.
   const [historicoCicloAtual,setHistoricoCicloAtual]=useState(null);
@@ -815,10 +817,25 @@ export default function CoraPortal(){
     setScr(tela);
   };
 
-  // Status de pagamento da subscription. MVP: deriva direto do state local.
-  // Fase 7 troca por GET no DB com cache. Apenas pending_payment dispara
+  // Status de pagamento da subscription. Apenas pending_payment dispara
   // banner + bloqueio de extras (active/paused/cancelled = sem efeito).
   const pendingPayment=subscription?.status==="pending_payment";
+
+  // Reconcilia status com servidor 1x ao montar. Quando Hugo muda status
+  // pra active no Supabase, F5 detecta e atualiza local + UI sem acao.
+  useEffect(()=>{
+    let cancelled=false;
+    reconcileSubscription().then((updated)=>{
+      if(cancelled) return;
+      if(updated){
+        setSubscription(updated);
+      } else if(!loadSubscription()){
+        // Subscription foi deletada no servidor (404 limpou local). Limpa state.
+        setSubscription(null);
+      }
+    }).catch(()=>{ /* reconcile ja loga; degrade gracioso */ });
+    return ()=>{cancelled=true;};
+  },[]);
 
   // Derivados
   // Alteracao pendente de Assinatura (reducao valem so no proximo ciclo).
@@ -842,20 +859,46 @@ export default function CoraPortal(){
   const isOnboarding=scr==="onboarding";
 
   const handleOnboardingComplete=(payload)=>{
-    // Retrocompat: payload pode ser só "data" (versao antiga) ou {data, assinatura}
-    const data=payload?.data||payload;
-    const assinatura=payload?.assinatura;
-    // Persiste subscription no localStorage (MVP). Fase 7 substitui por POST + DB.
+    // POST do POST /api/subscriptions ja rodou no clique "Confirmar" da T2.
+    // Aqui so persiste o resultado + payload no localStorage e navega pra Home.
+    const data=payload?.data||{};
+    const assinatura=payload?.assinatura||{};
+    const coverage_unconfirmed=!!payload?.coverage_unconfirmed;
+    const subscription_id=payload?.subscription_id;
+    const status=payload?.status;
+
+    if(!subscription_id){
+      // Caso defensivo: sem id, nao faz sentido criar subscription local.
+      // Loga e segue pra Home (onboarding ja foi).
+      console.warn("[App] onboarding sem subscription_id, abortando persist");
+      setScr("home");
+      return;
+    }
+
     const novaSubscription={
-      status:"pending_payment",
-      data,
-      assinatura:assinatura||{},
-      createdAt:new Date().toISOString(),
+      id: subscription_id,
+      status,
+      nome: data.nome,
+      whatsapp: data.whatsapp,
+      email: data.email,
+      cpf: data.cpf,
+      endereco:{
+        cep: data.cep,
+        rua: data.rua,
+        numero: data.numero,
+        complemento: data.complemento,
+        bairro: data.bairro,
+        cidade: data.cidade,
+        estado: data.estado,
+      },
+      itens: assinatura,
+      coverage_unconfirmed,
+      createdAt: new Date().toISOString(),
     };
     saveSubscription(novaSubscription);
     setSubscription(novaSubscription);
-    setUserData(data);
-    if(assinatura&&Object.keys(assinatura).length>0){
+    setUserData(novaSubscription);
+    if(Object.keys(assinatura).length>0){
       setOnboardingConfig({data,assinatura});
     }
     setScr("home");
@@ -902,7 +945,7 @@ const params = new URLSearchParams(window.location.search);
       <div style={{padding:"10px 16px",background:"#FFF",borderBottom:`1px solid ${W[200]}`}}>
         <img src={IMG.logo} alt="Cora" style={{height:28}}/>
       </div>
-      <PendingPaymentBanner/>
+      <PendingPaymentBanner pendingPayment={pendingPayment}/>
     </div>
     <main ref={mainRef} id="main-content" style={{flex:1,overflowY:"auto"}}>
       <div key={scr} className="tab-content">

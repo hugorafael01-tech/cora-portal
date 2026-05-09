@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-import { loadSubscription } from "../utils/subscription";
 import { B, fb } from "../tokens";
 
 /**
@@ -7,22 +5,14 @@ import { B, fb } from "../tokens";
  * Mounted no shell do portal, abaixo do header sticky e acima do <main>.
  * Aparece em todas as telas (Home/Assinatura/Cardapio/Perfil).
  *
- * Le subscription do localStorage no mount + escuta `storage` event
- * (atualiza quando outra aba edita localStorage). Edicao no DevTools
- * da mesma aba precisa de F5.
+ * Recebe pendingPayment via props pra ficar em sync com o state do App
+ * (evita state isolado lendo localStorage — `storage` event nao dispara
+ * na mesma aba, entao reconcile/save de outra logica nao chega aqui).
  *
  * Outros status (active, paused, cancelled) nao mostram banner no MVP.
  */
-export default function PendingPaymentBanner() {
-  const [status, setStatus] = useState(() => loadSubscription()?.status);
-
-  useEffect(() => {
-    const onStorage = () => setStatus(loadSubscription()?.status);
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  if (status !== "pending_payment") return null;
+export default function PendingPaymentBanner({ pendingPayment }) {
+  if (!pendingPayment) return null;
 
   return (
     <div

@@ -6,7 +6,7 @@ import { B, W, fd, fb, fmt, radii } from "./tokens";
 import { formatWhatsApp, formatCPF, isValidWhatsApp, isValidEmail, isValidCPF, isValidCEP, isValidNome, isValidNumero } from "./utils/validators";
 import { estaCoberto, estaNaWhitelist } from "./utils/coverage";
 import { buildHugoCoverageLink } from "./config/contact";
-import { postWaitlist } from "./utils/api";
+import { postWaitlist, postSubscription } from "./utils/api";
 import { calcularPrimeiraEntrega, formatarPrimeiraEntrega } from "./utils/firstDelivery";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -308,6 +308,8 @@ const Welcome=({data,assinatura,onComplete})=>{
   const totalMensal=totalPaes*VALOR_POR_PAO+FRETE_MENSAL;
   const dataPrimeiraEntrega=formatarPrimeiraEntrega(calcularPrimeiraEntrega());
 
+  // POST ja foi feito no clique "Confirmar" da T2. Aqui o botao so navega
+  // pra Home — opcional pro usuario, a assinatura ja esta criada.
   return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start",padding:"32px 24px 40px",textAlign:"center",minHeight:"100%",background:W[50]}}>
       <div style={{width:"100%",maxWidth:340}}>
@@ -371,6 +373,11 @@ export default function CoraOnboarding({onComplete}){
   const[cepFallback,setCepFallback]=useState(false);
   const[coverageStatus,setCoverageStatus]=useState("idle"); // idle | ok | blocked | unconfirmed
   const[viaCEPResolved,setViaCEPResolved]=useState(false);
+  // POST da Assinatura roda no clique "Confirmar" da T2. Resultado fica
+  // aqui pra repassar pro App quando o user terminar a Welcome.
+  const[submitting,setSubmitting]=useState(false);
+  const[submitError,setSubmitError]=useState(null);
+  const[submissionResult,setSubmissionResult]=useState(null);
   const scrollRef=useRef(null);
   // Reset scroll ao trocar step/screen do onboarding (mesma logica do App).
   useEffect(()=>{scrollRef.current?.scrollTo({top:0});window.scrollTo({top:0});},[step,screen]);
@@ -491,7 +498,7 @@ export default function CoraOnboarding({onComplete}){
     return true;
   })();
 
-  const handleNext=()=>{
+  const handleNext=async()=>{
     if(website) return; // honeypot: bot detectado
     if(step===1){
       if(!step1Valido){
@@ -508,9 +515,36 @@ export default function CoraOnboarding({onComplete}){
       return;
     }
     if(step===2){
-      // T2 confirmada -> vai pra Welcome. Persistencia em DB e disparo
-      // de e-mail entram na Fase 7 (backend).
-      setScreen("welcome");
+      if(submitting) return; // protege clique duplo (camada A da idempotencia)
+      if(!canNext2) return;
+      setSubmitting(true);
+      setSubmitError(null);
+      try{
+        const result=await postSubscription({
+          nome: data.nome,
+          whatsapp: data.whatsapp,
+          email: data.email,
+          cpf: data.cpf,
+          endereco:{
+            cep: data.cep,
+            rua: data.rua,
+            numero: data.numero,
+            complemento: data.complemento,
+            bairro: data.bairro,
+            cidade: data.cidade,
+            estado: data.estado,
+          },
+          itens: assinatura,
+          coverage_unconfirmed: coverageStatus==="unconfirmed",
+        });
+        setSubmissionResult(result);
+        setScreen("welcome");
+      }catch(err){
+        console.error("[onboarding] falha ao criar Assinatura", err);
+        setSubmitError("Algo deu errado, tenta de novo em alguns segundos.");
+      }finally{
+        setSubmitting(false);
+      }
     }
   };
 
@@ -557,7 +591,16 @@ export default function CoraOnboarding({onComplete}){
 
   if(screen==="welcome") return shell(<>
     <div style={{padding:"10px 16px",background:"#FFF",borderBottom:`1px solid ${W[200]}`}}><img src={IMG.logo} alt="Cora" style={{height:28}}/></div>
-    <div style={{flex:1}}><Welcome data={data} assinatura={assinatura} onComplete={()=>onComplete&&onComplete({data,assinatura})}/></div>
+    <div style={{flex:1}}><Welcome data={data} assinatura={assinatura} onComplete={()=>{
+      if(!onComplete) return;
+      onComplete({
+        data,
+        assinatura,
+        coverage_unconfirmed: coverageStatus==="unconfirmed",
+        subscription_id: submissionResult?.subscription_id,
+        status: submissionResult?.status,
+      });
+    }}/></div>
   </>);
 
   return shell(<>
@@ -595,18 +638,26 @@ export default function CoraOnboarding({onComplete}){
         {step===2?(
           // Footer da T2: bloco de info financeira a esquerda (so com paes selecionados)
           // + botoes a direita. Quando vazio: spacer mantem botoes na borda.
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            {totalItems>0?(
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontFamily:fb,fontSize:13,fontWeight:500,color:W[800],lineHeight:1.3}}>{totalItems} {totalItems===1?"pão":"pães"} por semana</div>
-                <div style={{fontFamily:fb,fontSize:12,color:W[600],marginTop:2,lineHeight:1.3}}>{fmt(valorPaes)}/mês · Frete {fmt(FRETE_MENSAL)}</div>
-                <div style={{fontFamily:fb,fontSize:14,fontWeight:700,color:B[700],marginTop:2,lineHeight:1.3}}>Total {fmt(valorTotal)}/mês</div>
-                {atingiuLimite&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:6,lineHeight:1.4}}>Máximo 3 pães por semana.</div>}
+          // ErrorBanner aparece acima quando POST falha.
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {submitError && (
+              <div role="alert" style={{fontFamily:fb,fontSize:13,color:"#9A3412",background:"#FFEDD5",border:"1px solid #FED7AA",borderRadius:radii.md,padding:"10px 12px",lineHeight:1.5}}>
+                {submitError}
               </div>
-            ):<div style={{flex:1}}/>}
-            <div style={{display:"flex",gap:10,flexShrink:0}}>
-              <Btn onClick={()=>setStep(1)} style={{width:"auto",flex:"0 0 auto",padding:"14px 20px"}}>Voltar</Btn>
-              <Btn primary disabled={!canNext2} onClick={handleNext} style={{width:"auto",flex:"0 0 auto",padding:"14px 24px"}}>Continuar</Btn>
+            )}
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              {totalItems>0?(
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontFamily:fb,fontSize:13,fontWeight:500,color:W[800],lineHeight:1.3}}>{totalItems} {totalItems===1?"pão":"pães"} por semana</div>
+                  <div style={{fontFamily:fb,fontSize:12,color:W[600],marginTop:2,lineHeight:1.3}}>{fmt(valorPaes)}/mês · Frete {fmt(FRETE_MENSAL)}</div>
+                  <div style={{fontFamily:fb,fontSize:14,fontWeight:700,color:B[700],marginTop:2,lineHeight:1.3}}>Total {fmt(valorTotal)}/mês</div>
+                  {atingiuLimite&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:6,lineHeight:1.4}}>Máximo 3 pães por semana.</div>}
+                </div>
+              ):<div style={{flex:1}}/>}
+              <div style={{display:"flex",gap:10,flexShrink:0}}>
+                <Btn onClick={()=>setStep(1)} disabled={submitting} style={{width:"auto",flex:"0 0 auto",padding:"14px 20px"}}>Voltar</Btn>
+                <Btn primary disabled={!canNext2 || submitting} onClick={handleNext} style={{width:"auto",flex:"0 0 auto",padding:"14px 24px"}}>{submitting?"Enviando…":"Confirmar"}</Btn>
+              </div>
             </div>
           </div>
         ):(

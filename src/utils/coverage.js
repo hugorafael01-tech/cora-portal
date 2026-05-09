@@ -14,9 +14,9 @@ export const estaCoberto = (bairro, cidade) => {
 };
 
 /**
- * Whitelist de override de cobertura. CRUD via SQL no Supabase chega na
- * Fase 7. Por enquanto, lista local vazia — comportamento equivalente a
- * "sem overrides".
+ * Whitelist de override de cobertura. CRUD via endpoint chega na
+ * Fase 8 (admin.acora.com.br). Por enquanto, lista local vazia —
+ * comportamento equivalente a "sem overrides".
  *
  * Match por qualquer um dos campos: CPF, e-mail, CEP. Comparacoes:
  *  - CPF/CEP: so digitos
