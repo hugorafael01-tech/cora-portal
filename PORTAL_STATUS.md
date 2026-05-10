@@ -1,18 +1,20 @@
 # Portal do Assinante — Status Atual
 
-_Auto-gerado em 2026-05-09 12:00 por Claude Code. Não editar manualmente acima da seção "Pendências não-código"._
+_Auto-gerado em 2026-05-09 por Claude Code. Não editar manualmente acima da seção "Pendências não-código"._
 
 ## Versão
 - **App:** v0.0.0 (produto v3.2.7)
 - **Branch:** main
-- **Último commit:** `58da702` — 2026-05-09 — feat(onboarding): fase 7 — backend (Supabase + Resend + Vercel Functions)
+- **Último commit:** `e90a00f` — 2026-05-09 — docs: consolida feedbacks UX e pendencias das telas internas
 
 ## Rotas / páginas
 - src/pages/PreCadastro.jsx
 
 ## Componentes principais
+- src/components/CEPField.jsx _(Fase 3)_
+- src/components/CoverageBlocker.jsx _(Fase 3)_
+- src/components/PendingPaymentBanner.jsx _(Fase 6/7)_
 - src/components/ProductCard.jsx
-- src/components/PendingPaymentBanner.jsx _(novo na Fase 7)_
 
 ## Dependências relevantes
 - react @ ^19.2.4
@@ -20,23 +22,31 @@ _Auto-gerado em 2026-05-09 12:00 por Claude Code. Não editar manualmente acima 
 - resend _(novo na Fase 7)_
 
 ## Marcadores de integração (grep)
-| Termo | Arquivos | Ocorrências |
-|---|---|---|
-| asaas | 0 | 0 |
-| otp | 1 | 2 |
-| whatsapp | 3 | 29 |
-| webhook | 0 | 0 |
-| supabase | 4 | (lib + endpoints + migration) |
-| resend | 2 | (lib + endpoint) |
-| stripe | 0 | 0 |
-| pagar.me | 0 | 0 |
+| Termo | Arquivos |
+|---|---|
+| asaas | 0 |
+| otp | 0 |
+| whatsapp | 8 |
+| webhook | 0 |
+| supabase | 4 (lib + endpoints + migration) |
+| resend | 2 (lib + endpoint) |
+| stripe | 0 |
+| pagar.me | 0 |
 
 ## TODOs e FIXMEs no código
 Nenhum encontrado
 
 ## Últimos 10 commits
+- `e90a00f` — 2026-05-09 — docs: consolida feedbacks UX e pendencias das telas internas
+- `257bc19` — 2026-05-09 — docs: add post-Phase 7 continuation briefing
+- `b2833a0` — 2026-05-09 — docs: update PORTAL_STATUS with Phase 7 completion
 - `58da702` — 2026-05-09 — feat(onboarding): fase 7 — backend (Supabase + Resend + Vercel Functions)
-- _(commits das Fases 0-6 da branch refactor/onboarding-fase-0 — Claude Code regenera lista após merge)_
+- `5adcb70` — 2026-05-05 — docs: briefing focado da Fase 7 (backend)
+- `cf97f4f` — 2026-05-05 — docs: atualiza status pos-Fase 6
+- `6021b98` — 2026-05-05 — feat(onboarding): fase 6 — banner pendente + bloqueio Cardapio + Home
+- `b3c99e3` — 2026-05-04 — feat(onboarding): fase 5 — Welcome reformulada + persistencia local
+- `9814436` — 2026-05-04 — fix(onboarding): placeholder de rua/bairro no fallback do ViaCEP
+- `e318f2a` — 2026-05-04 — feat(onboarding): fase 4 — refactor da T1 (Sobre voce + Entrega)
 
 ## Build / Deploy
 - **Último build local:** 2026-05-09
@@ -52,6 +62,8 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 ## Spec vigente
 - **Portal:** v3.0 (mar/2026) + Adendo v3.1 (mar/2026)
   - Backend (schema, endpoints, persistência) detalhado em `docs/CORA_Briefing_Fase7_Backend.md` e `docs/CORA_Prompt_Fase7_ClaudeCode.md`
+  - Continuação pós-Fase 7 (4 frentes mapeadas) em `docs/CORA_Briefing_PosFase7.md`
+  - Feedbacks UXers + pendências nas 4 telas internas em `docs/CORA_Telas_Internas_Pendencias.md`
 - **Próxima consolidação prevista:** v4.0 (pós-testes de usabilidade)
 - **Local dos docs:** projeto do Claude (CORA_Portal_Assinante_Especificacao_v3.docx + CORA_Portal_Adendo_v3_1_Redesign.docx)
 
@@ -70,7 +82,7 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 - [x] Conta Supabase — **provisionada na Fase 7**
 - [x] Conta Resend — **provisionada na Fase 7**
 - [ ] Google Workspace `hugo@acora.com.br` — setup pendente. Fase 7 mitigou usando Gmail temporário (`hugorafael01@gmail.com` como `EMAIL_TO`; domínio default do Resend como `EMAIL_FROM`) até Workspace ficar pronto.
-- [ ] SPF/DKIM no `acora.com.br` no Resend — bloqueante pro deploy de prod (task ClickUp: [86e1a8q5t](https://app.clickup.com/t/86e1a8q5t))
+- [x] SPF/DKIM no `acora.com.br` no Resend — **concluído em 09/05/2026** (task ClickUp: 86e1a8q5t fechada). Domínio verificado, EMAIL_FROM=portal@acora.com.br em Production.
 - [x] Definir Asaas CPF vs CNPJ antes de criar conta (task ClickUp: 86e0rghwq) — **resolvido**
 
 ## Gap spec × código (a reconciliar)
@@ -79,11 +91,28 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 - Auth: spec ainda fala em magic link Supabase. Decisão atual (Fase 7): localStorage com `subscription_id` funciona como credencial durável no MVP. Auth real (OTP WhatsApp ou magic link via Supabase Auth) é v2, quando tiver assinantes ativos pagando.
 
 ## Próximo foco acordado
-- **Capacity gate antes do lançamento** (task ClickUp: [86e1a8q50](https://app.clickup.com/t/86e1a8q50), prioridade high). Tabela `app_settings` com flag `subscriptions_open`, nova tabela `capacity_waitlist`, controle manual via SQL Editor. Bloqueante pro lançamento de agosto. Estimativa: 2-3h.
-- **SPF/DKIM no domínio acora.com.br no Resend** (task ClickUp: [86e1a8q5t](https://app.clickup.com/t/86e1a8q5t), prioridade high). Antes do primeiro deploy de prod. Estimativa: 30min de config + propagação DNS.
-- **Cenário 3 / Whitelist de cobertura** — pendência da Fase 8 (`admin.acora.com.br`): endpoint pra consultar `coverage_whitelist` no banco, refatorar `estaNaWhitelist` em `src/utils/coverage.js` pra async. Hoje retorna sempre false (lista local vazia em `WHITELIST_HARDCODED`).
+
+4 frentes mapeadas em `docs/CORA_Briefing_PosFase7.md`, em ordem de prioridade:
+
+- **Frente A — Capacity gate antes do lançamento** (task ClickUp: [86e1a8q50](https://app.clickup.com/t/86e1a8q50), high). Tabela `app_settings` com flag `subscriptions_open`, nova tabela `capacity_waitlist`, controle manual via SQL Editor. Bloqueante pro lançamento de agosto. Próximo na fila. Estimativa: 2-3h.
+- **Frente B — SPF/DKIM no domínio acora.com.br no Resend** (task ClickUp: [86e1a8q5t](https://app.clickup.com/t/86e1a8q5t), high). ✅ **Concluída em 09/05/2026.** Domínio verificado, EMAIL_FROM=portal@acora.com.br em Production, e-mail chegando na inbox do Gmail.
+- **Frente C — Telas internas pós-feedback UX.** Doc fonte: `docs/CORA_Telas_Internas_Pendencias.md`. 5 sub-itens distribuídos pelas 4 telas internas, exige discussão prévia por item antes de virar briefing técnico. Começar pelo item 1 (hierarquia da Home). Múltiplas sessões.
+- **Frente D — Whitelist de cobertura** — pendência da Fase 8 (`admin.acora.com.br`): endpoint pra consultar `coverage_whitelist` no banco, refatorar `estaNaWhitelist` em `src/utils/coverage.js` pra async. Hoje retorna sempre false (lista local vazia em `WHITELIST_HARDCODED`).
 
 ## Última sessão de trabalho
+- **Data:** 2026-05-09 (continuação)
+- **Tema:** Frente B do pós-Fase 7 — SPF/DKIM no domínio acora.com.br no Resend
+- **Saída:**
+  - Domínio `acora.com.br` adicionado e verificado no Resend (registros SPF, DKIM, MX cadastrados no Registro.br após correção do MX que tinha sido cadastrado como TXT).
+  - 5 variáveis de ambiente configuradas no Vercel (Production + Preview): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_TO`.
+  - `EMAIL_FROM=portal@acora.com.br` em Production, `EMAIL_FROM=onboarding@resend.dev` mantido em Preview pra testes.
+  - Deploy de produção via `vercel --prod` (commit `e90a00f`).
+  - Teste end-to-end: subscription criada em `app.acora.com.br`, e-mail chegou na inbox do Gmail com remetente `portal@acora.com.br` (não caiu em spam).
+  - Briefing de continuação `docs/CORA_Briefing_PosFase7.md` commitado (commit `257bc19`).
+  - Task ClickUp 86e1a8q5t fechada.
+- **Pendência registrada:** DMARC ainda não configurado (bonus opcional, `p=none` pra monitoring).
+
+## Sessão anterior
 - **Data:** 2026-05-09
 - **Tema:** Fase 7 do refactor de onboarding — backend completo (Supabase + Resend + Vercel Functions)
 - **Saída:** branch `refactor/onboarding-fase-0` mergeada em main (commit `58da702`, 19 arquivos, +1454/-83):
