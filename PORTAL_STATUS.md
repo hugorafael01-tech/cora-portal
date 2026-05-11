@@ -95,42 +95,36 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 4 frentes mapeadas em `docs/CORA_Briefing_PosFase7.md`, em ordem de prioridade:
 
-- **Frente A — Capacity gate antes do lançamento** (task ClickUp: [86e1a8q50](https://app.clickup.com/t/86e1a8q50), high). ✅ **Concluída em 2026-05-10.** Migration `0002_capacity_gate.sql` (tabelas `app_settings` + `capacity_waitlist`), endpoints `GET /api/settings`, `POST /api/capacity-waitlist`, check do gate em `POST /api/subscriptions`, página `src/pages/CapacityWaitlist.jsx`, Splash do Onboarding em modo fechado, handler 409 com toast de redirect. Controle do gate via SQL Editor (`UPDATE app_settings SET subscriptions_open = false WHERE id = 1`).
-- **Frente B — SPF/DKIM no domínio acora.com.br no Resend** (task ClickUp: [86e1a8q5t](https://app.clickup.com/t/86e1a8q5t), high). ✅ **Concluída em 09/05/2026.** Domínio verificado, EMAIL_FROM=portal@acora.com.br em Production, e-mail chegando na inbox do Gmail.
-- **Frente C — Telas internas pós-feedback UX.** Doc fonte: `docs/CORA_Telas_Internas_Pendencias.md`. 5 sub-itens distribuídos pelas 4 telas internas, exige discussão prévia por item antes de virar briefing técnico. Começar pelo item 1 (hierarquia da Home). Múltiplas sessões.
+- **Frente A — Capacity gate antes do lançamento** (task ClickUp: [86e1a8q50](https://app.clickup.com/t/86e1a8q50), high). ✅ **Concluída em 11/05/2026.** Deployada em produção. Schema (`app_settings` + `capacity_waitlist`), endpoints (`/api/settings`, `/api/capacity-waitlist`, check 409 em `/api/subscriptions`), frontend (Splash modo fechado + CapacityWaitlist page + banner persistente pós-redirect) e email transacional via Resend. Validada pelos cenários C1, C2, C3, C4, C6, C7.
+- **Frente B — SPF/DKIM no domínio acora.com.br no Resend** (task ClickUp: [86e1a8q5t](https://app.clickup.com/t/86e1a8q5t), high). ✅ **Concluída em 09/05/2026.** Domínio verificado, EMAIL_FROM=portal@acora.com.br em Production (também em Preview a partir de 11/05).
+- **Frente C — Telas internas pós-feedback UX.** Doc fonte: `docs/CORA_Telas_Internas_Pendencias.md`. 5 sub-itens distribuídos pelas 4 telas internas, exige discussão prévia por item antes de virar briefing técnico. **Próxima na fila — começar pelo item 1 (hierarquia da Home).** Múltiplas sessões.
 - **Frente D — Whitelist de cobertura** — pendência da Fase 8 (`admin.acora.com.br`): endpoint pra consultar `coverage_whitelist` no banco, refatorar `estaNaWhitelist` em `src/utils/coverage.js` pra async. Hoje retorna sempre false (lista local vazia em `WHITELIST_HARDCODED`).
 
 ## Última sessão de trabalho
-- **Data:** 2026-05-11
-- **Tema:** Frente A — ajustes pós-testes (copy + UX do C6) — task ClickUp 86e1a8q50, briefing `docs/CORA_Briefing_FrenteA_Ajustes.md`
-- **Branch:** `feat/capacity-gate` (continuação)
+- **Data:** 2026-05-11 (segunda)
+- **Tema:** Frente A do pós-Fase 7 — Capacity gate antes do lançamento
 - **Saída:**
-  - **Copy revisada** com tom calibrado pela skill brand voice da Cora (sem travessão, sem rule of three, sem AI vocab):
-    - Splash modo fechado em `src/Onboarding.jsx`: "As vagas dessa rodada já foram preenchidas. Estamos ampliando a produção aos poucos. Deixa seu contato e te avisamos quando abrir mais vagas." Botão pra `Quero entrar`.
-    - `src/pages/CapacityWaitlist.jsx`: header trocado pra "Estamos ampliando a produção. Vamos te avisar por email assim que abrir uma vaga." (sem título separado em destaque). CTA do form pra `Pronto`. Tela de confirmação: "Recebemos seu contato. / Assim que uma vaga abrir te avisamos por email, ok? / Enquanto isso, acompanha a gente no Instagram @cora.padaria. / Valeu pela paciência."
-    - Email Resend em `api/capacity-waitlist.js`: subject pra `Recebemos seu contato`; body texto+HTML alinhados com a nova copy.
-  - **Fix UX do C6 — banner persistente** substituindo o toast curto. `App.jsx` ganhou `waitlistReason` state (`'splash' | 'closed-during-flow'`); `goToCapacityWaitlist(reason)` agora seta o reason antes de mudar a rota. Toast antigo removido (`gateRedirectToast` + useEffect de timeout zerado). `Onboarding.jsx`: Splash chama `onGoToCapacityWaitlist('splash')`; handler de 409 chama `onGoToCapacityWaitlist('closed-during-flow')`. `CapacityWaitlist.jsx` recebe prop `reason` e renderiza `<RedirectBanner/>` no topo somente quando `reason === 'closed-during-flow' && !submitted` (banner some quando o user submete e cai na tela de confirmação). Visual: fundo `B[50]`, borda `B[100]`, texto `B[900]`, sem ícone, sem cor de erro. Copy: "As vagas dessa rodada acabaram de fechar. Deixa seu contato pra próxima."
-  - **O que NÃO mudou** (conforme Seção 5 do briefing de ajustes): schema do banco, endpoints `/api/settings`, validações, fluxo de idempotência, mecânica do flip via SQL Editor, mensagens de erro do form.
-  - **Pendência operacional:** rodar C3-bis e C6-bis (Seção 4 do briefing) no Preview após deploy. C6-bis é o foco — confirmar banner aparece no redirect, não some sozinho, e some quando o user submete e cai na confirmação.
-  - **Issue pré-existente registrada (fora desta frente):** `POST /api/lead 404` no `PreCadastro.jsx:256` em ambiente local. Pendente: criar endpoint stub local, apontar pro webhook Make.com, ou documentar que `/interesse` só funciona em deploy. Sugestão: nova task ClickUp na lista Digital & Portal quando Hugo decidir a abordagem.
+  - Migration `supabase/migrations/0002_capacity_gate.sql` aplicada. Duas tabelas novas: `app_settings` (singleton, linha única forçada por CHECK id=1, flag `subscriptions_open` boolean) e `capacity_waitlist` (id, nome, email, whatsapp, cep, created_at). RLS deny-all em ambas. Índice único parcial em `capacity_waitlist` por email pra idempotência.
+  - 3 endpoints: `GET /api/settings` (lê flag), `POST /api/capacity-waitlist` (insere + email Resend best-effort + idempotência por email), ajuste em `POST /api/subscriptions` com check 409 `subscriptions_closed` (defesa em profundidade contra race condition).
+  - Frontend: getSettings() no boot do App.jsx, novo state `subscriptionsOpen`; novo state `waitlistReason` ('splash' | 'closed-during-flow'); nova página `src/pages/CapacityWaitlist.jsx` (form + estado submitted que renderiza tela de confirmação); banner persistente no topo quando `waitlistReason === 'closed-during-flow'` (some quando submitted vira true); Splash modo fechado com copy "As vagas dessa rodada já foram preenchidas…" + CTA "Quero entrar".
+  - Email transacional via Resend (subject "Recebemos seu contato", assinatura simplificada só "Hugo" — "Padeiro apaixonado" segue válido pros posts do Instagram).
+  - Variável `EMAIL_FROM=portal@acora.com.br` criada em Preview via `npx vercel env add` (já existia em Production). Resolveu erro 403 do Resend em modo testing.
+  - Validação manual: C1 (sanity fluxo normal), C2/C3 (gate fechado + lista de espera + email chegando), C4 (idempotência por email), C6 (race: T2 aberta + flip da flag → 409 + banner persistente), C7 (reabertura do gate). C5 (validação payload) e C8 (persistência) pulados — edge cases menores.
+  - 2 iterações de copy com brand voice; consolidação em `docs/CORA_Briefing_FrenteA_CapacityGate.md` (briefing original) e `docs/CORA_Briefing_FrenteA_Ajustes.md` (revisão de copy + banner C6).
+  - Deploy de produção via `vercel --prod`. Smoke test em app.acora.com.br confirmou Splash modo aberto (flag reposicionada antes do deploy).
+  - PR `feat/capacity-gate` mergeado em main, branch deletada localmente e no remoto.
+  - Task ClickUp 86e1a8q50 fechada com comentário detalhado.
+  - Banco limpo dos registros de teste ao fim da sessão (8 linhas em `capacity_waitlist` + 1 subscription).
+- **Issue pré-existente registrada (não é desta frente):** `POST /api/lead` retorna 404 em ambiente local (`PreCadastro.jsx:256`). Provavelmente apontava pro webhook Make.com em produção e não tem implementação local. Virou task separada na lista Digital & Portal (ver task ClickUp).
+- **Pendência operacional:** Hugo precisa monitorar manualmente o número de subscribers ativos. Quando bater o teto, flipar `app_settings.subscriptions_open` via SQL Editor. Evolução futura (alternativa b da task original): contagem automática.
 
 ## Sessão anterior
-- **Data:** 2026-05-10
-- **Tema:** Frente A do pós-Fase 7 — Capacity gate antes do lançamento (task ClickUp: 86e1a8q50)
-- **Branch:** `feat/capacity-gate`
-- **Saída:**
-  - **Banco (Supabase):** migration `0002_capacity_gate.sql` cria `app_settings` (singleton com `id=1`, flag `subscriptions_open` boolean default true) + `capacity_waitlist` (nome/email/whatsapp/cep, unique index em `email` via `citext` pra idempotência case-insensitive). RLS deny-all nas duas. Total de tabelas: 5 (subscriptions, coverage_waitlist, coverage_whitelist, **app_settings**, **capacity_waitlist**).
-  - **Endpoints (Vercel Functions):** `GET /api/settings` retorna `{subscriptions_open}` (fallback seguro = aberto se a row sumir). `POST /api/capacity-waitlist` valida nome/email/whatsapp/cep, insere, trata 23505 retornando 200 com `status: already_exists`, dispara email Resend best-effort (template texto+HTML simples, copy da Seção 7.6 do briefing) somente em criação nova. `POST /api/subscriptions` agora lê `app_settings.subscriptions_open` antes de validar payload — se `false`, retorna 409 `{error: 'subscriptions_closed'}` (defesa em profundidade contra condição de corrida).
-  - **Frontend:** `src/utils/api.js` ganhou `getSettings()` e `postCapacityWaitlist()`. `throwApiError` agora anexa `.code` e `.status` ao Error pra callers detectarem casos específicos. `App.jsx` faz `getSettings()` no boot, mantém estado `subscriptionsOpen`, expõe via prop pra `CoraOnboarding`, adiciona rota `scr === 'lista-espera'` com toast de redirect. `Onboarding.jsx`: Splash agora tem dois modos (aberto/fechado via prop `gateClosed`), handler do POST subscription captura `err.code === 'subscriptions_closed'` e dispara toast da Seção 7.8 antes de redirecionar pra `lista-espera`. Página nova `src/pages/CapacityWaitlist.jsx` (form nome/email/whatsapp/cep + tela de confirmação via state `submitted`, reaproveita `CEPField` e estética alinhada com `CoverageBlocker`).
-  - **Copy:** strings da Seção 7 do briefing aplicadas literalmente (sem travessão, sem reescrita pra "soar mais educado").
-  - **Pendência operacional:** rodar a migration no ambiente Supabase (via CLI `supabase db push` ou colar no SQL Editor) antes de testar end-to-end. Validar manualmente C1-C8 (Seção 8 do briefing); C6 é o crítico (race entre Splash aberto → SQL flip → POST subscription → 409 → toast + redirect). Variáveis de ambiente existentes (`EMAIL_FROM`, `RESEND_API_KEY`, `SUPABASE_*`) reaproveitadas — sem novas envs.
-
-## Sessão 2026-05-09 (continuação)
+- **Data:** 2026-05-09 (continuação)
 - **Tema:** Frente B do pós-Fase 7 — SPF/DKIM no domínio acora.com.br no Resend
 - **Saída:**
   - Domínio `acora.com.br` adicionado e verificado no Resend (registros SPF, DKIM, MX cadastrados no Registro.br após correção do MX que tinha sido cadastrado como TXT).
   - 5 variáveis de ambiente configuradas no Vercel (Production + Preview): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_TO`.
-  - `EMAIL_FROM=portal@acora.com.br` em Production, `EMAIL_FROM=onboarding@resend.dev` mantido em Preview pra testes.
+  - `EMAIL_FROM=portal@acora.com.br` em Production, `EMAIL_FROM=onboarding@resend.dev` em Preview (corrigido posteriormente em 11/05 pra `portal@acora.com.br` também, ver Frente A).
   - Deploy de produção via `vercel --prod` (commit `e90a00f`).
   - Teste end-to-end: subscription criada em `app.acora.com.br`, e-mail chegou na inbox do Gmail com remetente `portal@acora.com.br` (não caiu em spam).
   - Briefing de continuação `docs/CORA_Briefing_PosFase7.md` commitado (commit `257bc19`).
@@ -138,13 +132,19 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 - **Pendência registrada:** DMARC ainda não configurado (bonus opcional, `p=none` pra monitoring).
 
 ## Sessões anteriores no histórico
-- **2026-05-09 — Fase 7 do refactor de onboarding — backend completo (Supabase + Resend + Vercel Functions)**
-- **Saída:** branch `refactor/onboarding-fase-0` mergeada em main (commit `58da702`, 19 arquivos, +1454/-83):
-  - **Banco (Supabase):** migration `0001_initial.sql` aplicada. Tabelas `subscriptions`, `coverage_waitlist`, `coverage_whitelist`. ENUM `subscription_status`. RLS `deny-all` nas 3. Constraint `valor_mensal_check` (defesa contra payload corrompido). Índice parcial único `subscriptions_cpf_pending_uniq` (idempotência por CPF + status pending_payment).
-  - **Endpoints (Vercel Functions):** `POST /api/subscriptions` cria registro, dispara e-mail Resend, trata duplicata retornando id existente sem reenvio. `GET /api/subscriptions/{id}` retorna apenas campos necessários pra Home (sem CPF, e-mail, WhatsApp, endereço completo). `POST /api/coverage-waitlist` substitui stub anterior em `src/utils/api.js`.
-  - **Frontend:** libs server-side `src/lib/{supabase-admin,resend,validators}.js`. Funções reais `postSubscription`, `getSubscription`, `postWaitlist` em `src/utils/api.js`. `reconcileSubscription()` em `src/utils/subscription.js` (sincroniza status do servidor pós-F5). Welcome (T2) chama POST e salva `{id, status, ...payload}` no localStorage. Home com `useEffect` que chama reconcile na montagem.
-  - **E-mail transacional:** Resend integrado com `await + try/catch` (best-effort, falha não bloqueia resposta da subscription). E-mail vai pro Gmail temporário até Workspace ficar pronto.
-  - **Validação:** 11/11 testes técnicos via harness Node (mocka req/res do Vercel) + 4/5 cenários end-to-end manuais (1 dentro de cobertura, 2 fora, 4 idempotência clique duplo, 5 reconcile pós-UPDATE manual). Cenário 3 (whitelist) é pendência da Fase 8.
-- **Sessões anteriores no histórico:** Fases 0-6 do refactor de onboarding (2026-05-05) — UI completa.
+
+### 2026-05-09 — Fase 7 do refactor de onboarding: backend completo (Supabase + Resend + Vercel Functions)
+
+Branch `refactor/onboarding-fase-0` mergeada em main (commit `58da702`, 19 arquivos, +1454/-83):
+
+- **Banco (Supabase):** migration `0001_initial.sql` aplicada. Tabelas `subscriptions`, `coverage_waitlist`, `coverage_whitelist`. ENUM `subscription_status`. RLS deny-all nas 3. Constraint `valor_mensal_check` (defesa contra payload corrompido). Índice parcial único `subscriptions_cpf_pending_uniq` (idempotência por CPF + status pending_payment).
+- **Endpoints (Vercel Functions):** `POST /api/subscriptions` cria registro, dispara e-mail Resend, trata duplicata retornando id existente sem reenvio. `GET /api/subscriptions/{id}` retorna apenas campos necessários pra Home (sem CPF, e-mail, WhatsApp, endereço completo). `POST /api/coverage-waitlist` substitui stub anterior em `src/utils/api.js`.
+- **Frontend:** libs server-side `src/lib/{supabase-admin,resend,validators}.js`. Funções reais `postSubscription`, `getSubscription`, `postWaitlist` em `src/utils/api.js`. `reconcileSubscription()` em `src/utils/subscription.js` (sincroniza status do servidor pós-F5). Welcome (T2) chama POST e salva `{id, status, ...payload}` no localStorage. Home com `useEffect` que chama reconcile na montagem.
+- **E-mail transacional:** Resend integrado com `await + try/catch` (best-effort, falha não bloqueia resposta da subscription). E-mail vai pro Gmail temporário até Workspace ficar pronto.
+- **Validação:** 11/11 testes técnicos via harness Node (mocka req/res do Vercel) + 4/5 cenários end-to-end manuais (1 dentro de cobertura, 2 fora, 4 idempotência clique duplo, 5 reconcile pós-UPDATE manual). Cenário 3 (whitelist) é pendência da Fase 8.
+
+### 2026-05-05 — Fases 0-6 do refactor de onboarding
+
+UI completa.
 
 <!-- STATUS_MANUAL_END -->
