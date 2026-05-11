@@ -76,6 +76,26 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "method_not_allowed" });
   }
 
+  // ─── Capacity gate (defesa em profundidade contra condicao de corrida) ───
+  // Frontend ja checa via GET /api/settings, mas alguem pode ter aberto a
+  // pagina antes do flip do switch. Backend rejeita ANTES de validar payload.
+  const { data: settings, error: settingsErr } = await supabaseAdmin
+    .from("app_settings")
+    .select("subscriptions_open")
+    .eq("id", 1)
+    .maybeSingle();
+
+  if (settingsErr) {
+    // Fail-open: prefere aceitar a assinatura a bloquear uma venda boa por
+    // falha de leitura. Loga pra investigacao.
+    console.error("[subscriptions POST] settings read failed, defaulting to open", settingsErr);
+  } else if (settings && settings.subscriptions_open === false) {
+    return res.status(409).json({
+      error: "subscriptions_closed",
+      message: "As vagas estão temporariamente fechadas. Entre na lista de espera.",
+    });
+  }
+
   const body = req.body || {};
   const { nome, whatsapp, email, cpf, endereco, itens, coverage_unconfirmed } = body;
 

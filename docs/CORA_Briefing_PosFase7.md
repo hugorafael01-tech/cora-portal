@@ -27,9 +27,9 @@ Fase 7 (backend Supabase + Resend + Vercel Functions) foi entregue, validada e m
 
 ## 3 frentes pendentes
 
-### A. Capacity gate antes do lançamento ⚠️ BLOQUEANTE
+### A. Capacity gate antes do lançamento ✅ CONCLUÍDA (2026-05-10)
 
-**Task ClickUp:** [86e1a8q50](https://app.clickup.com/t/86e1a8q50) (high)
+**Task ClickUp:** [86e1a8q50](https://app.clickup.com/t/86e1a8q50) (high) — ver `docs/CORA_Briefing_FrenteA_CapacityGate.md` para o briefing detalhado e PORTAL_STATUS.md ("Última sessão de trabalho") para a saída.
 
 Sem este mecanismo, o 51º assinante pode se cadastrar e pagar sem que haja capacidade de produção. Bloqueante pro lançamento de agosto.
 

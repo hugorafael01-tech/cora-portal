@@ -53,7 +53,11 @@ const Progress=({step})=><div style={{display:"flex",gap:6,padding:"0 16px"}}>{[
 const Field=({label,apoio,children,error})=><div style={{marginBottom:16}}><Label apoio={apoio}>{label}</Label>{children}{error&&<div style={{fontSize:13,color:"#DC2626",fontFamily:fb,marginTop:4}}>{error}</div>}</div>;
 
 /* ═══ SPLASH . Redesenhado alinhado com PreCadastro ═══ */
-const Splash=({onStart})=>(
+/* Suporta dois modos:
+ *  - aberto (default): "Vamos montar sua Assinatura?" + CTA "Vamos"
+ *  - fechado (gate): copy de vagas esgotadas + CTA "Entrar na lista de espera"
+ */
+const Splash=({onStart, gateClosed=false, onGoToWaitlist})=>(
   <div style={{minHeight:"100dvh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"60px 32px 40px",background:W[50],textAlign:"center"}}>
     <GrafismoCoracao size={36}/>
 
@@ -61,18 +65,39 @@ const Splash=({onStart})=>(
       <img src={IMG.logoTag} alt="Cora. Padaria por assinatura" style={{width:"clamp(180px, 65vw, 260px)",height:"auto"}}/>
     </div>
 
-    <div style={{marginTop:48,maxWidth:300,padding:"0 8px"}}>
-      <p style={{fontFamily:fb,fontSize:"clamp(22px, 6.5vw, 30px)",lineHeight:1.3,color:W[500],margin:0,fontWeight:400}}>
-        Feliz em te receber.
-      </p>
-      <p style={{fontFamily:fb,fontSize:"clamp(22px, 6.5vw, 30px)",lineHeight:1.3,color:W[800],margin:0,marginTop:4,fontWeight:500}}>
-        Vamos montar sua Assinatura?
-      </p>
-    </div>
+    {gateClosed ? (
+      <>
+        <div style={{marginTop:48,maxWidth:340,padding:"0 8px"}}>
+          <p style={{fontFamily:fb,fontSize:"clamp(20px, 5.8vw, 26px)",lineHeight:1.35,color:W[800],margin:0,fontWeight:500}}>
+            As vagas dessa rodada já foram preenchidas.
+          </p>
+          <p style={{fontFamily:fb,fontSize:"clamp(16px, 4.5vw, 19px)",lineHeight:1.5,color:W[600],margin:0,marginTop:14,fontWeight:400}}>
+            Estamos ampliando a produção aos poucos.
+            <br />
+            Deixa seu contato e te avisamos quando abrir mais vagas.
+          </p>
+        </div>
 
-    <button onClick={onStart} style={{marginTop:48,width:200,height:52,borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontSize:16,fontWeight:600,fontFamily:fb,cursor:"pointer",transition:"background 150ms"}} onMouseOver={e=>e.currentTarget.style.background=B[600]} onMouseOut={e=>e.currentTarget.style.background=B[500]}>
-      Vamos
-    </button>
+        <button onClick={onGoToWaitlist} style={{marginTop:36,padding:"0 28px",height:52,borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontSize:15,fontWeight:600,fontFamily:fb,cursor:"pointer",transition:"background 150ms"}} onMouseOver={e=>e.currentTarget.style.background=B[600]} onMouseOut={e=>e.currentTarget.style.background=B[500]}>
+          Quero entrar
+        </button>
+      </>
+    ) : (
+      <>
+        <div style={{marginTop:48,maxWidth:300,padding:"0 8px"}}>
+          <p style={{fontFamily:fb,fontSize:"clamp(22px, 6.5vw, 30px)",lineHeight:1.3,color:W[500],margin:0,fontWeight:400}}>
+            Feliz em te receber.
+          </p>
+          <p style={{fontFamily:fb,fontSize:"clamp(22px, 6.5vw, 30px)",lineHeight:1.3,color:W[800],margin:0,marginTop:4,fontWeight:500}}>
+            Vamos montar sua Assinatura?
+          </p>
+        </div>
+
+        <button onClick={onStart} style={{marginTop:48,width:200,height:52,borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontSize:16,fontWeight:600,fontFamily:fb,cursor:"pointer",transition:"background 150ms"}} onMouseOver={e=>e.currentTarget.style.background=B[600]} onMouseOut={e=>e.currentTarget.style.background=B[500]}>
+          Vamos
+        </button>
+      </>
+    )}
 
     <div style={{marginTop:60}}>
       <GrafismoCoracao size={36}/>
@@ -356,7 +381,7 @@ const Welcome=({data,assinatura,onComplete})=>{
 };
 
 /* ═══ APP ═══ */
-export default function CoraOnboarding({onComplete}){
+export default function CoraOnboarding({onComplete, subscriptionsOpen=true, onGoToCapacityWaitlist}){
   const[screen,setScreen]=useState("splash");
   const[step,setStep]=useState(1);
   const[data,setData]=useState({
@@ -541,6 +566,15 @@ export default function CoraOnboarding({onComplete}){
         setScreen("welcome");
       }catch(err){
         console.error("[onboarding] falha ao criar Assinatura", err);
+        // Capacity gate fechou enquanto user navegava (condicao de corrida).
+        // Redirect pra lista de espera com reason='closed-during-flow' — a
+        // CapacityWaitlist renderiza banner persistente nesse caso.
+        if(err?.code==="subscriptions_closed" || err?.status===409){
+          if(onGoToCapacityWaitlist){
+            onGoToCapacityWaitlist("closed-during-flow");
+            return;
+          }
+        }
         setSubmitError("Algo deu errado, tenta de novo em alguns segundos.");
       }finally{
         setSubmitting(false);
@@ -587,7 +621,13 @@ export default function CoraOnboarding({onComplete}){
     </div>
   );
 
-  if(screen==="splash") return shell(<Splash onStart={()=>setScreen("form")}/>);
+  if(screen==="splash") return shell(
+    <Splash
+      onStart={()=>setScreen("form")}
+      gateClosed={subscriptionsOpen===false}
+      onGoToWaitlist={()=>onGoToCapacityWaitlist && onGoToCapacityWaitlist("splash")}
+    />
+  );
 
   if(screen==="welcome") return shell(<>
     <div style={{padding:"10px 16px",background:"#FFF",borderBottom:`1px solid ${W[200]}`}}><img src={IMG.logo} alt="Cora" style={{height:28}}/></div>
