@@ -3,12 +3,14 @@ import { useState, useEffect, useRef, lazy, Suspense } from "react";
 // especificos. Lazy chunks separados reduzem o bundle inicial do Portal.
 const CoraOnboarding = lazy(() => import("./Onboarding"));
 const PreCadastro = lazy(() => import("./pages/PreCadastro"));
+const CapacityWaitlist = lazy(() => import("./pages/CapacityWaitlist"));
 import ProductCard from "./components/ProductCard";
 import PendingPaymentBanner from "./components/PendingPaymentBanner";
 import { isPastCutoff } from "./utils/cutoff";
 import { haptic } from "./utils/haptic";
 import { plural } from "./utils/plural";
 import { loadSubscription, saveSubscription, clearSubscription, reconcileSubscription } from "./utils/subscription";
+import { getSettings } from "./utils/api";
 import { B, W, fd, fb, fmt, radii } from "./tokens";
 
 // `?reset=true`: limpa subscription persistida e remove o param da URL.
@@ -784,6 +786,26 @@ export default function CoraPortal(){
   // Primeiro acesso (boas-vindas). Vira false apos navegar pra outra aba.
   const [ehPrimeiroAcesso,setEhPrimeiroAcesso]=useState(true);
 
+  // ─── Capacity gate ───
+  // null enquanto carrega, true/false depois do fetch. Fallback otimista:
+  // se /api/settings falhar, segue como true (nao bloqueia o portal).
+  const [subscriptionsOpen, setSubscriptionsOpen] = useState(true);
+  // 'splash' = chegou via Splash modo fechado (entrada direta).
+  // 'closed-during-flow' = bateu o 409 a meio do onboarding (race C6).
+  // O reason controla o banner persistente na CapacityWaitlist (Frente A — ajustes).
+  const [waitlistReason, setWaitlistReason] = useState("splash");
+  useEffect(() => {
+    let cancelled = false;
+    getSettings()
+      .then((s) => { if (!cancelled) setSubscriptionsOpen(!!s.subscriptions_open); })
+      .catch(() => { /* fallback ja eh true */ });
+    return () => { cancelled = true; };
+  }, []);
+  const goToCapacityWaitlist = (reason = "splash") => {
+    setWaitlistReason(reason);
+    setScr("lista-espera");
+  };
+
   // Sincronizacao com onboarding (substitui a mutacao direta de D)
   useEffect(()=>{
     if(!onboardingConfig?.assinatura) return;
@@ -932,10 +954,17 @@ const params = new URLSearchParams(window.location.search);
   // Fallback minimo enquanto chunks lazy carregam. Usa grafismo da marca.
   const lazyFallback=<div style={{position:"fixed",inset:0,background:W[50],display:"flex",alignItems:"center",justifyContent:"center"}}><img src="/images/grafismo_coracao.svg" alt="Cora" style={{width:48,height:48,opacity:0.6}}/></div>;
   if (window.location.pathname === "/interesse") return <Suspense fallback={lazyFallback}><PreCadastro /></Suspense>;
+  // Rota capacity waitlist (manual: setScr("lista-espera"))
+  // Banner persistente na propria pagina substitui o toast antigo de redirect.
+  if (scr === "lista-espera") return (
+    <Suspense fallback={lazyFallback}>
+      <CapacityWaitlist reason={waitlistReason}/>
+    </Suspense>
+  );
   // Sem subscription persistida e sem ?dev=1: PreCadastro. Subscription
   // existente destrava o portal direto (funciona como sessao do MVP).
   if (!subscription && !params.get("dev")) return <Suspense fallback={lazyFallback}><PreCadastro /></Suspense>;
-  if(isOnboarding) return <Suspense fallback={lazyFallback}><CoraOnboarding onComplete={handleOnboardingComplete}/></Suspense>;
+  if(isOnboarding) return <Suspense fallback={lazyFallback}><CoraOnboarding onComplete={handleOnboardingComplete} subscriptionsOpen={subscriptionsOpen} onGoToCapacityWaitlist={goToCapacityWaitlist}/></Suspense>;
 
   return<div style={{fontFamily:fb,maxWidth:390,margin:"0 auto",background:W[50],minHeight:"100vh",display:"flex",flexDirection:"column",position:"relative"}}>
     <a href="#main-content" className="skip-link">Pular para o conteúdo</a>
