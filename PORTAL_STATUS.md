@@ -82,7 +82,7 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 - [x] Conta Asaas — **criada** (task ClickUp: 86e0rgdhn)
 - [x] Conta Supabase — **provisionada na Fase 7**
 - [x] Conta Resend — **provisionada na Fase 7**
-- [ ] Google Workspace `hugo@acora.com.br` — setup pendente. Fase 7 mitigou usando Gmail temporário (`hugorafael01@gmail.com` como `EMAIL_TO`; domínio default do Resend como `EMAIL_FROM`) até Workspace ficar pronto.
+- [x] Google Workspace `hugo@acora.com.br` — **configurado em 12/05/2026.** Aliases criados: `oi@`, `noreply@`, `pedidos@` (todos entregam na inbox do hugo@). MX `acora.com.br` apontando pra `smtp.google.com` (Google) — MX `send.acora.com.br` continua pro Resend (bounces/auth).
 - [x] SPF/DKIM no `acora.com.br` no Resend — **concluído em 09/05/2026** (task ClickUp: 86e1a8q5t fechada). Domínio verificado, EMAIL_FROM=portal@acora.com.br em Production.
 - [x] Definir Asaas CPF vs CNPJ antes de criar conta (task ClickUp: 86e0rghwq) — **resolvido**
 
@@ -116,6 +116,7 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
   - Task ClickUp 86e1a8q50 fechada com comentário detalhado.
   - Banco limpo dos registros de teste ao fim da sessão (8 linhas em `capacity_waitlist` + 1 subscription).
 - **Issue pré-existente registrada (não é desta frente):** `POST /api/lead` retorna 404 em ambiente local (`PreCadastro.jsx:256`). Provavelmente apontava pro webhook Make.com em produção e não tem implementação local. Virou task separada na lista Digital & Portal (ver task ClickUp).
+- **Bonus técnico (12/05, dia seguinte):** Google Workspace configurado. Conta `hugo@acora.com.br` ativa, aliases `oi@`, `noreply@`, `pedidos@` criados. MX `acora.com.br` apontando pra `smtp.google.com`. `EMAIL_TO` no Vercel migrado pra `pedidos@acora.com.br` (Production + Preview). Lembrar pra futuro: **Resend mantém suppress list automática** — se um email bouncear (ex: MX faltando), os próximos pro mesmo destinatário ficam suppressed silenciosamente. Solução: remover da Suppressions list no dashboard do Resend.
 - **Pendência operacional:** Hugo precisa monitorar manualmente o número de subscribers ativos. Quando bater o teto, flipar `app_settings.subscriptions_open` via SQL Editor. Evolução futura (alternativa b da task original): contagem automática.
 
 ## Sessão anterior
