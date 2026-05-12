@@ -6,10 +6,14 @@
  * - postWaitlist(payload):         POST /api/coverage-waitlist
  * - getSettings():                 GET /api/settings
  * - postCapacityWaitlist(payload): POST /api/capacity-waitlist
+ * - postWeeklyOrder(payload):      POST /api/weekly-orders        (upsert do rascunho)
+ * - confirmWeeklyOrder(id):        POST /api/weekly-orders/:id/confirmar
+ * - getWeeklyOrders(subId):        GET  /api/weekly-orders?subscription_id=…
  *
  * Erros que nao sejam 404 (no GET) viram throw com mensagem descritiva.
  * O Error tem `.status` (HTTP) e `.code` (campo `error` do body) anexados
- * pra callers detectarem casos especificos (ex: 409 subscriptions_closed).
+ * pra callers detectarem casos especificos (ex: 409 subscriptions_closed,
+ * 409 cutoff_passed).
  */
 
 const throwApiError = async (res, fallback) => {
@@ -76,6 +80,41 @@ export async function postCapacityWaitlist(payload) {
   });
   if (!res.ok && res.status !== 200 && res.status !== 201) {
     return throwApiError(res, "Falha ao entrar na lista de espera");
+  }
+  return res.json();
+}
+
+export async function postWeeklyOrder(payload) {
+  const res = await fetch("/api/weekly-orders", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    return throwApiError(res, "Falha ao salvar cesta");
+  }
+  return res.json();
+}
+
+export async function confirmWeeklyOrder(id) {
+  const res = await fetch(`/api/weekly-orders/${encodeURIComponent(id)}/confirmar`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: "{}",
+  });
+  if (!res.ok) {
+    return throwApiError(res, "Falha ao confirmar pedido");
+  }
+  return res.json();
+}
+
+export async function getWeeklyOrders(subscriptionId) {
+  const res = await fetch(
+    `/api/weekly-orders?subscription_id=${encodeURIComponent(subscriptionId)}`,
+    { method: "GET" }
+  );
+  if (!res.ok) {
+    return throwApiError(res, "Falha ao consultar cestas");
   }
   return res.json();
 }

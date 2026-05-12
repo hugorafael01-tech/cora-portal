@@ -40,7 +40,7 @@ const IMG={
   brioche:"/images/_brioche.webp",
   focaccia:"/images/_focaccia.webp",
   ciabatta:"/images/_ciabatta.webp",
-  pattern:"/images/Cora_tile grafismo.svg",
+  pattern:"/images/Cora_tile_grafismo.svg",
 };
 
 // Calcula a proxima quinta-feira a partir de hoje.
