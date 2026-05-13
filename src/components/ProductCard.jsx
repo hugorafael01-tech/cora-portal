@@ -28,8 +28,14 @@ const QtyBtn=({qty,onAdd,onRemove,name,addDisabled=false})=>{
     lockedReason       — string opcional. Quando set: CTA fica disabled e
                          microcopy aparece abaixo. Usado no MVP pra bloquear
                          extras enquanto subscription.status === 'pending_payment'.
+    onCardClick        — () => void. Quando definido, clicar na imagem ou no título
+                         dispara `onCardClick()` em vez de toggle do expand inline.
+                         Usado pelo Cardápio (Frente C item 1) pra abrir o Modal.
+    inBasketLabel      — string. Quando set, substitui o CTA "Pedir" por um indicador
+                         estático (ex: "✓ 1× na sua cesta"). Combinado com onCardClick
+                         pra ainda permitir abrir o Modal e adicionar mais.
 */
-export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel="Pedir", cutoff=false, disabled=false, basketIds=[], loadingText, successText, directQtySelector=false, lockedReason }) {
+export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel="Pedir", cutoff=false, disabled=false, basketIds=[], loadingText, successText, directQtySelector=false, lockedReason, onCardClick, inBasketLabel }) {
   const [expanded, setExpanded] = useState(false);
   const [ctaSt, setCtaSt] = useState('idle');
   const [ctaErr, setCtaErr] = useState('');
@@ -37,6 +43,12 @@ export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel=
   const hasDetails = product.ingredientes || sobreText;
   const inBasket = product.id && basketIds.includes(product.id);
   const regionId = product.id ? `product-details-${product.id}` : undefined;
+  // Quando onCardClick existe, clique no card abre o modal externo em vez de
+  // expandir os detalhes inline. Inline expand só vale como fallback.
+  const useExternalClick = typeof onCardClick === "function";
+  const handleCardAreaClick = useExternalClick
+    ? () => onCardClick()
+    : (hasDetails ? () => setExpanded(e => !e) : undefined);
   const handleCta=async()=>{
     if(!loadingText){onAdd?.();return;}
     if(ctaSt!=='idle')return;
@@ -67,23 +79,23 @@ export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel=
         <img
           src={product.img} alt={product.nome}
           loading="lazy" decoding="async"
-          role={hasDetails?"button":undefined}
-          aria-expanded={hasDetails?expanded:undefined}
-          aria-controls={hasDetails?regionId:undefined}
-          onClick={hasDetails?()=>setExpanded(e=>!e):undefined}
+          role={(useExternalClick||hasDetails)?"button":undefined}
+          aria-expanded={!useExternalClick&&hasDetails?expanded:undefined}
+          aria-controls={!useExternalClick&&hasDetails?regionId:undefined}
+          onClick={handleCardAreaClick}
           style={{
             width:88, objectFit:"cover", display:"block", flexShrink:0,
             borderRadius:expanded?`${radii.lg} 0 0 0`:`${radii.lg} 0 0 ${radii.lg}`,
-            cursor:hasDetails?"pointer":"default",
+            cursor:(useExternalClick||hasDetails)?"pointer":"default",
           }}
         />
         <div style={{flex:1,padding:"12px",display:"flex",alignItems:"center",gap:8}}>
           <div
-            role={hasDetails?"button":undefined}
-            aria-expanded={hasDetails?expanded:undefined}
-            aria-controls={hasDetails?regionId:undefined}
-            style={{flex:1,cursor:hasDetails?"pointer":"default"}}
-            onClick={hasDetails?()=>setExpanded(e=>!e):undefined}
+            role={(useExternalClick||hasDetails)?"button":undefined}
+            aria-expanded={!useExternalClick&&hasDetails?expanded:undefined}
+            aria-controls={!useExternalClick&&hasDetails?regionId:undefined}
+            style={{flex:1,cursor:(useExternalClick||hasDetails)?"pointer":"default"}}
+            onClick={handleCardAreaClick}
           >
             <div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800]}}>
               {product.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>({product.peso})</span>
@@ -92,7 +104,7 @@ export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel=
             <div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:4,lineHeight:1.4}}>{product.desc}</div>
             <div style={{display:"flex",alignItems:"center",gap:6,marginTop:4}}>
               <span style={{fontFamily:fb,fontSize:12,color:W[600]}}>{product.preco}</span>
-              {hasDetails&&(
+              {!useExternalClick&&hasDetails&&(
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={W[400]} strokeWidth="2"
                   style={{transform:expanded?"rotate(180deg)":"none",transition:"transform 200ms",flexShrink:0}}>
                   <polyline points="6 9 12 15 18 9"/>
@@ -101,7 +113,9 @@ export default function ProductCard({ product, qty=0, onAdd, onRemove, ctaLabel=
             </div>
           </div>
 
-          {(cutoff||lockedReason||(disabled&&qty===0))&&!directQtySelector
+          {inBasketLabel
+            ?<span style={{fontFamily:fb,fontSize:12,fontWeight:500,color:'#065F46',background:'#D1FAE5',border:'1px solid #6EE7B7',borderRadius:radii.md,padding:"8px 12px",flexShrink:0,minHeight:40,display:"inline-flex",alignItems:"center"}}>{inBasketLabel}</span>
+          :(cutoff||lockedReason||(disabled&&qty===0))&&!directQtySelector
             ?<button disabled style={{padding:"8px 16px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:12,fontWeight:500,cursor:"default",flexShrink:0,minHeight:40,opacity:0.5}}>{ctaLabel}</button>
             :showCta
             ?<button disabled={ctaSt!=='idle'} onClick={handleCta} style={{padding:"8px 16px",borderRadius:radii.md,border:ctaSt==='success'?'1px solid #6EE7B7':'none',background:ctaSt==='success'?'#D1FAE5':B[500],color:ctaSt==='success'?'#065F46':'#FFF',fontFamily:fb,fontSize:12,fontWeight:500,cursor:ctaSt!=='idle'?'default':'pointer',flexShrink:0,minHeight:40,opacity:ctaSt==='loading'?0.5:1,transition:'all 150ms ease'}}>{ctaSt==='loading'?loadingText:ctaSt==='success'?successText:ctaLabel}</button>

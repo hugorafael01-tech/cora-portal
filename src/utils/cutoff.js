@@ -37,7 +37,9 @@ export function isThursday(dateStr) {
 
 // Próxima quinta a partir de `now` cujo cutoff (terça 15h UTC) ainda não passou.
 // Se hoje é quinta ou já passamos do cutoff dela, pula pra quinta seguinte.
-function nextEditableThursdayISO(now) {
+// Exportada pra App usar como `delivery_date` ao criar a primeira cesta da
+// semana (quando `currentWeeklyOrder` ainda é null).
+export function nextEditableThursdayISO(now = new Date()) {
   const t = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const dow = t.getUTCDay(); // 0=dom..6=sáb
   const thursday = new Date(t);
