@@ -6,11 +6,11 @@ const PreCadastro = lazy(() => import("./pages/PreCadastro"));
 const CapacityWaitlist = lazy(() => import("./pages/CapacityWaitlist"));
 import ProductCard from "./components/ProductCard";
 import PendingPaymentBanner from "./components/PendingPaymentBanner";
-import { isPastCutoff } from "./utils/cutoff";
+import { isPastCutoff, nextEditableThursdayISO } from "./utils/cutoff";
 import { haptic } from "./utils/haptic";
 import { plural } from "./utils/plural";
 import { loadSubscription, saveSubscription, clearSubscription, reconcileSubscription } from "./utils/subscription";
-import { getSettings } from "./utils/api";
+import { getSettings, getWeeklyOrders, postWeeklyOrder, confirmWeeklyOrder } from "./utils/api";
 import { B, W, fd, fb, fmt, radii } from "./tokens";
 
 // `?reset=true`: limpa subscription persistida e remove o param da URL.
@@ -187,49 +187,43 @@ const NovidadeCard=({extra,qty,onCardClick,onAdd,onRemove,cutoff,lockedReason})=
   </Card>;
 };
 
-// ─── SOFT LIMIT WARNING (4+ extras) ───
-const ExtrasWarning=({count})=>{
-  if(count<4)return null;
-  return<div style={{fontFamily:fb,fontSize:12,color:ST.warning.t,background:ST.warning.bg,padding:"8px 12px",borderRadius:radii.md,marginTop:8,border:`1px solid ${ST.warning.b}`,lineHeight:1.5}}>
-    <I d={ic.clock} size={14} color={ST.warning.t} sw={2}/> Você tem {count} {plural(count,"item","itens")} nesta semana. Pedidos acima de 3 itens podem ter prioridade reduzida se atingirmos o limite de produção. Se isso acontecer, avisamos pelo WhatsApp e você não é cobrado.
-  </div>;
-};
-
-// ─── PERSISTENT ORDER FOOTER (lives in App, visible on all screens) ───
-const OrderFooter=({pending,confirmed,onConfirm,onCancel,onNav,cutoff,pendingPayment})=>{
-  const total=totalOf(pending);
-  const pCount=extrasCount(pending);
-  if(pCount===0)return null;
-  const totalExtrasCount=extrasCount(confirmed)+pCount;
-  return<div style={{position:"fixed",bottom:56,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderTop:`1px solid ${W[200]}`,padding:"12px 16px",zIndex:8,animation:"fadeUp 200ms ease"}}>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-      <div onClick={()=>onNav("cardapio")} style={{cursor:"pointer"}}>
-        <div style={{fontFamily:fb,fontSize:12,color:W[600],display:"flex",alignItems:"center",gap:4}}>
-          <I d={ic.bag} size={14} color={B[500]}/>{pCount} {plural(pCount,"item","itens")} · extras desta semana
-        </div>
-        <div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800]}}>{fmt(total)}</div>
-      </div>
-      <div style={{display:"flex",gap:8,flexShrink:0}}><Btn onClick={onCancel}>Cancelar</Btn><ActionBtn primary disabled={cutoff||pendingPayment} loadingText="Adicionando…" successText="Adicionado ✓" onAction={()=>simulate()} onComplete={onConfirm}>Confirmar</ActionBtn></div>
-    </div>
-    {cutoff?<CutoffMsg/>:pendingPayment?<div style={{fontFamily:fb,fontSize:11,color:W[500],marginTop:4}}>Disponível após confirmação do primeiro pagamento.</div>:<div style={{fontFamily:fb,fontSize:11,color:W[500],marginTop:4}}>Além da sua Assinatura. Cobrado na próxima fatura.</div>}
-    <ExtrasWarning count={totalExtrasCount}/>
-  </div>;
-};
-
-const ConfirmedFooter=({vis})=>{
-  if(!vis)return null;
-  return<div style={{position:"fixed",bottom:56,left:0,right:0,maxWidth:390,margin:"0 auto",background:ST.success.bg,borderTop:`1px solid ${ST.success.b}`,padding:"16px",zIndex:8,textAlign:"center",animation:"fadeUp 300ms ease"}}>
-    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:4}}><I d={ic.check} size={18} color={ST.success.t}/><span style={{fontFamily:fb,fontSize:15,fontWeight:600,color:ST.success.t}}>Cesta confirmada!</span></div>
-    <div style={{fontFamily:fb,fontSize:13,color:ST.success.t}}>Sua cesta será entregue na próxima quinta.</div>
-  </div>;
-};
-
 // ─── HELPERS ───
 const cntIn=(list,nome)=>list.filter(p=>p.nome===nome&&p.kind!=="swap").length;
 const addTo=(list,product,kind="extra")=>{const pn=kind==="swap"?0:(typeof product.precoNum==="number"?product.precoNum:parseFloat(product.preco.replace("R$ ","").replace(",",".")));return[...list,{nome:product.nome,preco:product.preco,precoNum:pn,kind}];};
 const removeFrom=(list,nome)=>{const i=list.findIndex(p=>p.nome===nome&&p.kind!=="swap");if(i===-1)return list;return[...list.slice(0,i),...list.slice(i+1)];};
 const totalOf=list=>list.filter(p=>p.kind!=="swap").reduce((s,p)=>s+p.precoNum,0);
 const extrasCount=list=>list.filter(p=>p.kind!=="swap").length;
+
+// ─── WEEKLY ORDERS — helpers de nível de módulo ───
+// Catálogo unificado pra mapear `nome` → `id` no shim de compatibilidade
+// (Home/Cardapio passam `nome` nos handlers antigos; o schema usa `id`).
+const catalog = [...D.pães, ...D.extras, ...D.rotativos];
+
+// Substitui (ou insere) um pedido no array por `delivery_date`,
+// mantendo ordem ASC. Imutável.
+const mergeOrder = (orders, order) => {
+  const i = orders.findIndex(o => o.delivery_date === order.delivery_date);
+  if (i === -1) {
+    return [...orders, order].sort((a, b) => a.delivery_date.localeCompare(b.delivery_date));
+  }
+  const next = [...orders];
+  next[i] = order;
+  return next;
+};
+
+// Re-agrega o shape legacy (`[{nome, preco, precoNum, kind:"extra"}]`, 1-por-unidade)
+// no formato do schema (`[{id, nome, qty, preco_unit}]`).
+const aggregateLegacyExtras = (legacyList) => {
+  const byId = {};
+  for (const item of legacyList) {
+    if (item.kind === "swap") continue;
+    const product = catalog.find(p => p.nome === item.nome);
+    const id = product?.id || item.nome;
+    if (!byId[id]) byId[id] = { id, nome: item.nome, qty: 0, preco_unit: Number(item.precoNum) || 0 };
+    byId[id].qty += 1;
+  }
+  return Object.values(byId);
+};
 
 // Empty state com grafismo da marca. Para casos de "Nenhuma novidade" e afins.
 const EmptyState=({title,body})=><div style={{background:W[100],border:`1px solid ${W[200]}`,borderRadius:radii.lg,padding:"32px 20px",textAlign:"center",marginBottom:16}}>
@@ -369,7 +363,6 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
     }
   };
   const confirmedExtras=confirmed.filter(p=>p.kind!=="swap");
-  const confirmedTotal=totalOf(confirmed);
   const nome=userData?.nome?userData.nome.split(" ")[0]:D.nome;
   const bemvindo=userData?.genero==="f"?"Bem-vinda":userData?.genero==="m"?"Bem-vindo":"Boas-vindas";
   // Sobrio: ponto final, sem "Oi". Primeiro acesso mantem exclamacao (momento de acolhida).
@@ -451,15 +444,9 @@ const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,us
       {!cutoff&&<div style={{padding:"12px 20px 16px",borderTop:`1px solid ${W[200]}`}}>
         <button onClick={openSwapModal} className="press-scale" style={{width:"100%",padding:"12px 16px",borderRadius:radii.md,border:`1.5px solid ${B[500]}`,background:"transparent",color:B[500],fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",transition:"all 150ms ease"}} onMouseEnter={e=>e.currentTarget.style.background=B[50]} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>Personalizar esta semana</button>
       </div>}
-      {/* Extras confirmados + detalhamento swap — seção interna do mesmo card */}
-      {(temExtras||temSwap&&confirmedExtras.length>0)&&<div style={{borderTop:`1px solid ${W[200]}`,padding:"12px 16px"}}>
-        {temSwap&&<div style={{fontFamily:fb,fontSize:13,color:W[700],padding:"4px 0",marginBottom:confirmedExtras.length>0?4:0}}>{cestaLabel} · editada</div>}
-        {!temSwap&&temExtras&&<div style={{fontFamily:fb,fontSize:13,color:W[700],padding:"4px 0",marginBottom:4}}>{cestaLabel} · Assinatura</div>}
-        {Object.entries(confirmedExtras.reduce((a,p)=>{a[p.nome]=a[p.nome]||p;return a;},{})).map(([nome,item])=>{const qty=cntIn(confirmedExtras,nome);return<div key={nome} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 0"}}><div style={{fontFamily:fb,fontSize:13,color:W[800],flex:1}}>+ {qty>1?`${qty}× `:""}{nome} · {fmt(item.precoNum*qty)}</div><QtyBtn qty={qty} onAdd={()=>updateConfirmed(addTo(confirmed,{nome:item.nome,preco:item.preco,precoNum:item.precoNum},"extra"))} onRemove={()=>updateConfirmed(removeFrom(confirmed,nome))} name={nome}/></div>;})}
-        <div style={{height:1,background:W[200],margin:"8px 0"}}/>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:B[700]}}>Total de extras: {fmt(confirmedTotal)} na próxima fatura.</div></div><button onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:13,color:B[500],fontWeight:500,cursor:"pointer",background:"none",border:"none",display:"flex",alignItems:"center",gap:4}}><I d={ic.edit} size={14} color={B[500]}/>Editar</button></div>
-        {temSwap&&<div style={{fontFamily:fb,fontSize:11,color:W[500],marginTop:6}}>Próxima semana volta ao normal.</div>}
-      </div>}
+      {/* Seção interna de extras confirmados removida no PR 2 Fase 1.
+          O novo design da lista unificada (assinatura + extras) entra no
+          redesign do card na Fase 2 (briefing 5.2). */}
     </Card>
 
     {/* Novidade hero — edge-to-edge photo */}
@@ -640,7 +627,6 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff,pen
     }
   };
   const confirmedExtras=confirmed.filter(p=>p.kind!=="swap");
-  const totalExtrasAll=extrasCount(confirmed)+extrasCount(pending);
   const lockedReason=pendingPayment?LOCK_REASON_PENDING:undefined;
 
   return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
@@ -666,8 +652,6 @@ const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff,pen
   loadingText="Adicionando…"
   successText="Adicionado ✓"
 />;})}
-
-    <ExtrasWarning count={totalExtrasAll}/>
 
     {modal&&<Modal product={modal} onClose={()=>setModal(null)} onAction={()=>simulate()} onComplete={()=>{addItem(modal);setModal(null);}} actionLabel="Adicionar à cesta" hint="Cobrado na próxima fatura" qty={cntAll(modal.nome)} onAdd={()=>addItem(modal)} onRemove={()=>removeItem(modal.nome)} cutoff={cutoff}/>}
     <Toast msg="Item removido da cesta." vis={toastC}/>
@@ -696,20 +680,16 @@ const copyEntradaCiclo=(entrada)=>{
   return `Você ajustou a composição da sua Assinatura.`;
 };
 
-const Perfil=({confirmed,hasPending,assinaturaQtds,cestaAtual,houveSwap,historicoCicloAtual,historicoCiclosPassados=[]})=>{
-  const[cpf,setCpf]=useState(false);const dados=[["Endereço","Ed. Boa Vista, Bl. A / 502"],["Dia de entrega","Quintas-feiras"],["WhatsApp","(21) 99876-5432"],["E-mail","beatriz@email.com"],["CPF",cpf?"123.456.789-00":"•••.•••.789-00"]];const confirmedExtras=confirmed.filter(p=>p.kind!=="swap");const confirmedTotal=totalOf(confirmed);const qtdTotal=Object.values(assinaturaQtds||{}).reduce((s,q)=>s+q,0);const assinVal=D.assinatura.valorMensal*qtdTotal;const cestaLabelPerfil=composicaoToStr(cestaAtual||assinaturaQtds||{})||"Sem pães configurados";
+const Perfil=({confirmed,hasPending,assinaturaQtds,historicoCicloAtual,historicoCiclosPassados=[]})=>{
+  const[cpf,setCpf]=useState(false);const dados=[["Endereço","Ed. Boa Vista, Bl. A / 502"],["Dia de entrega","Quintas-feiras"],["WhatsApp","(21) 99876-5432"],["E-mail","beatriz@email.com"],["CPF",cpf?"123.456.789-00":"•••.•••.789-00"]];const confirmedTotal=totalOf(confirmed);const qtdTotal=Object.values(assinaturaQtds||{}).reduce((s,q)=>s+q,0);const assinVal=D.assinatura.valorMensal*qtdTotal;
   return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
     <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[500],margin:"0 0 20px"}}>Perfil</h2>
     <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}><div style={{width:48,height:48,borderRadius:radii.full,background:B[50],display:"flex",alignItems:"center",justifyContent:"center",border:`1px solid ${B[200]}`,flexShrink:0}}><img src="/images/grafismo_coracao.svg" alt="" aria-hidden="true" style={{width:28,height:28}}/></div><div><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800]}}>Beatriz Silva</div><div style={{fontFamily:fb,fontSize:12,color:W[500]}}>beatriz@email.com</div></div></div>
     <Card style={{marginBottom:12}}><SL t="Dados pessoais"/>{dados.map(([l,v],i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderBottom:i<dados.length-1?`1px solid ${W[100]}`:"none"}}><div><div style={{fontFamily:fb,fontSize:11,color:W[500],marginBottom:2}}>{l}</div><div style={{fontFamily:fb,fontSize:13,color:W[700]}}>{v}</div></div>{l==="CPF"?<button aria-label={cpf?"Ocultar CPF":"Mostrar CPF"} onClick={()=>setCpf(!cpf)} style={{background:"none",border:"none",cursor:"pointer",padding:4,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={cpf?ic.eyeOff:ic.eye} size={16} color={W[400]}/></button>:<I d={ic.chev} size={14} color={W[400]}/>}</div>)}</Card>
     <Card style={{marginBottom:12}}><SL t="Histórico de entregas e cobranças"/>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><I d={ic.check} size={14} color={ST.success.t}/><span style={{fontFamily:fb,fontSize:13,fontWeight:500,color:ST.success.t}}>Tudo em dia</span></div>
-      {(()=>{const reducaoPendente=historicoCicloAtual?.tipo==="reducao";const totalFuturo=reducaoPendente?Object.values(historicoCicloAtual.atual).reduce((s,q)=>s+q,0):0;return(confirmedExtras.length>0||houveSwap||reducaoPendente)&&<div style={{padding:12,borderRadius:radii.md,background:B[50],border:`1px solid ${B[200]}`,marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><span style={{fontFamily:fb,fontSize:12,color:B[700],fontWeight:500}}>Esta semana</span><Badge label="Confirmado" type="success"/></div>
-        <div style={{fontFamily:fb,fontSize:13,color:B[800]}}>{cestaLabelPerfil} · {houveSwap?"editada só nesta semana":"Assinatura"}</div>
-        {Object.entries(confirmedExtras.reduce((a,p)=>{a[p.nome]=(a[p.nome]||0)+1;return a;},{})).map(([n,q])=><div key={n} style={{fontFamily:fb,fontSize:12,color:B[500],marginTop:4}}>+ {q}× {n} · {fmt(confirmedExtras.find(p=>p.nome===n).precoNum*q)}</div>)}
-        {confirmedTotal>0&&<div style={{fontFamily:fb,fontSize:12,color:B[700],marginTop:4,fontWeight:500}}>Total extras: {fmt(confirmedTotal)}</div>}
-        {reducaoPendente&&<div style={{fontFamily:fb,fontSize:12,color:B[600],marginTop:8,paddingTop:8,borderTop:`1px solid ${B[100]}`,lineHeight:1.5}}>A partir de 1º de {proximoMesPt()}, sua Assinatura muda para {totalFuturo} {plural(totalFuturo,"pão","pães")} por semana.</div>}
-      </div>;})()}
+      {/* Card "Esta semana" (brand-50) removido no PR 2 Fase 1.
+          A visão detalhada da cesta migra pro EditarCarrinhoDrawer na Fase 2. */}
       {/* Ajuste do ciclo atual (uma unica entrada, ou null) */}
       {[...(historicoCicloAtual?[historicoCicloAtual]:[]),...historicoCiclosPassados].map((alt,i)=>{
         const d=new Date(alt.data);
@@ -752,9 +732,10 @@ export default function CoraPortal(){
   // minHeight:100vh (nao height) — o scroll acaba caindo na window quando
   // o conteudo passa do viewport, e no <main> quando ha overflow interno.
   useEffect(()=>{mainRef.current?.scrollTo({top:0});window.scrollTo({top:0});},[scr]);
-  const[pending,setPending]=useState([]);
-  const[confirmed,setConfirmed]=useState([]);
-  const[justConfirmed,setJustConfirmed]=useState(false);
+  // === Carrinho persistido no servidor (Frente C item 1, PR 2) ===
+  // weeklyOrders vem do GET /api/weekly-orders e é mantido sincronizado por
+  // cada handler de carrinho. Primeiro item = pedido da próxima entrega.
+  const[weeklyOrders,setWeeklyOrders]=useState([]);
   // Shape novo (Fase 7): subscription eh flat — nome/whatsapp/email/cpf
   // ficam no topo, endereco aninhado em endereco, itens em itens.
   const[userData,setUserData]=useState(initialSubscription||null);
@@ -801,6 +782,19 @@ export default function CoraPortal(){
       .catch(() => { /* fallback ja eh true */ });
     return () => { cancelled = true; };
   }, []);
+
+  // Sincroniza pedidos da semana. Só busca em subscription active.
+  // Quando o status muda pra não-active, cleanup zera o array (evita
+  // dados stale aparecerem se Hugo flipar status manualmente).
+  useEffect(() => {
+    if (!subscription?.id || subscription.status !== "active") return;
+    let cancelled = false;
+    getWeeklyOrders(subscription.id)
+      .then(({ weekly_orders }) => { if (!cancelled) setWeeklyOrders(weekly_orders || []); })
+      .catch((err) => { if (!cancelled) console.error("[App] getWeeklyOrders failed", err); });
+    return () => { cancelled = true; setWeeklyOrders([]); };
+  }, [subscription?.id, subscription?.status]);
+
   const goToCapacityWaitlist = (reason = "splash") => {
     setWaitlistReason(reason);
     setScr("lista-espera");
@@ -814,8 +808,7 @@ export default function CoraPortal(){
     setAssinaturaBaseline(next); // onboarding = novo ciclo, baseline inicia igual
     setHistoricoCicloAtual(null);
     setCestaSemana(null);
-    setPending([]);
-    setConfirmed([]);
+    setWeeklyOrders([]); // novo ciclo: zera carrinho local (GET sync recarrega quando active)
     setEhPrimeiroAcesso(true); // boas-vindas ao voltar do onboarding
   },[onboardingConfig]);
 
@@ -872,12 +865,106 @@ export default function CoraPortal(){
   const cestaSemSwap=reducaoPendente?assinaturaBaseline:assinaturaQtds;
   const houveSwap=cestaSemana!==null&&JSON.stringify(cestaSemana)!==JSON.stringify(cestaSemSwap);
 
-  const addPending=p=>setPending(prev=>addTo(prev,p,"extra"));
-  const removePending=n=>setPending(prev=>removeFrom(prev,n));
-  const handleConfirm=()=>{haptic();setConfirmed(prev=>[...prev,...pending]);setPending([]);setJustConfirmed(true);setTimeout(()=>setJustConfirmed(false),4000);};
-  const handleCancel=()=>setPending([]);
-  const hasPending=extrasCount(pending)>0;
-  const cutoff=isPastCutoff();
+  // ─── Carrinho persistido: pedido atual, cutoff por delivery_date ───
+  const currentWeeklyOrder = weeklyOrders[0] || null;
+  const currentExtras = currentWeeklyOrder?.extras || [];
+  const cutoff = isPastCutoff(currentWeeklyOrder?.delivery_date);
+
+  // POST upsert canônico. Optimistic update local antes da resposta;
+  // em erro, reverte snapshot e loga (toast/feedback visual entra na Fase 2).
+  const postCurrentOrder = async (nextExtras, nextComposition) => {
+    if (!subscription?.id || subscription.status !== "active") return;
+    const delivery_date = currentWeeklyOrder?.delivery_date || nextEditableThursdayISO();
+    const composition = nextComposition !== undefined
+      ? nextComposition
+      : (currentWeeklyOrder?.composition ?? null);
+    const snapshot = weeklyOrders;
+    const optimistic = {
+      ...(currentWeeklyOrder || {
+        subscription_id: subscription.id,
+        status: "rascunho",
+        confirmed_at: null,
+      }),
+      delivery_date,
+      composition,
+      extras: nextExtras,
+      total_extras: nextExtras.reduce((s, e) => s + e.qty * Number(e.preco_unit), 0),
+    };
+    setWeeklyOrders(prev => mergeOrder(prev, optimistic));
+    try {
+      const saved = await postWeeklyOrder({
+        subscription_id: subscription.id,
+        delivery_date,
+        composition,
+        extras: nextExtras,
+      });
+      setWeeklyOrders(prev => mergeOrder(prev, saved));
+    } catch (err) {
+      console.error("[App] postWeeklyOrder failed", err);
+      setWeeklyOrders(snapshot);
+    }
+  };
+
+  const addExtraToCart = (product) => {
+    const next = currentExtras.map(e => ({ ...e }));
+    const existing = next.find(e => e.id === product.id);
+    if (existing) existing.qty += 1;
+    else next.push({ id: product.id, nome: product.nome, qty: 1, preco_unit: Number(product.precoNum) });
+    return postCurrentOrder(next);
+  };
+
+  const removeExtraFromCart = (productId) => {
+    const next = [];
+    for (const e of currentExtras) {
+      if (e.id !== productId) { next.push({ ...e }); continue; }
+      if (e.qty > 1) next.push({ ...e, qty: e.qty - 1 });
+      // qty === 1: dropa o item (não inclui no array)
+    }
+    return postCurrentOrder(next);
+  };
+
+  // Reservados pra Fase 2 (Drawer chama updateComposition; botão Confirmar chama confirmCurrentOrder).
+  // eslint-disable-next-line no-unused-vars
+  const updateComposition = (newComposition) => postCurrentOrder(currentExtras, newComposition);
+  // eslint-disable-next-line no-unused-vars
+  const confirmCurrentOrder = async () => {
+    if (!currentWeeklyOrder?.id) return;
+    try {
+      const saved = await confirmWeeklyOrder(currentWeeklyOrder.id);
+      setWeeklyOrders(prev => prev.map(o => (o.id === saved.id ? saved : o)));
+    } catch (err) {
+      console.error("[App] confirmCurrentOrder failed", err);
+    }
+  };
+
+  // ─── Compat shim — removido na Fase 2 com o redesign Home/Cardapio/Perfil ───
+  // Expõe o shape legacy `[{nome, preco, precoNum, kind:"extra"}]` (1-por-unidade)
+  // e adapta os handlers velhos pra falar com o backend.
+  const confirmedLegacy = currentExtras.flatMap(e =>
+    Array.from({ length: e.qty }, () => ({
+      nome: e.nome,
+      preco: `R$ ${Number(e.preco_unit).toFixed(2).replace(".", ",")}`,
+      precoNum: Number(e.preco_unit),
+      kind: "extra",
+    }))
+  );
+  const pendingLegacy = []; // não existe mais; deixa as derivadas internas (pending.length) zeradas
+  const legacyAddPending = (product) => addExtraToCart(product);
+  const legacyRemovePending = (nome) => {
+    const found = currentExtras.find(e => e.nome === nome);
+    if (found) removeExtraFromCart(found.id);
+  };
+  const legacySetConfirmed = (newLegacyList) => postCurrentOrder(aggregateLegacyExtras(newLegacyList));
+  const legacySetPending = (updater) => {
+    // Cardapio chama `setPending(prev => addTo(prev, p, "extra"))`. Com pendingLegacy=[],
+    // o resultado é `[item]` — extraímos o item adicionado e POSTamos.
+    const result = typeof updater === "function" ? updater([]) : updater;
+    if (!Array.isArray(result) || result.length === 0) return;
+    const item = result[result.length - 1];
+    if (item.kind === "swap") return;
+    const product = catalog.find(p => p.nome === item.nome);
+    if (product) addExtraToCart(product);
+  };
   const isOnboarding=scr==="onboarding";
 
   const handleOnboardingComplete=(payload)=>{
@@ -978,16 +1065,16 @@ const params = new URLSearchParams(window.location.search);
     </div>
     <main ref={mainRef} id="main-content" style={{flex:1,overflowY:"auto"}}>
       <div key={scr} className="tab-content">
-        {scr==="home"&&<Home onNav={handleNav} pending={pending} confirmed={confirmed} addPending={addPending} removePending={removePending} updateConfirmed={setConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaSemana={cestaSemana} cestaAtual={cestaAtual} houveSwap={houveSwap} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} historicoCicloAtual={historicoCicloAtual} pendingPayment={pendingPayment}/>}
-        {scr==="assinatura"&&<Assinatura onNav={handleNav} hasPending={hasPending} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} onSalvar={handleSalvarAssinatura}/>}
-        {scr==="cardapio"&&<Cardapio pending={pending} confirmed={confirmed} setPending={setPending} setConfirmed={setConfirmed} hasPending={hasPending} cutoff={cutoff} pendingPayment={pendingPayment}/>}
-        {scr==="perfil"&&<Perfil confirmed={confirmed} hasPending={hasPending} assinaturaQtds={assinaturaQtds} cestaAtual={cestaAtual} houveSwap={houveSwap} historicoCicloAtual={historicoCicloAtual} historicoCiclosPassados={historicoCiclosPassados}/>}
+        {scr==="home"&&<Home onNav={handleNav} pending={pendingLegacy} confirmed={confirmedLegacy} addPending={legacyAddPending} removePending={legacyRemovePending} updateConfirmed={legacySetConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaSemana={cestaSemana} cestaAtual={cestaAtual} houveSwap={houveSwap} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} historicoCicloAtual={historicoCicloAtual} pendingPayment={pendingPayment}/>}
+        {scr==="assinatura"&&<Assinatura onNav={handleNav} hasPending={false} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} onSalvar={handleSalvarAssinatura}/>}
+        {scr==="cardapio"&&<Cardapio pending={pendingLegacy} confirmed={confirmedLegacy} setPending={legacySetPending} setConfirmed={legacySetConfirmed} hasPending={false} cutoff={cutoff} pendingPayment={pendingPayment}/>}
+        {scr==="perfil"&&<Perfil confirmed={confirmedLegacy} hasPending={false} assinaturaQtds={assinaturaQtds} historicoCicloAtual={historicoCicloAtual} historicoCiclosPassados={historicoCiclosPassados}/>}
       </div>
     </main>
-    {/* RODAPÉ PERSISTENTE — visível em TODAS as telas */}
-    <OrderFooter pending={pending} confirmed={confirmed} onConfirm={handleConfirm} onCancel={handleCancel} onNav={handleNav} cutoff={cutoff} pendingPayment={pendingPayment}/>
-    <ConfirmedFooter vis={justConfirmed}/>
-    <Nav active={scr} onNav={handleNav} badge={pending.length}/>
+    {/* Footers fixos (OrderFooter/ConfirmedFooter) removidos no PR 2 Fase 1.
+        Confirmação do pedido vai pro botão "Confirmar pedido" no card da Home
+        e no EditarCarrinhoDrawer (Fase 2). */}
+    <Nav active={scr} onNav={handleNav} badge={0}/>
     <style>{`
       *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
       body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior:none}
