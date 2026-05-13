@@ -64,16 +64,19 @@ const D={
   cartao:{band:"Visa",n:"6411",prox:"1º de abril"},
   cob:{mes:"Março",valor:"R$ 99,00",status:"Pago"},
   semanasRestantes:2,
-  extras:[{id:"focaccia",nome:"Focaccia Genovesa",peso:"430g",preco:"R$ 22,00",precoNum:22,img:IMG.focaccia,ingredientes:"Farinha, água, azeite extra-virgem, sal, levain, cebola roxa, alecrim fresco.",historia:"A receita veio de Gênova, onde a focaccia é assunto sério. Lá, cada padeiro tem sua versão. A da Cora leva fermentação longa de 24h e azeite generoso. A cebola roxa carameliza no forno e o alecrim perfuma a cozinha inteira."}],
+  // `genero` controla a flexão do toast pós-adicionar ("adicionada"/"adicionado").
+  // `subCopy` é a sub-copy emocional do hero da Novidade (briefing 5.3).
+  // Quando o Backoffice nascer, ambos viram campo do produto no banco.
+  extras:[{id:"focaccia",nome:"Focaccia Genovesa",peso:"430g",preco:"R$ 22,00",precoNum:22,genero:"f",subCopy:"Pra um café da tarde diferente.",img:IMG.focaccia,ingredientes:"Farinha, água, azeite extra-virgem, sal, levain, cebola roxa, alecrim fresco.",historia:"A receita veio de Gênova, onde a focaccia é assunto sério. Lá, cada padeiro tem sua versão. A da Cora leva fermentação longa de 24h e azeite generoso. A cebola roxa carameliza no forno e o alecrim perfuma a cozinha inteira."}],
   pães:[
-    {id:"original",nome:"Pão Original",peso:"700g",preco:"R$ 27,00",precoNum:27,img:IMG.original,desc:"Pão de toda mesa. Vai com azeite, queijo, bruschetta de tomate ou o que você abrir na cozinha.",sobre:"Blend de farinha branca italiana e integral brasileira. Levain da Cora, água, sal. Hidratação 70%.",qtd:1},
-    {id:"integral",nome:"Pão Integral",peso:"700g",preco:"R$ 29,00",precoNum:29,img:IMG.integral,desc:"Sabor de grão inteiro, miolo leve. Torrado pela manhã ou ao lado da salada no almoço.",sobre:"100% integral em blend de farinha brasileira e italiana. Levain da Cora, água, sal, azeite. Hidratação 75%.",qtd:0},
+    {id:"original",nome:"Pão Original",peso:"700g",preco:"R$ 27,00",precoNum:27,genero:"m",img:IMG.original,desc:"Pão de toda mesa. Vai com azeite, queijo, bruschetta de tomate ou o que você abrir na cozinha.",sobre:"Blend de farinha branca italiana e integral brasileira. Levain da Cora, água, sal. Hidratação 70%.",qtd:1},
+    {id:"integral",nome:"Pão Integral",peso:"700g",preco:"R$ 29,00",precoNum:29,genero:"m",img:IMG.integral,desc:"Sabor de grão inteiro, miolo leve. Torrado pela manhã ou ao lado da salada no almoço.",sobre:"100% integral em blend de farinha brasileira e italiana. Levain da Cora, água, sal, azeite. Hidratação 75%.",qtd:0},
   ],
   rotativos:[
-    {id:"multigraos",nome:"Multigrãos",peso:"615g",preco:"R$ 32,00",precoNum:32,img:IMG.multigraos,desc:"Aveia, centeio, gergelim e mel.",ingredientes:"Farinha de trigo, centeio, aveia, água, mel, sal, levain, gergelim.",detalhe:"Cinco grãos na massa, mel na fermentação. Miolo denso, casca com gergelim tostado."},
-    {id:"focaccia",nome:"Focaccia Genovesa",peso:"430g",preco:"R$ 22,00",precoNum:22,img:IMG.focaccia,desc:"Azeite generoso, cebola roxa, alecrim.",ingredientes:"Farinha, água, azeite extra-virgem, sal, levain, cebola roxa, alecrim fresco.",detalhe:"Fermentação longa de 24h. Azeite generoso. A cebola roxa carameliza no forno e o alecrim perfuma a cozinha inteira."},
-    {id:"ciabatta",nome:"Ciabatta",peso:"533g",preco:"R$ 25,00",precoNum:25,img:IMG.ciabatta,desc:"Crosta fina, miolo aberto e leve.",ingredientes:"Farinha de trigo, água, sal, levain, azeite.",detalhe:"Massa de alta hidratação. Crosta fina e crocante, miolo com alvéolos grandes e textura leve."},
-    {id:"brioche",nome:"Brioche",peso:"256g",preco:"R$ 32,00",precoNum:32,img:IMG.brioche,desc:"Manteiga francesa, textura amanteigada.",ingredientes:"Farinha, manteiga, ovos, açúcar, sal, levain, leite.",detalhe:"Massa enriquecida com manteiga. Fermentação 18h. Miolo dourado, textura que desfia."},
+    {id:"multigraos",nome:"Multigrãos",peso:"615g",preco:"R$ 32,00",precoNum:32,genero:"m",img:IMG.multigraos,desc:"Aveia, centeio, gergelim e mel.",ingredientes:"Farinha de trigo, centeio, aveia, água, mel, sal, levain, gergelim.",detalhe:"Cinco grãos na massa, mel na fermentação. Miolo denso, casca com gergelim tostado."},
+    {id:"focaccia",nome:"Focaccia Genovesa",peso:"430g",preco:"R$ 22,00",precoNum:22,genero:"f",img:IMG.focaccia,desc:"Azeite generoso, cebola roxa, alecrim.",ingredientes:"Farinha, água, azeite extra-virgem, sal, levain, cebola roxa, alecrim fresco.",detalhe:"Fermentação longa de 24h. Azeite generoso. A cebola roxa carameliza no forno e o alecrim perfuma a cozinha inteira."},
+    {id:"ciabatta",nome:"Ciabatta",peso:"533g",preco:"R$ 25,00",precoNum:25,genero:"f",img:IMG.ciabatta,desc:"Crosta fina, miolo aberto e leve.",ingredientes:"Farinha de trigo, água, sal, levain, azeite.",detalhe:"Massa de alta hidratação. Crosta fina e crocante, miolo com alvéolos grandes e textura leve."},
+    {id:"brioche",nome:"Brioche",peso:"256g",preco:"R$ 32,00",precoNum:32,genero:"m",img:IMG.brioche,desc:"Manteiga francesa, textura amanteigada.",ingredientes:"Farinha, manteiga, ovos, açúcar, sal, levain, leite.",detalhe:"Massa enriquecida com manteiga. Fermentação 18h. Miolo dourado, textura que desfia."},
   ],
   semana:{pedidosAbertos:false,cardapioProxima:["Pão Original","Pão Integral","Focaccia Genovesa"],entregaProxima:formatarDataEntrega(proximaQuinta(new Date(Date.now()+7*24*60*60*1000)))},
   hist:[
@@ -83,7 +86,7 @@ const D={
     {sem:"Semana 07/03",itens:"1 Pão Original (700g)",st:"Entregue",extra:null},
   ],
 };
-const greet=()=>{const h=new Date().getHours();return h<12?"bom dia":h<18?"boa tarde":"boa noite";};
+const greet=()=>{const h=new Date().getHours();return h<12?"Bom dia":h<18?"Boa tarde":"Boa noite";};
 
 const I=({d,size=20,color=W[400],sw=1.5})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
 const ic={
@@ -170,17 +173,24 @@ const Modal=({product,onClose,onAction,onComplete,actionLabel,hint,qty,onAdd,onR
 const Nav=({active,onNav,badge})=>{const items=[{id:"home",label:"INÍCIO",icon:ic.home},{id:"assinatura",label:"ASSINATURA",icon:ic.wheat},{id:"cardapio",label:"CARDÁPIO",icon:ic.utensils},{id:"perfil",label:"PERFIL",icon:ic.user}];return<div style={{display:"flex",justifyContent:"space-around",alignItems:"center",padding:"8px 0 12px",borderTop:`1px solid ${W[200]}`,background:"#FFF",position:"sticky",bottom:0,zIndex:10,minHeight:56}}>{items.map(it=><button key={it.id} aria-label={`Ir para ${it.label}`} onClick={()=>onNav(it.id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,border:"none",background:"none",cursor:"pointer",minWidth:56,minHeight:44,padding:"4px 0",position:"relative"}}><I d={it.icon} size={22} color={active===it.id?B[500]:W[400]}/>{it.id==="cardapio"&&badge>0&&<span style={{position:"absolute",top:0,right:4,width:18,height:18,borderRadius:radii.full,background:B[500],color:"#FFF",fontFamily:fb,fontSize:10,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{badge}</span>}<span style={{fontFamily:fd,fontSize:11,letterSpacing:"0.02em",textTransform:"uppercase",color:active===it.id?B[500]:W[400]}}>{it.label}</span></button>)}</div>;};
 
 // ─── NOVIDADE CARD (edge-to-edge photo) ───
-const NovidadeCard=({extra,qty,onCardClick,onAdd,onRemove,cutoff,lockedReason})=>{
+// Briefing 5.3 (Home) e 8.1 (Cardapio): card sempre abre o Modal de detalhes.
+// CTA com preço inline ("+ Adicionar à cesta — R$ X"). Sem QtyBtn embutido —
+// re-adicionar passa pelo Modal de novo. `ctaText` é opcional; default usa "Quero"
+// pra manter compat com callers que não passam (ex: Cardapio na grade).
+const NovidadeCard=({extra,onCardClick,cutoff,lockedReason,ctaText})=>{
   const isLocked=!!lockedReason;
-  const cardClickable=!isLocked;
-  return<Card style={{padding:0,overflow:"hidden",cursor:cardClickable?"pointer":"default",marginBottom:16}} onClick={cardClickable?onCardClick:undefined} ariaLabel={`Novidade: ${extra.nome}`}>
+  const disabled=cutoff||isLocked;
+  const label=ctaText||`+ Adicionar à cesta — ${(extra.preco||"").replace(/,00$/,"")}`;
+  return<Card style={{padding:0,overflow:"hidden",cursor:disabled?"default":"pointer",marginBottom:16}} onClick={disabled?undefined:onCardClick} ariaLabel={`Novidade: ${extra.nome}`}>
     <ProductImg src={extra.img} h={200} alt={extra.nome} rounded={false}/>
     <div style={{padding:16}}>
       <SL t="Novidade da semana"/>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}>
-        <div style={{flex:1}}><div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800]}}>{extra.nome}</div><div style={{fontFamily:fb,fontSize:14,color:W[600],marginTop:4}}>{extra.preco}</div></div>
-        {(cutoff||isLocked)?<button disabled className="bp press-scale" style={{padding:"10px 24px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"default",minHeight:44,flexShrink:0,opacity:0.5}}>Quero</button>:qty===0?<button onClick={e=>{e.stopPropagation();onCardClick();}} className="bp press-scale" style={{padding:"10px 24px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",minHeight:44,flexShrink:0}}>Quero</button>:<QtyBtn qty={qty} onAdd={()=>onAdd&&onAdd()} onRemove={()=>onRemove&&onRemove()} name={extra.nome}/>}
-      </div>
+      <div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800]}}>{extra.nome}</div>
+      {extra.subCopy&&<div style={{fontFamily:fb,fontSize:14,color:W[600],fontWeight:400,lineHeight:1.5,margin:"4px 0 12px"}}>{extra.subCopy}</div>}
+      {disabled
+        ?<button disabled className="bp" style={{width:"100%",padding:"12px 16px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"default",minHeight:44,opacity:0.5,marginTop:extra.subCopy?0:12}}>{label}</button>
+        :<button onClick={e=>{e.stopPropagation();onCardClick&&onCardClick();}} className="bp press-scale" style={{width:"100%",padding:"12px 16px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",minHeight:44,marginTop:extra.subCopy?0:12}}>{label}</button>
+      }
       {cutoff&&<CutoffMsg/>}
       {isLocked&&!cutoff&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:6,lineHeight:1.4}}>{lockedReason}</div>}
     </div>
@@ -188,17 +198,13 @@ const NovidadeCard=({extra,qty,onCardClick,onAdd,onRemove,cutoff,lockedReason})=
 };
 
 // ─── HELPERS ───
-const cntIn=(list,nome)=>list.filter(p=>p.nome===nome&&p.kind!=="swap").length;
-const addTo=(list,product,kind="extra")=>{const pn=kind==="swap"?0:(typeof product.precoNum==="number"?product.precoNum:parseFloat(product.preco.replace("R$ ","").replace(",",".")));return[...list,{nome:product.nome,preco:product.preco,precoNum:pn,kind}];};
-const removeFrom=(list,nome)=>{const i=list.findIndex(p=>p.nome===nome&&p.kind!=="swap");if(i===-1)return list;return[...list.slice(0,i),...list.slice(i+1)];};
+// `totalOf` ainda é usado pelo Perfil pra somar `confirmedLegacy` (extras
+// renderizados em forma 1-por-unidade pelo shim). Quando o Perfil também
+// migrar pra leitura direta de `currentWeeklyOrder.total_extras` (futura
+// frente do Perfil), esse helper sai junto.
 const totalOf=list=>list.filter(p=>p.kind!=="swap").reduce((s,p)=>s+p.precoNum,0);
-const extrasCount=list=>list.filter(p=>p.kind!=="swap").length;
 
 // ─── WEEKLY ORDERS — helpers de nível de módulo ───
-// Catálogo unificado pra mapear `nome` → `id` no shim de compatibilidade
-// (Home/Cardapio passam `nome` nos handlers antigos; o schema usa `id`).
-const catalog = [...D.pães, ...D.extras, ...D.rotativos];
-
 // Substitui (ou insere) um pedido no array por `delivery_date`,
 // mantendo ordem ASC. Imutável.
 const mergeOrder = (orders, order) => {
@@ -209,20 +215,6 @@ const mergeOrder = (orders, order) => {
   const next = [...orders];
   next[i] = order;
   return next;
-};
-
-// Re-agrega o shape legacy (`[{nome, preco, precoNum, kind:"extra"}]`, 1-por-unidade)
-// no formato do schema (`[{id, nome, qty, preco_unit}]`).
-const aggregateLegacyExtras = (legacyList) => {
-  const byId = {};
-  for (const item of legacyList) {
-    if (item.kind === "swap") continue;
-    const product = catalog.find(p => p.nome === item.nome);
-    const id = product?.id || item.nome;
-    if (!byId[id]) byId[id] = { id, nome: item.nome, qty: 0, preco_unit: Number(item.precoNum) || 0 };
-    byId[id].qty += 1;
-  }
-  return Object.values(byId);
 };
 
 // Empty state com grafismo da marca. Para casos de "Nenhuma novidade" e afins.
@@ -288,205 +280,296 @@ const AnimatedNumber=({value,duration=400,format=fmt})=>{
 const qtdsToSlots=(qtds)=>{const s=[];Object.entries(qtds).forEach(([id,q])=>{for(let i=0;i<q;i++)s.push(id);});return s;};
 const slotsToQtds=(slots)=>slots.reduce((a,id)=>{a[id]=(a[id]||0)+1;return a;},{});
 
-// Dias ate a proxima entrega (quinta). Retorna objeto com n de dias e texto sobrio.
-// Quinta = 4 (Date.getDay: 0=dom, 1=seg, ..., 4=qui, 5=sex, 6=sab)
-const diasAteEntrega=(now=new Date())=>{
-  const hoje=now.getDay();
-  const dias=(4-hoje+7)%7;
-  if(dias===0) return {dias:0,texto:"hoje"};
-  if(dias===1) return {dias:1,texto:"amanhã"};
-  return {dias,texto:`em ${dias} dias`};
+// `WeekTimeline`, `diasAteEntrega`, `formatarDataHero` (e seus arrays
+// auxiliares MESES_CURTOS_PT / DIAS_SEMANA_PT) foram removidos no PR 2 Fase 2.
+// O novo card da Cesta (briefing 5.2) não usa timeline visual nem "em X dias";
+// a entrega é mostrada como "Entrega: quinta, 14 de maio."
+
+// ─── EDITAR CARRINHO DRAWER (substitui o swapModal antigo) ───
+// Bottom sheet com radio slots da assinatura + lista de extras + sumário + Confirmar.
+// Trocar pão dispara updateComposition com debounce de 300ms (briefing 6.2).
+// Remover extra dispara removeExtraFromCart imediato.
+// Pós-cutoff: controles disabled.
+const EditarCarrinhoDrawer=({
+  onClose,
+  currentWeeklyOrder,
+  currentExtras,
+  assinaturaQtds,
+  assinaturaBaseline,
+  cestaAtual,
+  onSetCestaSemana,
+  updateComposition,
+  removeExtraFromCart,
+  confirmCurrentOrder,
+  cutoff,
+  pendingPayment,
+  deliveryLabelFull,
+  onNav,
+  onConfirmedToast,
+})=>{
+  const dialogRef=useRef(null);
+  useModalA11y(dialogRef,true,onClose);
+  const baselineQtds=assinaturaBaseline||assinaturaQtds;
+  // Slots locais — radio selection sincroniza com updateComposition via debounce
+  const[slots,setSlots]=useState(()=>qtdsToSlots(cestaAtual||baselineQtds));
+  const compDebounceRef=useRef(null);
+
+  // Briefing 10.4: pending_payment mantém o drawer acessível mas com controles
+  // disabled. Backend já rejeita o POST (409 subscription_not_active), e o UI
+  // deixa explícito.
+  const isDisabled=cutoff||pendingPayment;
+  const isConfirmado=currentWeeklyOrder?.status==="confirmado";
+  const hasAlteration=!!(currentWeeklyOrder?.composition)||currentExtras.length>0;
+  const canConfirmar=!isDisabled&&!isConfirmado&&!!currentWeeklyOrder&&hasAlteration;
+
+  const triggerCompositionSave=(nextSlots)=>{
+    if(compDebounceRef.current) clearTimeout(compDebounceRef.current);
+    compDebounceRef.current=setTimeout(()=>{
+      const novoQtds=slotsToQtds(nextSlots);
+      D.pães.forEach(p=>{if(novoQtds[p.id]===undefined) novoQtds[p.id]=0;});
+      const igual=JSON.stringify(novoQtds)===JSON.stringify(baselineQtds);
+      // Atualiza cestaSemana local (legacy compat) + POSTa composition
+      onSetCestaSemana(igual?null:novoQtds);
+      updateComposition(igual?null:novoQtds);
+    },300);
+  };
+
+  const setSlot=(idx,novoId)=>{
+    if(isDisabled) return;
+    setSlots(prev=>{
+      const next=[...prev]; next[idx]=novoId;
+      triggerCompositionSave(next);
+      return next;
+    });
+  };
+
+  const totalExtras=currentExtras.reduce((s,e)=>s+e.qty*Number(e.preco_unit),0);
+  const assinaturaSlotsBase=qtdsToSlots(baselineQtds);
+
+  return<>
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Editar carrinho da semana" style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:`${radii.xl} ${radii.xl} 0 0`,zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",padding:20}}>
+      {/* Cabeçalho */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,marginBottom:12}}>
+        <div style={{flex:1}}>
+          <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em"}}>EDITAR CARRINHO</div>
+          <div style={{fontFamily:fb,fontSize:13,color:W[600],marginTop:6,lineHeight:1.5}}>Entrega: {deliveryLabelFull}.</div>
+          <div style={{fontFamily:fb,fontSize:13,color:isDisabled?W[500]:W[600],lineHeight:1.5}}>{pendingPayment?"Disponível após confirmação do primeiro pagamento.":cutoff?"Prazo encerrado. Você poderá editar a próxima cesta.":"Confirme até terça, 12h."}</div>
+        </div>
+        <button aria-label="Fechar" onClick={onClose} style={{width:36,height:36,borderRadius:radii.full,background:W[100],border:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>✕</button>
+      </div>
+
+      <div style={{height:1,background:W[200],margin:"12px 0 16px"}}/>
+
+      {/* Seção: SUA ASSINATURA */}
+      <div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:12}}>SUA ASSINATURA</div>
+      {assinaturaSlotsBase.map((produtoPadraoId,idx)=>{
+        const produtoAtualId=slots[idx]||produtoPadraoId;
+        return<div key={idx} style={{marginBottom:14}}>
+          {assinaturaSlotsBase.length>1&&<div style={{fontFamily:fd,fontSize:12,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:6}}>Pão {idx+1}</div>}
+          {D.pães.map(p=>{
+            const sel=produtoAtualId===p.id;
+            return<button key={p.id} onClick={()=>setSlot(idx,p.id)} disabled={isDisabled} style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"10px 12px",marginBottom:6,borderRadius:radii.md,border:`2px solid ${sel?B[500]:W[200]}`,background:sel?B[50]:"#FFF",cursor:isDisabled?"default":"pointer",textAlign:"left",opacity:isDisabled?0.55:1}}>
+              <div style={{width:20,height:20,borderRadius:radii.full,border:`2px solid ${sel?B[500]:W[300]}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<div style={{width:10,height:10,borderRadius:radii.full,background:B[500]}}/>}</div>
+              <div style={{flex:1}}><div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:sel?B[700]:W[700]}}>{p.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>({p.peso})</span></div></div>
+            </button>;
+          })}
+        </div>;
+      })}
+
+      <div style={{height:1,background:W[200],margin:"16px 0"}}/>
+
+      {/* Seção: EXTRAS DESTA SEMANA */}
+      <div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:12}}>EXTRAS DESTA SEMANA</div>
+      {currentExtras.length===0
+        ?<div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6,marginBottom:16}}>
+            Você ainda não adicionou extras.<br/>
+            <button onClick={()=>{onClose();onNav&&onNav("cardapio");}} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0,marginTop:6}}>→ Ver tudo no Cardápio</button>
+          </div>
+        :<div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
+            {currentExtras.map(e=><div key={e.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+              <span style={{fontFamily:fb,fontSize:14,color:W[800],flex:1}}>{e.qty}× {e.nome}</span>
+              <span style={{fontFamily:fb,fontSize:14,color:W[700],fontWeight:500}}>{fmt(Number(e.preco_unit)*e.qty)}</span>
+              {!isDisabled&&<button aria-label={`Remover ${e.nome}`} onClick={()=>removeExtraFromCart(e.id)} className="press-scale" style={{width:28,height:28,minWidth:28,borderRadius:radii.full,border:"none",background:"transparent",color:W[500],cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
+            </div>)}
+          </div>
+      }
+
+      {/* Sumário */}
+      <div style={{height:1,background:W[200],margin:"4px 0 16px"}}/>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontFamily:fb,fontSize:14,marginBottom:20}}>
+        <span style={{color:W[700]}}>Total de extras desta semana</span>
+        <span style={{color:B[700],fontWeight:600}}>{fmt(totalExtras)}</span>
+      </div>
+
+      {/* Botões */}
+      <div style={{display:"flex",gap:8}}>
+        <Btn onClick={onClose} style={{flex:1}}>Cancelar</Btn>
+        {canConfirmar&&<ActionBtn primary
+          loadingText="Confirmando…"
+          successText="Confirmado ✓"
+          onAction={async()=>{await confirmCurrentOrder();}}
+          onComplete={()=>{onConfirmedToast&&onConfirmedToast();onClose();}}
+          style={{flex:2}}
+          ariaLabel="Confirmar pedido"
+        >Confirmar pedido</ActionBtn>}
+      </div>
+    </div>
+  </>;
 };
 
-// Data formatada estilo hero. Ex: "QUINTA, 23 ABR"
-const MESES_CURTOS_PT=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
-const DIAS_SEMANA_PT=["dom","seg","ter","qua","qui","sex","sáb"];
-const formatarDataHero=(dataStr)=>{
-  // Aceita string "Quinta, 23 de abril" ou tenta parse.
-  // Se nao conseguir parsear, retorna string original em uppercase.
-  if(!dataStr) return "";
-  return dataStr.toUpperCase();
-};
-
-// Timeline da semana. Renderiza 7 circulos Seg-Dom ligados por linha horizontal.
-// Estados: passado (preenchido W[300]), hoje (anel B[500]), entrega (preenchido B[500]).
-const WeekTimeline=({hoje=new Date().getDay(),diaEntrega=4})=>{
-  // Ordem de segunda a domingo na visualizacao: [seg,ter,qua,qui,sex,sab,dom] = indices [1,2,3,4,5,6,0]
-  const ordem=[1,2,3,4,5,6,0];
-  const labels=["S","T","Q","Q","S","S","D"]; // iniciais curtas
-  const width=280;const height=36;const padding=12;
-  const step=(width-padding*2)/(ordem.length-1);
-  return<svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{display:"block",maxWidth:width,margin:"8px auto 4px"}} aria-hidden="true">
-    {/* Linha de base */}
-    <line x1={padding} y1={height/2} x2={width-padding} y2={height/2} stroke={W[200]} strokeWidth="1.5"/>
-    {ordem.map((d,i)=>{
-      const x=padding+i*step;
-      const ehHoje=d===hoje;
-      const ehEntrega=d===diaEntrega;
-      const ehPassado=!ehHoje && ((hoje<diaEntrega) ? (d<hoje||d===0&&hoje!==0) : (d<hoje&&d!==0));
-      // Cores
-      let fill="#FFF";let stroke=W[300];let rOuter=5;let rInner=0;
-      if(ehEntrega){fill=B[500];stroke=B[500];}
-      if(ehPassado&&!ehEntrega){fill=W[300];stroke=W[300];}
-      if(ehHoje){fill="#FFF";stroke=B[500];rInner=3;}
-      return<g key={i}>
-        <circle cx={x} cy={height/2} r={rOuter} fill={fill} stroke={stroke} strokeWidth="1.5"/>
-        {ehHoje&&<circle cx={x} cy={height/2} r={rInner} fill={B[500]}/>}
-        <text x={x} y={height-2} textAnchor="middle" fontSize="10" fontFamily={fb} fill={ehHoje?B[500]:W[500]} fontWeight={ehHoje?"600":"400"}>{labels[i]}</text>
-      </g>;
-    })}
-  </svg>;
-};
-
-const Home=({onNav,pending,confirmed,addPending,removePending,updateConfirmed,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinaturaBaseline,cestaSemana,cestaAtual,houveSwap,onSetCestaSemana,ehPrimeiroAcesso,historicoCicloAtual,pendingPayment})=>{
+// ─── HOME ───
+// Redesign Frente C item 1 (briefing 5):
+//  - Saudação temporal (sem flexão por gênero)
+//  - Card da cesta com fundo brand-50, lista unificada (assinatura + extras),
+//    badge/microcopy condicional, botão "Editar carrinho" e "Confirmar pedido"
+//  - Novidade hero com sub-copy emocional e CTA "+ Adicionar à cesta — R$ X"
+//  - Estado "semana sem destaque" quando D.extras vazio
+const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinaturaBaseline,cestaAtual,onSetCestaSemana,ehPrimeiroAcesso,pendingPayment,currentWeeklyOrder,currentExtras,addExtraToCart,removeExtraFromCart,updateComposition,confirmCurrentOrder})=>{
   const[modal,setModal]=useState(null);
-  const[swapModal,setSwapModal]=useState(false);
-  const swapDialogRef=useRef(null);
-  useModalA11y(swapDialogRef,swapModal,()=>setSwapModal(false));
-  const[rascunhoSlots,setRascunhoSlots]=useState([]); // slots da cesta durante a edicao no modal
+  const[drawerOpen,setDrawerOpen]=useState(false);
   const[toast,setToast]=useState(false);
   const[toastMsg,setToastMsg]=useState("");
-  const allItems=[...confirmed,...pending];
-  const cntAll=n=>cntIn(allItems,n);
-  const handleAddComplete=p=>{addPending(p);setModal(null);};
-  const handleQtyChange=(product,delta)=>{
-    if(confirmed.length>0){
-      if(delta>0) updateConfirmed(addTo(confirmed,product));
-      else {
-        const next=removeFrom(confirmed,product.nome);
-        updateConfirmed(next);
-        if(next.length===0){setToastMsg("Item removido da cesta.");setToast(true);setTimeout(()=>setToast(false),5000);}
-      }
-    } else {
-      if(delta>0) addPending(product);
-      else removePending(product.nome);
-    }
-  };
-  const confirmedExtras=confirmed.filter(p=>p.kind!=="swap");
+  const showToast=(msg)=>{setToastMsg(msg);setToast(true);setTimeout(()=>setToast(false),5000);};
+
   const nome=userData?.nome?userData.nome.split(" ")[0]:D.nome;
-  const bemvindo=userData?.genero==="f"?"Bem-vinda":userData?.genero==="m"?"Bem-vindo":"Boas-vindas";
-  // Sobrio: ponto final, sem "Oi". Primeiro acesso mantem exclamacao (momento de acolhida).
-  const prefix=ehPrimeiroAcesso?`${bemvindo}, ${nome}.`:`${greet().charAt(0).toUpperCase()}${greet().slice(1)}, ${nome}.`;
+  const saudacao=ehPrimeiroAcesso?`Que bom ter você aqui, ${nome}.`:`${greet()}, ${nome}.`;
 
-  // Composicao da Cesta desta semana (multi-pao)
-  const cestaSlots=qtdsToSlots(cestaAtual);
-  // Slots do modal Personalizar refletem o BASELINE (o que esta sendo cobrado
-  // este mes). Alteracoes da Assinatura (reducoes/aumentos) so valem no proximo
-  // ciclo, entao nao afetam os slots personalizaveis desta semana.
-  const assinaturaSlots=qtdsToSlots(assinaturaBaseline||assinaturaQtds);
-  const temSwap=houveSwap;
-  const temExtras=confirmedExtras.length>0;
-  const cestaLabel=composicaoToStr(cestaAtual)||"Sem pães configurados";
-  const assinaturaLabel=composicaoToStr(assinaturaQtds)||"Sem pães configurados";
-  const primeiroPaoCesta=D.pães.find(p=>cestaAtual[p.id]>0)||D.pães[0];
-  const cestaImg=primeiroPaoCesta?.img||IMG.original;
+  // ─── Estado da cesta ───────────────────────────────────────────────
+  const hasComposition=currentWeeklyOrder?.composition!=null;
+  const hasExtras=currentExtras.length>0;
+  const hasAlteration=hasComposition||hasExtras;
+  const isRascunho=currentWeeklyOrder?.status==="rascunho";
+  const isConfirmado=currentWeeklyOrder?.status==="confirmado";
 
-  const openSwapModal=()=>{
-    // Inicializa rascunho com a composicao atual da cesta (ou da assinatura se nao houver customizacao)
-    setRascunhoSlots(qtdsToSlots(cestaAtual));
-    setSwapModal(true);
-  };
-  const setSlotProduto=(idx,novoId)=>{
-    setRascunhoSlots(prev=>{const n=[...prev];n[idx]=novoId;return n;});
-  };
-  const handleSwapConfirm=()=>{
-    haptic();
-    const novoQtds=slotsToQtds(rascunhoSlots);
-    // Preenche ids ausentes com 0 para comparacao estavel com assinaturaQtds
-    D.pães.forEach(p=>{if(novoQtds[p.id]===undefined)novoQtds[p.id]=0;});
-    // Se voltou pro estado da Assinatura, limpa cestaSemana (null)
-    // Compara com baseline (o que de fato esta sendo entregue este mes)
-    const igual=JSON.stringify(novoQtds)===JSON.stringify(assinaturaBaseline||assinaturaQtds);
-    onSetCestaSemana(igual?null:novoQtds);
-    setSwapModal(false);
-    setToastMsg("Cesta atualizada. Sua Assinatura segue como antes na próxima semana.");
-    setToast(true);setTimeout(()=>setToast(false),5000);
-  };
+  // ─── Formatação de datas ───────────────────────────────────────────
+  const deliveryDate=currentWeeklyOrder?.delivery_date||nextEditableThursdayISO();
+  // Parse com noon UTC pra evitar deriva BRT (UTC-3 ainda cai no mesmo dia)
+  const deliveryDateObj=new Date(`${deliveryDate}T12:00:00Z`);
+  const deliveryLabelFull=formatarDataEntrega(deliveryDateObj);
+  const fmtDdMm=(dt)=>`${String(dt.getDate()).padStart(2,"0")}/${String(dt.getMonth()+1).padStart(2,"0")}`;
+  const deliveryLabelShort=fmtDdMm(deliveryDateObj);
+
+  // ─── Lista unificada (assinatura + extras) ─────────────────────────
+  const baselineQtds=assinaturaBaseline||assinaturaQtds;
+  // 1 entry por pão da composição atual (com swap se houver)
+  const assinaturaItems=Object.entries(cestaAtual||{}).filter(([,q])=>q>0).map(([id,q])=>{
+    const pao=D.pães.find(p=>p.id===id);
+    if(!pao) return null;
+    const baselineQty=baselineQtds?.[id]||0;
+    const wasSwapped=hasComposition&&baselineQty!==q;
+    return{id,nome:pao.nome,qty:q,sublabel:wasSwapped?"(assinatura, trocado)":"(assinatura)"};
+  }).filter(Boolean);
+
+  // ─── Microcopy condicional (briefing 5.2) ──────────────────────────
+  let microcopy=null;
+  if(cutoff&&!isConfirmado){
+    microcopy={text:"Prazo encerrado. Esta semana você recebe a cesta da assinatura. Pode editar a próxima.",color:W[500]};
+  } else if(isRascunho&&hasAlteration){
+    microcopy={text:"Confirme seu pedido até terça, 12h para esta entrega.",color:W[600]};
+  } else if(isConfirmado&&currentWeeklyOrder?.confirmed_at){
+    microcopy={text:`Pedido confirmado em ${fmtDdMm(new Date(currentWeeklyOrder.confirmed_at))}.`,color:W[500]};
+  }
+
+  // ─── Badge condicional ─────────────────────────────────────────────
+  let badge=null;
+  if(isConfirmado) badge=<Badge label="Confirmada" type="success"/>;
+  else if(isRascunho&&hasAlteration) badge=<Badge label="Pedido não confirmado" type="warning"/>;
+
+  const showConfirmar=isRascunho&&hasAlteration&&!cutoff;
+  const editarDisabled=cutoff&&isConfirmado;
 
   useEffect(()=>{if(!isFirstVisit||!onSeen)return;const t=setTimeout(onSeen,5000);return()=>clearTimeout(t);},[isFirstVisit,onSeen]);
 
-  return<div style={{padding:"24px 16px 16px",paddingBottom:pending.length>0?80:16}}>
-    <h1 style={{fontFamily:fd,fontSize:30,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",margin:"0 0 20px",lineHeight:1.1}}>{prefix}</h1>
+  // Texto do CTA da novidade com preço inline. "R$ 22,00" → "R$ 22" pra ficar curto.
+  const novidadeCtaText=(extra)=>`+ Adicionar à cesta — ${extra.preco.replace(/,00$/,"")}`;
+
+  return<div style={{padding:"24px 16px 16px"}}>
+    <h1 style={{fontFamily:fd,fontSize:30,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",margin:"0 0 20px",lineHeight:1.1}}>{saudacao}</h1>
 
     <CutoffBanner cutoff={cutoff}/>
 
-    {/* Card unificado — CESTA DA SEMANA (4 estados: padrão, swap, extra, swap+extra) */}
-    <Card style={{marginBottom:16,padding:0,overflow:"hidden",background:"#FFF",border:`1px solid ${temSwap?B[200]:W[200]}`}} ariaLabel={`Cesta da semana: ${D.entrega.dia}`}>
-      {/* Cabeçalho com data hero e countdown */}
-      <div style={{padding:"20px 20px 12px"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,marginBottom:12}}>
-          <SL t="Cesta da semana"/>
-          {temSwap
-            ?<span style={{fontFamily:fb,fontSize:11,fontWeight:500,padding:"3px 8px",borderRadius:radii.xs,background:W[200],color:W[800],whiteSpace:"nowrap"}}>editada só nesta semana</span>
-            :temExtras
-              ?<Badge label="confirmada" type="info"/>
-              :null}
-        </div>
-        <h2 style={{fontFamily:fd,fontSize:32,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",lineHeight:1,margin:0}}>{D.entrega.dia}</h2>
-        <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:4}}>{diasAteEntrega().texto}</div>
-        <WeekTimeline/>
+    {/* Card da Cesta — brand-50, lista unificada */}
+    <Card style={{marginBottom:16,padding:24,background:B[50],border:`1px solid ${B[100]}`,borderRadius:radii.lg}} ariaLabel={`Cesta da semana: ${deliveryLabelFull}`}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:16}}>
+        <div style={{fontFamily:fd,fontSize:22,textTransform:"uppercase",color:B[700],letterSpacing:"0.04em",lineHeight:1.15}}>SUA CESTA DESSA SEMANA</div>
+        {badge}
       </div>
-      {/* Foto do pão principal + composição */}
-      <div style={{display:"flex",alignItems:"stretch",borderTop:`1px solid ${W[200]}`}}>
-        <img src={cestaImg} alt={primeiroPaoCesta?.nome||"Pão"} style={{width:96,height:96,objectFit:"cover",display:"block",flexShrink:0}}/>
-        <div style={{flex:1,padding:"16px 20px",display:"flex",flexDirection:"column",justifyContent:"center",gap:4}}>
-          <div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800],lineHeight:1.4}}>
-            {cestaLabel}{temExtras&&!temSwap&&<span style={{fontWeight:400,color:W[500]}}> · Assinatura</span>}
-          </div>
-          {temSwap&&<div style={{fontFamily:fb,fontSize:12,color:W[600],lineHeight:1.4}}>
-            Válida só nesta semana. Próxima semana volta ao normal.
-          </div>}
-          {!temSwap&&!temExtras&&<div style={{fontFamily:fb,fontSize:12,color:W[500]}}>Tudo certo. Essa é sua cesta da Assinatura.</div>}
-          {historicoCicloAtual?.tipo==="reducao"&&(()=>{const totalFuturo=Object.values(historicoCicloAtual.atual).reduce((s,q)=>s+q,0);return<div style={{fontFamily:fb,fontSize:12,color:B[600],marginTop:4,lineHeight:1.5}}>A partir de 1º de {proximoMesPt()}, sua Assinatura muda para {totalFuturo} {plural(totalFuturo,"pão","pães")} por semana.</div>;})()}
-        </div>
+
+      {/* Lista unificada */}
+      <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+        {assinaturaItems.map((item,i)=><div key={`a-${i}`} style={{display:"flex",alignItems:"baseline",fontFamily:fb,fontSize:14,color:W[800]}}>
+          <span style={{flex:1}}>{item.qty}× {item.nome}</span>
+          <span style={{color:W[500],fontSize:12,marginLeft:6}}>{item.sublabel}</span>
+        </div>)}
+        {currentExtras.map(e=><div key={`e-${e.id}`} style={{display:"flex",alignItems:"center",gap:8,fontFamily:fb,fontSize:14,color:W[800]}}>
+          <span style={{flex:1}}>{e.qty}× {e.nome}</span>
+          <span style={{color:W[700],fontWeight:500}}>{fmt(Number(e.preco_unit)*e.qty)}</span>
+          {!cutoff&&!isConfirmado&&<button aria-label={`Remover ${e.nome}`} onClick={()=>removeExtraFromCart(e.id)} className="press-scale" style={{width:28,height:28,minWidth:28,borderRadius:radii.full,border:"none",background:"transparent",color:W[500],cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
+        </div>)}
       </div>
-      {/* Ação primária do card: Personalizar esta semana */}
-      {!cutoff&&<div style={{padding:"12px 20px 16px",borderTop:`1px solid ${W[200]}`}}>
-        <button onClick={openSwapModal} className="press-scale" style={{width:"100%",padding:"12px 16px",borderRadius:radii.md,border:`1.5px solid ${B[500]}`,background:"transparent",color:B[500],fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",transition:"all 150ms ease"}} onMouseEnter={e=>e.currentTarget.style.background=B[50]} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>Personalizar esta semana</button>
-      </div>}
-      {/* Seção interna de extras confirmados removida no PR 2 Fase 1.
-          O novo design da lista unificada (assinatura + extras) entra no
-          redesign do card na Fase 2 (briefing 5.2). */}
+
+      <div style={{fontFamily:fb,fontSize:13,color:W[600],marginBottom:microcopy?6:16}}>Entrega: {deliveryLabelFull}.</div>
+      {microcopy&&<div style={{fontFamily:fb,fontSize:13,color:microcopy.color,marginBottom:16,lineHeight:1.5}}>{microcopy.text}</div>}
+
+      {showConfirmar&&<ActionBtn primary full
+        loadingText="Confirmando…"
+        successText="Confirmado ✓"
+        onAction={async()=>{await confirmCurrentOrder();}}
+        onComplete={()=>showToast(`Cesta confirmada. Entrega ${deliveryLabelShort}.`)}
+        ariaLabel="Confirmar pedido"
+        style={{marginBottom:8}}
+      >Confirmar pedido</ActionBtn>}
+
+      <button onClick={()=>setDrawerOpen(true)} disabled={editarDisabled} className="press-scale" style={{
+        width:"100%",padding:"12px 16px",borderRadius:radii.md,
+        border:`1.5px solid ${B[500]}`,background:"transparent",color:B[500],
+        fontFamily:fb,fontSize:14,fontWeight:500,
+        cursor:editarDisabled?"default":"pointer",opacity:editarDisabled?0.4:1,
+        transition:"all 150ms ease",minHeight:44,
+      }} onMouseEnter={e=>{if(!editarDisabled) e.currentTarget.style.background=B[100];}} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>→ Editar carrinho</button>
     </Card>
 
-    {/* Novidade hero — edge-to-edge photo */}
-    {D.extras.length>0?<NovidadeCard extra={D.extras[0]} qty={cntAll(D.extras[0].nome)} onCardClick={()=>setModal(D.extras[0])} onAdd={()=>handleQtyChange(D.extras[0],1)} onRemove={()=>handleQtyChange(D.extras[0],-1)} cutoff={cutoff} lockedReason={pendingPayment?LOCK_REASON_PENDING:undefined}/>:<EmptyState title="Novidades da semana" body="Nenhuma novidade esta semana. Seu pão de sempre está garantido."/>}
-
-    <div onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,textAlign:"center",padding:"8px 0",cursor:"pointer"}}>Ver cardápio completo ›</div>
-
-    {/* Swap modal */}
-    {swapModal&&<>
-      <div onClick={()=>setSwapModal(false)} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
-      <div ref={swapDialogRef} role="dialog" aria-modal="true" aria-label="Personalizar cesta da semana" style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:`${radii.xl} ${radii.xl} 0 0`,zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",padding:20}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-          <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500]}}>Personalizar cesta da semana</div>
-          <button aria-label="Fechar" onClick={()=>setSwapModal(false)} style={{width:36,height:36,borderRadius:radii.full,background:W[100],border:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
-        </div>
-        <div style={{fontFamily:fb,fontSize:14,color:W[600],marginBottom:20,lineHeight:1.5}}>
-          Você pode trocar os pães da sua Assinatura por outros produtos elegíveis. A troca vale só pra esta semana. Sua Assinatura volta ao normal na próxima.
-        </div>
-        {/* Slots dinamicos: um bloco por pao da Assinatura */}
-        {assinaturaSlots.map((produtoPadraoId,idx)=>{
-          const produtoAtualId=rascunhoSlots[idx]||produtoPadraoId;
-          return<div key={idx} style={{marginBottom:16}}>
-            {assinaturaSlots.length>1&&<div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:8}}>Pão {idx+1}</div>}
-            {D.pães.map(p=>{const sel=produtoAtualId===p.id;return<button key={p.id} onClick={()=>setSlotProduto(idx,p.id)} style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"12px",marginBottom:8,borderRadius:radii.md,border:`2px solid ${sel?B[500]:W[200]}`,background:sel?B[50]:"#FFF",cursor:"pointer",textAlign:"left"}}>
-              <div style={{width:20,height:20,borderRadius:radii.full,border:`2px solid ${sel?B[500]:W[300]}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<div style={{width:10,height:10,borderRadius:radii.full,background:B[500]}}/>}</div>
-              <ProductThumb src={p.img} w={48} h={40} alt={p.nome}/>
-              <div><div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:sel?B[700]:W[700]}}>{p.nome}</div><div style={{fontFamily:fb,fontSize:12,color:W[500]}}>{p.peso}</div></div>
-            </button>;})}
-          </div>;
-        })}
-        <div style={{marginTop:8,marginBottom:16}}/>
-
-        <div style={{display:"flex",gap:8}}>
-          <Btn onClick={()=>setSwapModal(false)} style={{flex:1}}>Cancelar</Btn>
-          <ActionBtn primary loadingText="Salvando…" successText="Salvo ✓" onAction={()=>simulate()} onComplete={handleSwapConfirm} style={{flex:2}}>Confirmar troca</ActionBtn>
-        </div>
+    {/* Novidade hero — com sub-copy emocional + CTA com preço inline */}
+    {D.extras.length>0
+      ?<NovidadeCard extra={D.extras[0]} ctaText={novidadeCtaText(D.extras[0])} onCardClick={()=>setModal(D.extras[0])} cutoff={cutoff} lockedReason={pendingPayment?LOCK_REASON_PENDING:undefined}/>
+      :<div style={{background:W[100],border:`1px solid ${W[200]}`,borderRadius:radii.lg,padding:"24px 20px",textAlign:"center",marginBottom:16}}>
+        <div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.5,marginBottom:8}}>Conhece o resto da nossa padaria?</div>
+        <button onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0}}>→ Ver tudo no Cardápio</button>
       </div>
-    </>}
+    }
 
-    {modal&&<Modal product={modal} onClose={()=>setModal(null)} onAction={()=>simulate()} onComplete={()=>handleAddComplete(modal)} actionLabel="Adicionar à cesta" hint="Cobrado na próxima fatura" qty={cntAll(modal.nome)} onAdd={()=>handleQtyChange(modal,1)} onRemove={()=>handleQtyChange(modal,-1)} cutoff={cutoff}/>}
+    <div onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,textAlign:"center",padding:"8px 0",cursor:"pointer"}}>→ Ver tudo no Cardápio</div>
+
+    {/* Drawer */}
+    {drawerOpen&&<EditarCarrinhoDrawer
+      onClose={()=>setDrawerOpen(false)}
+      currentWeeklyOrder={currentWeeklyOrder}
+      currentExtras={currentExtras}
+      assinaturaQtds={assinaturaQtds}
+      assinaturaBaseline={assinaturaBaseline}
+      cestaAtual={cestaAtual}
+      onSetCestaSemana={onSetCestaSemana}
+      updateComposition={updateComposition}
+      removeExtraFromCart={removeExtraFromCart}
+      confirmCurrentOrder={confirmCurrentOrder}
+      cutoff={cutoff}
+      pendingPayment={pendingPayment}
+      deliveryLabelFull={deliveryLabelFull}
+      onNav={onNav}
+      onConfirmedToast={()=>showToast(`Cesta confirmada. Entrega ${deliveryLabelShort}.`)}
+    />}
+
+    {modal&&<Modal product={modal} onClose={()=>setModal(null)}
+      onAction={async()=>{await addExtraToCart(modal);}}
+      onComplete={()=>{
+        const verb=modal.genero==="f"?"adicionada":"adicionado";
+        showToast(`${modal.nome} ${verb} à cesta. Confirme antes de terça, 12h.`);
+        setModal(null);
+      }}
+      actionLabel="Adicionar à cesta"
+      cutoff={cutoff}
+    />}
     <Toast msg={toastMsg} vis={toast}/>
   </div>;
 };
@@ -611,50 +694,56 @@ const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,assinaturaBaseline,onS
 };
 
 // ═══ CARDÁPIO ═══
-const Cardapio=({pending,confirmed,setPending,setConfirmed,hasPending,cutoff,pendingPayment})=>{
+// Refactor Frente C item 1 (briefing 8):
+//  - Click no ProductCard → abre Modal (sem QtyBtn embutido no card)
+//  - "✓ Nx na sua cesta" substitui o CTA "Pedir" quando o produto já está no carrinho
+//  - Sem banner "confirmado" no topo; sem toast "Item removido"
+const Cardapio=({currentExtras,addExtraToCart,cutoff,pendingPayment})=>{
   const[modal,setModal]=useState(null);
-  const[toastC,setToastC]=useState(false);
-  const allItems=[...confirmed,...pending];const cntAll=n=>cntIn(allItems,n);
-  const addItem=p=>{setPending(prev=>addTo(prev,p,"extra"));};
-  const removeItem=n=>{
-    const pi=pending.findIndex(p=>p.nome===n&&p.kind!=="swap");
-    if(pi!==-1){setPending(prev=>removeFrom(prev,n));return;}
-    const ci=confirmed.findIndex(p=>p.nome===n&&p.kind!=="swap");
-    if(ci!==-1){
-      const next=removeFrom(confirmed,n);
-      setConfirmed(next);
-      if(extrasCount(next)===0){setToastC(true);setTimeout(()=>setToastC(false),5000);}
-    }
-  };
-  const confirmedExtras=confirmed.filter(p=>p.kind!=="swap");
+  const[toast,setToast]=useState(false);
+  const[toastMsg,setToastMsg]=useState("");
+  const showToast=(msg)=>{setToastMsg(msg);setToast(true);setTimeout(()=>setToast(false),5000);};
   const lockedReason=pendingPayment?LOCK_REASON_PENDING:undefined;
+  const qtyOf=(id)=>currentExtras.find(e=>e.id===id)?.qty||0;
 
-  return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
+  return<div style={{padding:"24px 16px 16px"}}>
     <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[500],margin:"0 0 4px"}}>Cardápio</h2>
     <div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:12}}>Peça itens extras para esta semana</div>
     <DeadlineWarning/>
 
-    {confirmedExtras.length>0&&<div style={{background:ST.success.bg,borderRadius:radii.md,padding:"10px 12px",marginBottom:16,border:`1px solid ${ST.success.b}`,display:"flex",alignItems:"center",gap:8}}><I d={ic.check} size={16} color={ST.success.t}/><span style={{fontFamily:fb,fontSize:13,color:ST.success.t,fontWeight:500}}>{Object.entries(confirmedExtras.reduce((a,p)=>{a[p.nome]=(a[p.nome]||0)+1;return a;},{})).map(([n,q])=>`${q}× ${n}`).join(", ")} · confirmado</span></div>}
-
-    {D.extras.length>0?D.extras.map((ex,i)=><NovidadeCard key={i} extra={ex} qty={cntAll(ex.nome)} onCardClick={()=>setModal(ex)} onAdd={()=>addItem(ex)} onRemove={()=>removeItem(ex.nome)} cutoff={cutoff} lockedReason={lockedReason}/>):<EmptyState title="Novidade da semana" body="Nenhuma novidade esta semana."/>}
+    {D.extras.length>0
+      ?D.extras.map((ex,i)=><NovidadeCard key={i} extra={ex} onCardClick={()=>setModal(ex)} cutoff={cutoff} lockedReason={lockedReason}/>)
+      :<EmptyState title="Novidade da semana" body="Nenhuma novidade esta semana."/>
+    }
 
     <div style={{height:1,background:W[200],margin:"4px 0 20px"}}/>
     <div style={{fontFamily:fd,fontSize:16,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",marginBottom:12}}>Nossos pães</div>
 
-    {D.pães.map((p,i)=>{const q=cntAll(p.nome);return<ProductCard key={i}
-  product={{...p, preco:`${p.preco}/un`}}
-  qty={q}
-  onAdd={()=>addItem(p)}
-  onRemove={()=>removeItem(p.nome)}
-  ctaLabel="Pedir"
-  cutoff={cutoff}
-  lockedReason={lockedReason}
-  loadingText="Adicionando…"
-  successText="Adicionado ✓"
-/>;})}
+    {D.pães.map((p,i)=>{
+      const q=qtyOf(p.id);
+      return<ProductCard key={i}
+        product={{...p,preco:`${p.preco}/un`}}
+        qty={0}
+        ctaLabel="Pedir"
+        cutoff={cutoff}
+        lockedReason={lockedReason}
+        onCardClick={()=>setModal(p)}
+        onAdd={()=>setModal(p)}
+        inBasketLabel={q>0?`✓ ${q}× na sua cesta`:undefined}
+      />;
+    })}
 
-    {modal&&<Modal product={modal} onClose={()=>setModal(null)} onAction={()=>simulate()} onComplete={()=>{addItem(modal);setModal(null);}} actionLabel="Adicionar à cesta" hint="Cobrado na próxima fatura" qty={cntAll(modal.nome)} onAdd={()=>addItem(modal)} onRemove={()=>removeItem(modal.nome)} cutoff={cutoff}/>}
-    <Toast msg="Item removido da cesta." vis={toastC}/>
+    {modal&&<Modal product={modal} onClose={()=>setModal(null)}
+      onAction={async()=>{await addExtraToCart(modal);}}
+      onComplete={()=>{
+        const verb=modal.genero==="f"?"adicionada":"adicionado";
+        showToast(`${modal.nome} ${verb} à cesta. Confirme antes de terça, 12h.`);
+        setModal(null);
+      }}
+      actionLabel="Adicionar à cesta"
+      cutoff={cutoff}
+    />}
+    <Toast msg={toastMsg} vis={toast}/>
   </div>;
 };
 
@@ -861,9 +950,6 @@ export default function CoraPortal(){
   //   - com reducao pendente: baseline (cliente continua recebendo o que ja pagou)
   //   - caso contrario: assinaturaQtds (aumento/troca ja valem)
   const cestaAtual=cestaSemana??(reducaoPendente?assinaturaBaseline:assinaturaQtds);
-  // Swap comparado contra o que seria a cesta sem swap (baseline se reducao, senao assinatura)
-  const cestaSemSwap=reducaoPendente?assinaturaBaseline:assinaturaQtds;
-  const houveSwap=cestaSemana!==null&&JSON.stringify(cestaSemana)!==JSON.stringify(cestaSemSwap);
 
   // ─── Carrinho persistido: pedido atual, cutoff por delivery_date ───
   const currentWeeklyOrder = weeklyOrders[0] || null;
@@ -923,10 +1009,9 @@ export default function CoraPortal(){
     return postCurrentOrder(next);
   };
 
-  // Reservados pra Fase 2 (Drawer chama updateComposition; botão Confirmar chama confirmCurrentOrder).
-  // eslint-disable-next-line no-unused-vars
+  // updateComposition é chamado pelo EditarCarrinhoDrawer (slot radio com debounce);
+  // confirmCurrentOrder é o "Confirmar pedido" da Home e do Drawer.
   const updateComposition = (newComposition) => postCurrentOrder(currentExtras, newComposition);
-  // eslint-disable-next-line no-unused-vars
   const confirmCurrentOrder = async () => {
     if (!currentWeeklyOrder?.id) return;
     try {
@@ -937,9 +1022,10 @@ export default function CoraPortal(){
     }
   };
 
-  // ─── Compat shim — removido na Fase 2 com o redesign Home/Cardapio/Perfil ───
-  // Expõe o shape legacy `[{nome, preco, precoNum, kind:"extra"}]` (1-por-unidade)
-  // e adapta os handlers velhos pra falar com o backend.
+  // ─── Compat shim residual ────────────────────────────────────────────────
+  // Home e Cardapio foram migrados pra `currentExtras` direto (PR 2 Fase 2).
+  // O Perfil ainda lê extras no shape antigo (1-por-unidade) pra somar
+  // `confirmedTotal` no card "Próxima fatura". Sai quando o Perfil for refeito.
   const confirmedLegacy = currentExtras.flatMap(e =>
     Array.from({ length: e.qty }, () => ({
       nome: e.nome,
@@ -948,23 +1034,6 @@ export default function CoraPortal(){
       kind: "extra",
     }))
   );
-  const pendingLegacy = []; // não existe mais; deixa as derivadas internas (pending.length) zeradas
-  const legacyAddPending = (product) => addExtraToCart(product);
-  const legacyRemovePending = (nome) => {
-    const found = currentExtras.find(e => e.nome === nome);
-    if (found) removeExtraFromCart(found.id);
-  };
-  const legacySetConfirmed = (newLegacyList) => postCurrentOrder(aggregateLegacyExtras(newLegacyList));
-  const legacySetPending = (updater) => {
-    // Cardapio chama `setPending(prev => addTo(prev, p, "extra"))`. Com pendingLegacy=[],
-    // o resultado é `[item]` — extraímos o item adicionado e POSTamos.
-    const result = typeof updater === "function" ? updater([]) : updater;
-    if (!Array.isArray(result) || result.length === 0) return;
-    const item = result[result.length - 1];
-    if (item.kind === "swap") return;
-    const product = catalog.find(p => p.nome === item.nome);
-    if (product) addExtraToCart(product);
-  };
   const isOnboarding=scr==="onboarding";
 
   const handleOnboardingComplete=(payload)=>{
@@ -1065,9 +1134,9 @@ const params = new URLSearchParams(window.location.search);
     </div>
     <main ref={mainRef} id="main-content" style={{flex:1,overflowY:"auto"}}>
       <div key={scr} className="tab-content">
-        {scr==="home"&&<Home onNav={handleNav} pending={pendingLegacy} confirmed={confirmedLegacy} addPending={legacyAddPending} removePending={legacyRemovePending} updateConfirmed={legacySetConfirmed} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaSemana={cestaSemana} cestaAtual={cestaAtual} houveSwap={houveSwap} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} historicoCicloAtual={historicoCicloAtual} pendingPayment={pendingPayment}/>}
+        {scr==="home"&&<Home onNav={handleNav} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaAtual={cestaAtual} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} pendingPayment={pendingPayment} currentWeeklyOrder={currentWeeklyOrder} currentExtras={currentExtras} addExtraToCart={addExtraToCart} removeExtraFromCart={removeExtraFromCart} updateComposition={updateComposition} confirmCurrentOrder={confirmCurrentOrder}/>}
         {scr==="assinatura"&&<Assinatura onNav={handleNav} hasPending={false} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} onSalvar={handleSalvarAssinatura}/>}
-        {scr==="cardapio"&&<Cardapio pending={pendingLegacy} confirmed={confirmedLegacy} setPending={legacySetPending} setConfirmed={legacySetConfirmed} hasPending={false} cutoff={cutoff} pendingPayment={pendingPayment}/>}
+        {scr==="cardapio"&&<Cardapio currentExtras={currentExtras} addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment}/>}
         {scr==="perfil"&&<Perfil confirmed={confirmedLegacy} hasPending={false} assinaturaQtds={assinaturaQtds} historicoCicloAtual={historicoCicloAtual} historicoCiclosPassados={historicoCiclosPassados}/>}
       </div>
     </main>
