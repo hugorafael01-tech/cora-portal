@@ -86,7 +86,6 @@ const D={
     {sem:"Semana 07/03",itens:"1 Pão Original (700g)",st:"Entregue",extra:null},
   ],
 };
-const greet=()=>{const h=new Date().getHours();return h<12?"Bom dia":h<18?"Boa tarde":"Boa noite";};
 
 const I=({d,size=20,color=W[400],sw=1.5})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
 const ic={
@@ -118,9 +117,46 @@ const Card=({children,style,onClick,ariaLabel})=>{const[h,setH]=useState(false);
 const SL=({t})=><div style={{fontFamily:fd,fontSize:15,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:8,lineHeight:1}}>{t}</div>;
 const Badge=({label,type="success"})=>{const s=ST[type]||ST.success;return<span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:12,fontWeight:500,fontFamily:fb,padding:"4px 10px",borderRadius:radii.xs,background:s.bg,color:s.t,border:`1px solid ${s.b}`}}><span style={{fontSize:8}}>●</span>{label}</span>;};
 const Btn=({children,primary,disabled,onClick,style:es,full,ariaLabel})=>{const[h,setH]=useState(false);return<button aria-label={ariaLabel} disabled={disabled} onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} className="press-scale" style={{padding:"12px 20px",borderRadius:radii.md,border:primary?"none":`1px solid ${h&&!disabled?B[600]:B[500]}`,background:primary?(disabled?W[200]:h?B[600]:B[500]):(h&&!disabled?B[50]:"none"),color:primary?(disabled?W[500]:"#FFF"):B[500],fontFamily:fb,fontSize:14,fontWeight:500,cursor:disabled?"default":"pointer",opacity:disabled?0.5:1,minHeight:44,width:full?"100%":"auto",transition:"all 150ms ease",...es}}>{children}</button>;};
-// QtyBtn local do App removido — só era usado pelo Modal (que saiu na Frente C
-// item 3). O ProductCard tem seu próprio QtyBtn pro modo directQtySelector.
-// O controle [- N +] do Card de Cesta entra na Fase 2 com visual brand-50/warm-100.
+// QtyStepper [- N +] — usado na lista de extras do Card de Cesta da Home
+// (variant brand sobre fundo brand-50) e no Drawer (Fase 3, variant neutro).
+// SVG inline pros sinais − e + (mantém peso visual consistente, sem confusão
+// com fontes do sistema). Borda muda conforme variant.
+const QtyStepper=({qty,onIncrement,onDecrement,name,disabled=false,variant="brand"})=>{
+  const bColor=variant==="brand"?B[100]:W[300];
+  const iconColor=disabled?W[300]:B[500];
+  const btnStyle={
+    width:32,height:32,padding:0,
+    background:"transparent",border:"none",
+    cursor:disabled?"not-allowed":"pointer",
+    color:iconColor,
+    display:"flex",alignItems:"center",justifyContent:"center",
+  };
+  return (
+    <div onClick={e=>e.stopPropagation()} style={{
+      display:"inline-flex",alignItems:"center",
+      border:`1px solid ${bColor}`,borderRadius:radii.md,
+      background:"#FFF",overflow:"hidden",flexShrink:0,
+    }}>
+      <button type="button" onClick={onDecrement} disabled={disabled} aria-label={`Diminuir ${name}`} style={btnStyle}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+      <span style={{
+        minWidth:28,textAlign:"center",lineHeight:"32px",
+        fontFamily:fb,fontWeight:600,fontSize:14,color:W[800],
+        borderLeft:`1px solid ${bColor}`,borderRight:`1px solid ${bColor}`,
+        fontVariantNumeric:"tabular-nums",
+      }}>{qty}</span>
+      <button type="button" onClick={onIncrement} disabled={disabled} aria-label={`Aumentar ${name}`} style={btnStyle}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+    </div>
+  );
+};
 // Toast simples (1 mensagem com timer próprio). Mantido pra compat de chamadas
 // que ainda passam `msg`/`vis` (toasts de polish em outras telas).
 const Toast=({msg,vis})=>vis?<div role="status" aria-live="polite" style={{position:"fixed",bottom:72,left:16,right:16,maxWidth:358,margin:"0 auto",background:W[800],color:"#FFF",borderRadius:radii.md,padding:"12px 16px",zIndex:60,fontFamily:fb,fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8,animation:"fadeUp 300ms ease"}}><I d={ic.check} size={16} color="#6EE7B7"/>{msg}</div>:null;
@@ -255,7 +291,27 @@ const ActionBtn=({children,loadingText,successText,onAction,onComplete,primary,d
 // O Modal de detalhes do produto saiu na Frente C item 3 (wireframe v2).
 // ProductCard agora expande inline; NovidadeCard adiciona direto sem modal.
 // QtyBtn local também sai junto (era usado pelo branch qty>0 do Modal).
-const Nav=({active,onNav,badge})=>{const items=[{id:"home",label:"INÍCIO",icon:ic.home},{id:"assinatura",label:"ASSINATURA",icon:ic.wheat},{id:"cardapio",label:"CARDÁPIO",icon:ic.utensils},{id:"perfil",label:"PERFIL",icon:ic.user}];return<div style={{display:"flex",justifyContent:"space-around",alignItems:"center",padding:"8px 0 12px",borderTop:`1px solid ${W[200]}`,background:"#FFF",position:"sticky",bottom:0,zIndex:10,minHeight:56}}>{items.map(it=><button key={it.id} aria-label={`Ir para ${it.label}`} onClick={()=>onNav(it.id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,border:"none",background:"none",cursor:"pointer",minWidth:56,minHeight:44,padding:"4px 0",position:"relative"}}><I d={it.icon} size={22} color={active===it.id?B[500]:W[400]}/>{it.id==="cardapio"&&badge>0&&<span style={{position:"absolute",top:0,right:4,width:18,height:18,borderRadius:radii.full,background:B[500],color:"#FFF",fontFamily:fb,fontSize:10,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{badge}</span>}<span style={{fontFamily:fd,fontSize:11,letterSpacing:"0.02em",textTransform:"uppercase",color:active===it.id?B[500]:W[400]}}>{it.label}</span></button>)}</div>;};
+// Nav inferior. `inicioBadge` true mostra um dot brand-500 no canto superior
+// direito do ícone Início — indica `currentWeeklyOrder?.status === 'rascunho'`
+// (briefing 3.6 / wireframe v2 tela 1, 4, 6).
+const Nav=({active,onNav,inicioBadge=false})=>{
+  const items=[{id:"home",label:"INÍCIO",icon:ic.home},{id:"assinatura",label:"ASSINATURA",icon:ic.wheat},{id:"cardapio",label:"CARDÁPIO",icon:ic.utensils},{id:"perfil",label:"PERFIL",icon:ic.user}];
+  return<div style={{display:"flex",justifyContent:"space-around",alignItems:"center",padding:"8px 0 12px",borderTop:`1px solid ${W[200]}`,background:"#FFF",position:"sticky",bottom:0,zIndex:10,minHeight:56}}>
+    {items.map(it=>(
+      <button key={it.id} aria-label={`Ir para ${it.label}`} onClick={()=>onNav(it.id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,border:"none",background:"none",cursor:"pointer",minWidth:56,minHeight:44,padding:"4px 0",position:"relative"}}>
+        <span style={{position:"relative",display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
+          <I d={it.icon} size={22} color={active===it.id?B[500]:W[400]}/>
+          {it.id==="home"&&inicioBadge&&<span aria-label="Você tem alterações na cesta" style={{
+            position:"absolute",top:-2,right:-4,
+            width:9,height:9,borderRadius:"50%",
+            background:B[500],boxShadow:"0 0 0 2px #FFF",
+          }}/>}
+        </span>
+        <span style={{fontFamily:fd,fontSize:11,letterSpacing:"0.02em",textTransform:"uppercase",color:active===it.id?B[500]:W[400]}}>{it.label}</span>
+      </button>
+    ))}
+  </div>;
+};
 
 // ─── NOVIDADE HERO ───
 // Wireframe v2 (Frente C item 3): foto grande edge-to-edge com tag "Novidade
@@ -546,7 +602,7 @@ const EditarCarrinhoDrawer=({
 //    badge/microcopy condicional, botão "Editar carrinho" e "Confirmar pedido"
 //  - Novidade hero com sub-copy emocional e CTA "+ Adicionar à cesta — R$ X"
 //  - Estado "semana sem destaque" quando D.extras vazio
-const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinaturaBaseline,cestaAtual,onSetCestaSemana,ehPrimeiroAcesso,pendingPayment,currentWeeklyOrder,currentExtras,addExtraToCart,removeExtraFromCart,updateComposition,confirmCurrentOrder})=>{
+const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinaturaBaseline,cestaAtual,onSetCestaSemana,pendingPayment,currentWeeklyOrder,currentExtras,addExtraToCart,removeExtraFromCart,updateComposition,confirmCurrentOrder})=>{
   const[drawerOpen,setDrawerOpen]=useState(false);
   const{toasts,push:pushToast}=useToastStack();
   // `showToast` mantém a assinatura legacy pros callers existentes (ActionBtn
@@ -554,7 +610,11 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
   const showToast=(msg)=>pushToast(msg);
 
   const nome=userData?.nome?userData.nome.split(" ")[0]:D.nome;
-  const saudacao=ehPrimeiroAcesso?`Que bom ter você aqui, ${nome}.`:`${greet()}, ${nome}.`;
+  // Saudação unificada (briefing Frente C item 3, seção 3.4): sempre temporal,
+  // sem flexão de gênero, sem distinção de "primeiro acesso".
+  const _hora=new Date().getHours();
+  const _periodo=_hora<12?"bom dia":_hora<18?"boa tarde":"boa noite";
+  const saudacao=`Oi, ${nome}, ${_periodo}!`;
 
   // ─── Estado da cesta ───────────────────────────────────────────────
   const hasComposition=currentWeeklyOrder?.composition!=null;
@@ -571,34 +631,55 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
   const fmtDdMm=(dt)=>`${String(dt.getDate()).padStart(2,"0")}/${String(dt.getMonth()+1).padStart(2,"0")}`;
   const deliveryLabelShort=fmtDdMm(deliveryDateObj);
 
-  // ─── Lista unificada (assinatura + extras) ─────────────────────────
+  // ─── Lista de assinatura ───────────────────────────────────────────
+  // 1 entry por pão da composição atual (com swap se houver).
+  // Linhas de extras vêm direto de currentExtras (1 entry por id, qty agregada).
   const baselineQtds=assinaturaBaseline||assinaturaQtds;
-  // 1 entry por pão da composição atual (com swap se houver)
   const assinaturaItems=Object.entries(cestaAtual||{}).filter(([,q])=>q>0).map(([id,q])=>{
     const pao=D.pães.find(p=>p.id===id);
     if(!pao) return null;
     const baselineQty=baselineQtds?.[id]||0;
     const wasSwapped=hasComposition&&baselineQty!==q;
-    return{id,nome:pao.nome,qty:q,sublabel:wasSwapped?"(assinatura, trocado)":"(assinatura)"};
+    return{id,nome:pao.nome,qty:q,tag:wasSwapped?"Trocado":"Assinatura"};
   }).filter(Boolean);
 
-  // ─── Microcopy condicional (briefing 5.2) ──────────────────────────
+  // ─── Microcopy condicional (Fase 2): só Confirmado + Cutoff ────────
+  // Briefing: Badge "Pedido não confirmado" + microcopy de rascunho saem
+  // (informação migra pro badge do Nav). Mantém pós-confirmação e pós-cutoff.
   let microcopy=null;
   if(cutoff&&!isConfirmado){
     microcopy={text:"Prazo encerrado. Esta semana você recebe a cesta da assinatura. Pode editar a próxima.",color:W[500]};
-  } else if(isRascunho&&hasAlteration){
-    microcopy={text:"Confirme seu pedido até terça, 12h para esta entrega.",color:W[600]};
   } else if(isConfirmado&&currentWeeklyOrder?.confirmed_at){
     microcopy={text:`Pedido confirmado em ${fmtDdMm(new Date(currentWeeklyOrder.confirmed_at))}.`,color:W[500]};
   }
 
-  // ─── Badge condicional ─────────────────────────────────────────────
-  let badge=null;
-  if(isConfirmado) badge=<Badge label="Confirmada" type="success"/>;
-  else if(isRascunho&&hasAlteration) badge=<Badge label="Pedido não confirmado" type="warning"/>;
-
+  // Total dos extras (assinatura é "Incluso", não soma).
+  const totalExtras=currentExtras.reduce((s,e)=>s+e.qty*Number(e.preco_unit),0);
   const showConfirmar=isRascunho&&hasAlteration&&!cutoff;
   const editarDisabled=cutoff&&isConfirmado;
+
+  // ─── Animação de remoção de extra ──────────────────────────────────
+  // Quando user clica `-` em qty=1: marca o id em `removing`, aguarda 200ms
+  // de animação CSS, e dispara removeExtraFromCart. Pra qty>1 decrementa
+  // direto sem animação.
+  const[removing,setRemoving]=useState(()=>new Set());
+  const removingTimersRef=useRef({});
+  useEffect(()=>()=>{
+    Object.values(removingTimersRef.current).forEach(clearTimeout);
+    removingTimersRef.current={};
+  },[]);
+  const handleExtraDecrement=(extra)=>{
+    if(extra.qty>1){removeExtraFromCart(extra.id);return;}
+    // qty===1 → anima e remove depois.
+    if(removing.has(extra.id)) return;
+    setRemoving(prev=>{const next=new Set(prev);next.add(extra.id);return next;});
+    removingTimersRef.current[extra.id]=setTimeout(()=>{
+      removeExtraFromCart(extra.id);
+      // Cleanup do Set no próprio callback do timer (evita setState-in-effect).
+      setRemoving(prev=>{const next=new Set(prev);next.delete(extra.id);return next;});
+      delete removingTimersRef.current[extra.id];
+    },200);
+  };
 
   useEffect(()=>{if(!isFirstVisit||!onSeen)return;const t=setTimeout(onSeen,5000);return()=>clearTimeout(t);},[isFirstVisit,onSeen]);
 
@@ -611,49 +692,102 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
   };
 
   return<div style={{padding:"24px 16px 16px"}}>
-    <h1 style={{fontFamily:fd,fontSize:30,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",margin:"0 0 20px",lineHeight:1.1}}>{saudacao}</h1>
+    {/* Saudação temporal unificada (wireframe v2 tela 4: page-title 26px,
+        margin-top 4px, League Gothic uppercase). */}
+    <h1 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",margin:"4px 0 16px",lineHeight:1.05}}>{saudacao}</h1>
 
     <CutoffBanner cutoff={cutoff}/>
 
-    {/* Card da Cesta — brand-50, lista unificada */}
-    <Card style={{marginBottom:16,padding:24,background:B[50],border:`1px solid ${B[100]}`,borderRadius:radii.lg}} ariaLabel={`Cesta da semana: ${deliveryLabelFull}`}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:16}}>
-        <div style={{fontFamily:fd,fontSize:22,textTransform:"uppercase",color:B[700],letterSpacing:"0.04em",lineHeight:1.15}}>SUA CESTA DESSA SEMANA</div>
-        {badge}
+    {/* Card da Cesta — fundo brand-50, lista com separadores dashed,
+        linhas de assinatura "Incluso" + extras com [- N +] (wireframe v2 tela 4). */}
+    <Card style={{marginBottom:16,padding:20,background:B[50],border:`1px solid ${B[100]}`,borderRadius:radii.lg}} ariaLabel={`Cesta da semana: ${deliveryLabelFull}`}>
+      {/* Cabeçalho: label pequeno + título da entrega */}
+      <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:B[600],marginBottom:4}}>Sua cesta desta semana</div>
+      <div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:B[800],lineHeight:1.3,marginBottom:10}}>Entrega {deliveryLabelFull}</div>
+
+      {/* Lista — assinatura primeiro, extras depois. Rows separadas por dashed border. */}
+      <div style={{display:"flex",flexDirection:"column"}}>
+        {assinaturaItems.map((item)=>(
+          <div key={`a-${item.id}-${item.tag}`} style={{
+            display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
+            padding:"10px 0",borderBottom:`1px dashed ${B[100]}`,
+            fontFamily:fb,fontSize:14,color:B[800],lineHeight:1.4,
+          }}>
+            <div style={{flex:1}}>
+              {item.qty}× {item.nome}{" "}
+              <span style={{
+                display:"inline-block",marginLeft:4,fontFamily:fd,fontSize:11,
+                textTransform:"uppercase",letterSpacing:"0.06em",color:B[600],
+                background:"#FFF",border:`1px solid ${B[100]}`,
+                padding:"1px 5px",borderRadius:radii.xs,verticalAlign:"1px",
+              }}>{item.tag}</span>
+            </div>
+            <div style={{fontFamily:fb,fontWeight:600,fontSize:14,color:B[700],fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>Incluso</div>
+          </div>
+        ))}
+        {currentExtras.map((e)=>{
+          const isLast=false; // borda dashed em todas; o "last-child" some via :last-child no estilo do total
+          const isRemoving=removing.has(e.id);
+          return (
+            <div key={`e-${e.id}`} className={isRemoving?"cesta-row-removing":undefined} style={{
+              display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
+              padding:"10px 0",borderBottom:isLast?"0":`1px dashed ${B[100]}`,
+              fontFamily:fb,fontSize:14,color:B[800],lineHeight:1.4,
+            }}>
+              <div style={{flex:1}}>{e.qty}× {e.nome}</div>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontFamily:fb,fontWeight:600,fontSize:14,color:B[700],fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{fmt(Number(e.preco_unit)*e.qty)}</span>
+                {!cutoff&&!isConfirmado&&<QtyStepper
+                  qty={e.qty}
+                  name={e.nome}
+                  variant="brand"
+                  disabled={isRemoving}
+                  onIncrement={()=>addExtraToCart({id:e.id,nome:e.nome,precoNum:Number(e.preco_unit)})}
+                  onDecrement={()=>handleExtraDecrement(e)}
+                />}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Lista unificada */}
-      <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
-        {assinaturaItems.map((item,i)=><div key={`a-${i}`} style={{display:"flex",alignItems:"baseline",fontFamily:fb,fontSize:14,color:W[800]}}>
-          <span style={{flex:1}}>{item.qty}× {item.nome}</span>
-          <span style={{color:W[500],fontSize:12,marginLeft:6}}>{item.sublabel}</span>
-        </div>)}
-        {currentExtras.map(e=><div key={`e-${e.id}`} style={{display:"flex",alignItems:"center",gap:8,fontFamily:fb,fontSize:14,color:W[800]}}>
-          <span style={{flex:1}}>{e.qty}× {e.nome}</span>
-          <span style={{color:W[700],fontWeight:500}}>{fmt(Number(e.preco_unit)*e.qty)}</span>
-          {!cutoff&&!isConfirmado&&<button aria-label={`Remover ${e.nome}`} onClick={()=>removeExtraFromCart(e.id)} className="press-scale" style={{width:28,height:28,minWidth:28,borderRadius:radii.full,border:"none",background:"transparent",color:W[500],cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
-        </div>)}
+      {/* Total — só extras (assinatura é "Incluso", coberta pelo plano). */}
+      <div style={{
+        display:"flex",justifyContent:"space-between",alignItems:"baseline",
+        padding:"12px 0 0",marginTop:6,borderTop:`1px solid ${B[100]}`,
+      }}>
+        <span style={{fontFamily:fb,fontSize:12,color:B[700]}}>Extras desta semana</span>
+        <span style={{fontFamily:fb,fontSize:18,fontWeight:700,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(totalExtras)}</span>
       </div>
 
-      <div style={{fontFamily:fb,fontSize:13,color:W[600],marginBottom:microcopy?6:16}}>Entrega: {deliveryLabelFull}.</div>
-      {microcopy&&<div style={{fontFamily:fb,fontSize:13,color:microcopy.color,marginBottom:16,lineHeight:1.5}}>{microcopy.text}</div>}
+      {/* Microcopy condicional: só pós-confirmação e pós-cutoff. */}
+      {microcopy&&<div style={{fontFamily:fb,fontSize:13,color:microcopy.color,marginTop:8,lineHeight:1.5}}>{microcopy.text}</div>}
 
+      {/* Confirmar pedido (mantido entre total e Editar cesta). */}
       {showConfirmar&&<ActionBtn primary full
         loadingText="Confirmando…"
         successText="Confirmado ✓"
         onAction={async()=>{await confirmCurrentOrder();}}
         onComplete={()=>showToast(`Cesta confirmada. Entrega ${deliveryLabelShort}.`)}
         ariaLabel="Confirmar pedido"
-        style={{marginBottom:8}}
+        style={{marginTop:12}}
       >Confirmar pedido</ActionBtn>}
 
+      {/* Editar cesta — link ghost dashed com ícone pencil (wireframe v2 tela 4). */}
       <button onClick={()=>setDrawerOpen(true)} disabled={editarDisabled} className="press-scale" style={{
-        width:"100%",padding:"12px 16px",borderRadius:radii.md,
-        border:`1.5px solid ${B[500]}`,background:"transparent",color:B[500],
-        fontFamily:fb,fontSize:14,fontWeight:500,
-        cursor:editarDisabled?"default":"pointer",opacity:editarDisabled?0.4:1,
-        transition:"all 150ms ease",minHeight:44,
-      }} onMouseEnter={e=>{if(!editarDisabled) e.currentTarget.style.background=B[100];}} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>→ Editar carrinho</button>
+        display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+        width:"100%",marginTop:10,padding:"8px 12px",
+        background:"transparent",border:`1px dashed ${B[100]}`,borderRadius:radii.md,
+        fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",
+        color:B[500],cursor:editarDisabled?"default":"pointer",
+        opacity:editarDisabled?0.4:1,transition:"all 150ms ease",minHeight:40,
+      }} onMouseEnter={e=>{if(!editarDisabled){e.currentTarget.style.background="#FFF";e.currentTarget.style.borderStyle="solid";}}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.borderStyle="dashed";}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        Editar cesta
+      </button>
     </Card>
 
     {/* Novidade hero — clique no CTA adiciona direto (sem modal de detalhes) */}
@@ -1274,7 +1408,7 @@ const params = new URLSearchParams(window.location.search);
     {/* Footers fixos (OrderFooter/ConfirmedFooter) removidos no PR 2 Fase 1.
         Confirmação do pedido vai pro botão "Confirmar pedido" no card da Home
         e no EditarCarrinhoDrawer (Fase 2). */}
-    <Nav active={scr} onNav={handleNav} badge={0}/>
+    <Nav active={scr} onNav={handleNav} inicioBadge={currentWeeklyOrder?.status==="rascunho"}/>
     <style>{`
       *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
       body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior:none}
@@ -1285,6 +1419,9 @@ const params = new URLSearchParams(window.location.search);
       @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
       /* Toast: fadeUp dedicado (280ms ease-out) — translateY 8px → 0 + fade */
       @keyframes toastFadeUp{from{opacity:0;transform:translateY(8px) scale(1)}to{opacity:1;transform:translateY(0) scale(1)}}
+      /* Remoção de linha do Card de Cesta: slide-out horizontal + fade + colapso vertical (200ms ease-out, briefing 3.4) */
+      @keyframes slideOutFade{to{opacity:0;transform:translateX(40px);max-height:0;padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0;border-bottom-width:0}}
+      .cesta-row-removing{animation:slideOutFade 200ms ease-out forwards;overflow:hidden}
       .bp:hover{background:${B[600]}!important}
       .bw:hover{background:#1FAF54!important}
       .bl:hover{background:${W[100]}!important}
