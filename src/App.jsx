@@ -69,8 +69,8 @@ const D={
   // Quando o Backoffice nascer, ambos viram campo do produto no banco.
   extras:[{id:"focaccia",nome:"Focaccia Genovesa",peso:"430g",preco:"R$ 22,00",precoNum:22,genero:"f",subCopy:"Pra um café da tarde diferente.",img:IMG.focaccia,ingredientes:"Farinha, água, azeite extra-virgem, sal, levain, cebola roxa, alecrim fresco.",historia:"A receita veio de Gênova, onde a focaccia é assunto sério. Lá, cada padeiro tem sua versão. A da Cora leva fermentação longa de 24h e azeite generoso. A cebola roxa carameliza no forno e o alecrim perfuma a cozinha inteira."}],
   pães:[
-    {id:"original",nome:"Pão Original",peso:"700g",preco:"R$ 27,00",precoNum:27,genero:"m",img:IMG.original,desc:"Pão de toda mesa. Vai com azeite, queijo, bruschetta de tomate ou o que você abrir na cozinha.",sobre:"Blend de farinha branca italiana e integral brasileira. Levain da Cora, água, sal. Hidratação 70%.",qtd:1},
-    {id:"integral",nome:"Pão Integral",peso:"700g",preco:"R$ 29,00",precoNum:29,genero:"m",img:IMG.integral,desc:"Sabor de grão inteiro, miolo leve. Torrado pela manhã ou ao lado da salada no almoço.",sobre:"100% integral em blend de farinha brasileira e italiana. Levain da Cora, água, sal, azeite. Hidratação 75%.",qtd:0},
+    {id:"original",nome:"Pão Original",peso:"700g",preco:"R$ 27,00",precoNum:27,genero:"m",img:IMG.original,desc:"Pão de toda mesa. Vai com azeite, queijo, bruschetta de tomate ou o que você abrir na cozinha.",sobre:"Blend de farinha branca italiana e integral brasileira. Levain da Cora, água, sal. Hidratação 70%.",ingredientes:"Farinha de trigo, Água, Sal marinho, Levain natural",qtd:1},
+    {id:"integral",nome:"Pão Integral",peso:"700g",preco:"R$ 29,00",precoNum:29,genero:"m",img:IMG.integral,desc:"Sabor de grão inteiro, miolo leve. Torrado pela manhã ou ao lado da salada no almoço.",sobre:"100% integral em blend de farinha brasileira e italiana. Levain da Cora, água, sal, azeite. Hidratação 75%.",ingredientes:"Farinha integral, Água, Sal marinho, Levain natural",qtd:0},
   ],
   rotativos:[
     {id:"multigraos",nome:"Multigrãos",peso:"615g",preco:"R$ 32,00",precoNum:32,genero:"m",img:IMG.multigraos,desc:"Aveia, centeio, gergelim e mel.",ingredientes:"Farinha de trigo, centeio, aveia, água, mel, sal, levain, gergelim.",detalhe:"Cinco grãos na massa, mel na fermentação. Miolo denso, casca com gergelim tostado."},
@@ -118,8 +118,92 @@ const Card=({children,style,onClick,ariaLabel})=>{const[h,setH]=useState(false);
 const SL=({t})=><div style={{fontFamily:fd,fontSize:15,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:8,lineHeight:1}}>{t}</div>;
 const Badge=({label,type="success"})=>{const s=ST[type]||ST.success;return<span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:12,fontWeight:500,fontFamily:fb,padding:"4px 10px",borderRadius:radii.xs,background:s.bg,color:s.t,border:`1px solid ${s.b}`}}><span style={{fontSize:8}}>●</span>{label}</span>;};
 const Btn=({children,primary,disabled,onClick,style:es,full,ariaLabel})=>{const[h,setH]=useState(false);return<button aria-label={ariaLabel} disabled={disabled} onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} className="press-scale" style={{padding:"12px 20px",borderRadius:radii.md,border:primary?"none":`1px solid ${h&&!disabled?B[600]:B[500]}`,background:primary?(disabled?W[200]:h?B[600]:B[500]):(h&&!disabled?B[50]:"none"),color:primary?(disabled?W[500]:"#FFF"):B[500],fontFamily:fb,fontSize:14,fontWeight:500,cursor:disabled?"default":"pointer",opacity:disabled?0.5:1,minHeight:44,width:full?"100%":"auto",transition:"all 150ms ease",...es}}>{children}</button>;};
-const QtyBtn=({qty,onAdd,onRemove,name})=>{const removeDisabled=qty<=0;return<div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}><button aria-label={`Remover ${name}`} onClick={onRemove} disabled={removeDisabled} className="qb press-scale" style={{width:32,height:32,borderRadius:radii.md,border:`1px solid ${W[300]}`,background:"none",cursor:removeDisabled?"not-allowed":"pointer",fontSize:18,color:removeDisabled?W[300]:W[600],display:"flex",alignItems:"center",justifyContent:"center",opacity:removeDisabled?0.35:1}}>−</button><span style={{fontFamily:fb,fontSize:16,fontWeight:600,color:B[500],width:24,textAlign:"center"}}>{qty}</span><button aria-label={`Adicionar ${name}`} onClick={onAdd} className="qb press-scale" style={{width:32,height:32,borderRadius:radii.md,border:`1px solid ${B[500]}`,background:B[50],cursor:"pointer",fontSize:18,color:B[500],display:"flex",alignItems:"center",justifyContent:"center"}}>+</button></div>;};
+// QtyBtn local do App removido — só era usado pelo Modal (que saiu na Frente C
+// item 3). O ProductCard tem seu próprio QtyBtn pro modo directQtySelector.
+// O controle [- N +] do Card de Cesta entra na Fase 2 com visual brand-50/warm-100.
+// Toast simples (1 mensagem com timer próprio). Mantido pra compat de chamadas
+// que ainda passam `msg`/`vis` (toasts de polish em outras telas).
 const Toast=({msg,vis})=>vis?<div role="status" aria-live="polite" style={{position:"fixed",bottom:72,left:16,right:16,maxWidth:358,margin:"0 auto",background:W[800],color:"#FFF",borderRadius:radii.md,padding:"12px 16px",zIndex:60,fontFamily:fb,fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8,animation:"fadeUp 300ms ease"}}><I d={ic.check} size={16} color="#6EE7B7"/>{msg}</div>:null;
+
+// ToastStack — pilha de até 3 toasts simultâneos (briefing 5.5).
+// Mais recente no topo a 100% opacity; anteriores recuam (85% / 65%, scale
+// 0.97 / 0.94). 4º toast empurra o mais antigo (auto-remove na hora). Cada
+// toast tem timer próprio de 3.5s.
+//
+// API: `useToastStack()` retorna `{ toasts, push }`. `push(message)` adiciona
+// um toast novo no topo. Renderizar `<ToastStack toasts={toasts}/>` perto do
+// rodapé da tela (acima do Nav).
+const TOAST_TTL_MS = 3500;
+const TOAST_STACK_MAX = 3;
+let __toastSeq = 0;
+const useToastStack = () => {
+  const [toasts, setToasts] = useState([]);
+  const timersRef = useRef({});
+  useEffect(() => () => {
+    // cleanup: limpa todos os timers pendentes
+    Object.values(timersRef.current).forEach(clearTimeout);
+    timersRef.current = {};
+  }, []);
+  const dismiss = (id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+    if (timersRef.current[id]) {
+      clearTimeout(timersRef.current[id]);
+      delete timersRef.current[id];
+    }
+  };
+  const push = (message) => {
+    const id = ++__toastSeq;
+    setToasts((prev) => {
+      const next = [...prev, { id, message }];
+      // Se passou do limite, dropa o mais antigo (e cancela o timer dele).
+      while (next.length > TOAST_STACK_MAX) {
+        const stale = next.shift();
+        if (timersRef.current[stale.id]) {
+          clearTimeout(timersRef.current[stale.id]);
+          delete timersRef.current[stale.id];
+        }
+      }
+      return next;
+    });
+    timersRef.current[id] = setTimeout(() => dismiss(id), TOAST_TTL_MS);
+  };
+  return { toasts, push };
+};
+
+const ToastStack = ({ toasts }) => {
+  if (!toasts?.length) return null;
+  // O toast no fim do array é o mais novo — renderizar com z-index/posição maior.
+  // Recuo visual: itens mais antigos têm opacity menor e scale menor, empilhados acima.
+  const last = toasts.length - 1;
+  return (
+    <div aria-live="polite" style={{
+      position:"fixed", bottom:72, left:16, right:16, maxWidth:358,
+      margin:"0 auto", zIndex:60, pointerEvents:"none",
+    }}>
+      {toasts.map((t, i) => {
+        const fromTop = last - i; // 0 = mais novo, 1 = anterior, 2 = mais antigo
+        const opacity = fromTop === 0 ? 1 : fromTop === 1 ? 0.85 : 0.65;
+        const scale = fromTop === 0 ? 1 : fromTop === 1 ? 0.97 : 0.94;
+        const translateY = -fromTop * 8; // empilha verticalmente
+        return (
+          <div key={t.id} role="status" style={{
+            position:"absolute", bottom:0, left:0, right:0,
+            background: W[800], color: "#FFF", borderRadius: radii.md,
+            padding:"12px 16px", fontFamily: fb, fontSize:13, fontWeight:500,
+            display:"flex", alignItems:"center", gap:8,
+            opacity, transform:`translateY(${translateY}px) scale(${scale})`,
+            transition:"opacity 200ms ease, transform 200ms ease",
+            animation: fromTop === 0 ? "fadeUp 300ms ease" : undefined,
+            boxShadow:"0 4px 12px rgba(26,24,21,0.18)",
+          }}>
+            <I d={ic.check} size={16} color="#6EE7B7"/>
+            <span>{t.message}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 const DeadlineWarning=()=><div style={{fontFamily:fb,fontSize:12,color:ST.warning.t,background:ST.warning.bg,padding:"8px 12px",borderRadius:radii.md,marginBottom:20,display:"inline-flex",alignItems:"center",gap:8,border:`1px solid ${ST.warning.b}`}}><I d={ic.clock} size={14} color={ST.warning.t}/>Pedidos até terça, 12h, para entrega na quinta</div>;
 const CutoffMsg=()=><div style={{fontFamily:fb,fontSize:13,color:"#7A766E",marginTop:6}}>Prazo encerrado. Alterações valem a partir da próxima semana.</div>;
 const CutoffBanner=({cutoff})=>{
@@ -142,59 +226,70 @@ const simulate=()=>new Promise(r=>setTimeout(r,600));
 const LOCK_REASON_PENDING="Disponível após confirmação do primeiro pagamento.";
 const ActionBtn=({children,loadingText,successText,onAction,onComplete,primary,disabled:extDisabled,full,style:es,ariaLabel})=>{const[st,setSt]=useState('idle');const[err,setErr]=useState('');const handle=async()=>{if(st!=='idle')return;setSt('loading');setErr('');try{await onAction();setSt('success');setTimeout(()=>{setSt('idle');onComplete?.();},1500);}catch(e){setErr(e.message||'Erro ao processar. Tente novamente.');setSt('idle');}};const busy=st==='loading'||st==='success';const label=st==='loading'?loadingText:st==='success'?successText:children;const stStyle=st==='success'?{background:'#D1FAE5',color:'#065F46',border:'1px solid #6EE7B7',opacity:1}:{};return<><Btn primary={st!=='success'&&primary} disabled={busy||extDisabled} onClick={handle} full={full} ariaLabel={ariaLabel} style={{...es,...stStyle}}>{label}</Btn>{err&&<div style={{fontFamily:fb,fontSize:13,color:'#9A3412',background:'#FFEDD5',padding:'8px 12px',borderRadius:radii.md,marginTop:6}}>{err}</div>}</>;};
 
-// ─── MODAL ───
-const Modal=({product,onClose,onAction,onComplete,actionLabel,hint,qty,onAdd,onRemove,cutoff})=>{
-  const dialogRef=useRef(null);
-  useModalA11y(dialogRef,!!product,onClose);
-  if(!product)return null;
-  return<>
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
-    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={`Detalhes: ${product.nome}`} style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:`${radii.xl} ${radii.xl} 0 0`,zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease"}}>
-      <div style={{position:"relative"}}>
-        <ProductImg src={product.img} h={220} alt={product.nome} rounded={false} style={{borderRadius:`${radii.xl} ${radii.xl} 0 0`}}/>
-        <button aria-label="Fechar" onClick={onClose} style={{position:"absolute",top:12,right:12,width:36,height:36,borderRadius:radii.full,background:"rgba(255,255,255,0.9)",border:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
-      </div>
-      <div style={{padding:20}}>
-        <div style={{fontFamily:fd,fontSize:24,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",lineHeight:1.2}}>{product.nome}</div>
-        <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:4}}>{product.peso}</div>
-        <div style={{fontFamily:fb,fontSize:20,fontWeight:600,color:B[500],marginTop:8}}>{product.preco}</div>
-        <div style={{height:1,background:W[200],margin:"16px 0"}}/>
-        {product.ingredientes&&<div style={{marginBottom:16}}><div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:6}}>Ingredientes</div><div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6}}>{product.ingredientes}</div></div>}
-        {product.historia&&<div style={{marginBottom:16,fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.7}}>{product.historia}</div>}
-        {product.detalhe&&!product.historia&&<div style={{marginBottom:16}}><div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:6}}>Sobre este pão</div><div style={{fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.6}}>{product.detalhe}</div></div>}
-        <div style={{marginTop:4}}>
-          {cutoff?<><Btn primary full disabled ariaLabel={actionLabel}>{actionLabel}</Btn><CutoffMsg/></>:qty>0?<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0"}}><div style={{fontFamily:fb,fontSize:14,color:ST.success.t,fontWeight:500,display:"flex",alignItems:"center",gap:6}}><I d={ic.check} size={16} color={ST.success.t}/>Na sua cesta</div><QtyBtn qty={qty} onAdd={onAdd} onRemove={onRemove} name={product.nome}/></div>:<>{onAction&&<ActionBtn primary full loadingText="Adicionando…" successText="Adicionado ✓" onAction={onAction} onComplete={onComplete} ariaLabel={actionLabel}>{actionLabel}</ActionBtn>}{hint&&<div style={{fontFamily:fb,fontSize:12,color:W[500],textAlign:"center",marginTop:8}}>{hint}</div>}</>}
-        </div>
-      </div>
-    </div>
-  </>;
-};
-
+// O Modal de detalhes do produto saiu na Frente C item 3 (wireframe v2).
+// ProductCard agora expande inline; NovidadeCard adiciona direto sem modal.
+// QtyBtn local também sai junto (era usado pelo branch qty>0 do Modal).
 const Nav=({active,onNav,badge})=>{const items=[{id:"home",label:"INÍCIO",icon:ic.home},{id:"assinatura",label:"ASSINATURA",icon:ic.wheat},{id:"cardapio",label:"CARDÁPIO",icon:ic.utensils},{id:"perfil",label:"PERFIL",icon:ic.user}];return<div style={{display:"flex",justifyContent:"space-around",alignItems:"center",padding:"8px 0 12px",borderTop:`1px solid ${W[200]}`,background:"#FFF",position:"sticky",bottom:0,zIndex:10,minHeight:56}}>{items.map(it=><button key={it.id} aria-label={`Ir para ${it.label}`} onClick={()=>onNav(it.id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,border:"none",background:"none",cursor:"pointer",minWidth:56,minHeight:44,padding:"4px 0",position:"relative"}}><I d={it.icon} size={22} color={active===it.id?B[500]:W[400]}/>{it.id==="cardapio"&&badge>0&&<span style={{position:"absolute",top:0,right:4,width:18,height:18,borderRadius:radii.full,background:B[500],color:"#FFF",fontFamily:fb,fontSize:10,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{badge}</span>}<span style={{fontFamily:fd,fontSize:11,letterSpacing:"0.02em",textTransform:"uppercase",color:active===it.id?B[500]:W[400]}}>{it.label}</span></button>)}</div>;};
 
-// ─── NOVIDADE CARD (edge-to-edge photo) ───
-// Briefing 5.3 (Home) e 8.1 (Cardapio): card sempre abre o Modal de detalhes.
-// CTA com preço inline ("+ Adicionar à cesta — R$ X"). Sem QtyBtn embutido —
-// re-adicionar passa pelo Modal de novo. `ctaText` é opcional; default usa "Quero"
-// pra manter compat com callers que não passam (ex: Cardapio na grade).
-const NovidadeCard=({extra,onCardClick,cutoff,lockedReason,ctaText})=>{
+// ─── NOVIDADE HERO ───
+// Wireframe v2 (Frente C item 3): foto grande edge-to-edge com tag "Novidade
+// da semana" sobreposta no canto superior esquerdo, body com nome + meta
+// ("{peso} · estreia desta quinta") + sub-copy emocional + CTA split (label
+// + preço tabular dentro do mesmo botão). Click no CTA adiciona direto ao
+// carrinho — não abre modal.
+const NovidadeCard=({extra,onAdd,cutoff,lockedReason})=>{
   const isLocked=!!lockedReason;
   const disabled=cutoff||isLocked;
-  const label=ctaText||`+ Adicionar à cesta — ${(extra.preco||"").replace(/,00$/,"")}`;
-  return<Card style={{padding:0,overflow:"hidden",cursor:disabled?"default":"pointer",marginBottom:16}} onClick={disabled?undefined:onCardClick} ariaLabel={`Novidade: ${extra.nome}`}>
-    <ProductImg src={extra.img} h={200} alt={extra.nome} rounded={false}/>
+  const precoLabel=(extra.preco||"").replace(/,00$/,"");
+  return<div style={{
+    background:"#FFF",
+    border:`1px solid ${W[200]}`,
+    borderRadius:radii.lg,
+    overflow:"hidden",
+    marginBottom:16,
+  }} aria-label={`Novidade: ${extra.nome}`}>
+    {/* Foto edge-to-edge com tag overlay */}
+    <div style={{position:"relative"}}>
+      <ProductImg src={extra.img} h={200} alt={extra.nome} rounded={false}/>
+      <span style={{
+        position:"absolute",top:12,left:12,
+        fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",
+        color:B[700],background:"rgba(255,255,255,0.92)",
+        padding:"5px 10px",borderRadius:radii.xs,fontWeight:600,
+      }}>Novidade da semana</span>
+    </div>
+    {/* Body */}
     <div style={{padding:16}}>
-      <SL t="Novidade da semana"/>
-      <div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800]}}>{extra.nome}</div>
-      {extra.subCopy&&<div style={{fontFamily:fb,fontSize:14,color:W[600],fontWeight:400,lineHeight:1.5,margin:"4px 0 12px"}}>{extra.subCopy}</div>}
-      {disabled
-        ?<button disabled className="bp" style={{width:"100%",padding:"12px 16px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"default",minHeight:44,opacity:0.5,marginTop:extra.subCopy?0:12}}>{label}</button>
-        :<button onClick={e=>{e.stopPropagation();onCardClick&&onCardClick();}} className="bp press-scale" style={{width:"100%",padding:"12px 16px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",minHeight:44,marginTop:extra.subCopy?0:12}}>{label}</button>
-      }
+      <div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800],lineHeight:1.3}}>{extra.nome}</div>
+      <div style={{fontFamily:fb,fontSize:13,color:W[500],marginTop:2}}>{extra.peso} · estreia desta quinta</div>
+      {extra.subCopy&&<div style={{fontFamily:fb,fontSize:14,color:W[600],fontWeight:400,lineHeight:1.5,marginTop:10}}>{extra.subCopy}</div>}
+      <button
+        onClick={(e)=>{e.stopPropagation();if(!disabled) onAdd&&onAdd();}}
+        disabled={disabled}
+        className={disabled?"":"press-scale"}
+        style={{
+          marginTop:14,
+          width:"100%",
+          display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,
+          padding:"12px 16px",
+          borderRadius:radii.md,border:"none",
+          background:B[500],color:"#FFF",
+          fontFamily:fb,fontSize:14,fontWeight:500,
+          cursor:disabled?"default":"pointer",
+          opacity:disabled?0.5:1,
+          minHeight:44,
+        }}
+      >
+        <span style={{display:"inline-flex",alignItems:"center",gap:6}}>
+          <span style={{fontSize:18,lineHeight:1}} aria-hidden="true">+</span>
+          Adicionar à cesta
+        </span>
+        <span style={{fontVariantNumeric:"tabular-nums",fontWeight:500}}>{precoLabel}</span>
+      </button>
       {cutoff&&<CutoffMsg/>}
       {isLocked&&!cutoff&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:6,lineHeight:1.4}}>{lockedReason}</div>}
     </div>
-  </Card>;
+  </div>;
 };
 
 // ─── HELPERS ───
@@ -426,11 +521,11 @@ const EditarCarrinhoDrawer=({
 //  - Novidade hero com sub-copy emocional e CTA "+ Adicionar à cesta — R$ X"
 //  - Estado "semana sem destaque" quando D.extras vazio
 const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinaturaBaseline,cestaAtual,onSetCestaSemana,ehPrimeiroAcesso,pendingPayment,currentWeeklyOrder,currentExtras,addExtraToCart,removeExtraFromCart,updateComposition,confirmCurrentOrder})=>{
-  const[modal,setModal]=useState(null);
   const[drawerOpen,setDrawerOpen]=useState(false);
-  const[toast,setToast]=useState(false);
-  const[toastMsg,setToastMsg]=useState("");
-  const showToast=(msg)=>{setToastMsg(msg);setToast(true);setTimeout(()=>setToast(false),5000);};
+  const{toasts,push:pushToast}=useToastStack();
+  // `showToast` mantém a assinatura legacy pros callers existentes (ActionBtn
+  // do Confirmar, Drawer onConfirmedToast) — internamente vai pro stack.
+  const showToast=(msg)=>pushToast(msg);
 
   const nome=userData?.nome?userData.nome.split(" ")[0]:D.nome;
   const saudacao=ehPrimeiroAcesso?`Que bom ter você aqui, ${nome}.`:`${greet()}, ${nome}.`;
@@ -481,8 +576,13 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
 
   useEffect(()=>{if(!isFirstVisit||!onSeen)return;const t=setTimeout(onSeen,5000);return()=>clearTimeout(t);},[isFirstVisit,onSeen]);
 
-  // Texto do CTA da novidade com preço inline. "R$ 22,00" → "R$ 22" pra ficar curto.
-  const novidadeCtaText=(extra)=>`+ Adicionar à cesta — ${extra.preco.replace(/,00$/,"")}`;
+  // Handler do CTA do NovidadeCard: POST + toast com flexão.
+  const handleNovidadeAdd=async(produto)=>{
+    try{await addExtraToCart(produto);}
+    catch(err){console.error("[Home] addExtraToCart failed",err); return;}
+    const verb=(produto.genero||"m")==="f"?"adicionada":"adicionado";
+    pushToast(`${produto.nome} ${verb} à cesta.`);
+  };
 
   return<div style={{padding:"24px 16px 16px"}}>
     <h1 style={{fontFamily:fd,fontSize:30,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",margin:"0 0 20px",lineHeight:1.1}}>{saudacao}</h1>
@@ -530,9 +630,9 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
       }} onMouseEnter={e=>{if(!editarDisabled) e.currentTarget.style.background=B[100];}} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>→ Editar carrinho</button>
     </Card>
 
-    {/* Novidade hero — com sub-copy emocional + CTA com preço inline */}
+    {/* Novidade hero — clique no CTA adiciona direto (sem modal de detalhes) */}
     {D.extras.length>0
-      ?<NovidadeCard extra={D.extras[0]} ctaText={novidadeCtaText(D.extras[0])} onCardClick={()=>setModal(D.extras[0])} cutoff={cutoff} lockedReason={pendingPayment?LOCK_REASON_PENDING:undefined}/>
+      ?<NovidadeCard extra={D.extras[0]} onAdd={()=>handleNovidadeAdd(D.extras[0])} cutoff={cutoff} lockedReason={pendingPayment?LOCK_REASON_PENDING:undefined}/>
       :<div style={{background:W[100],border:`1px solid ${W[200]}`,borderRadius:radii.lg,padding:"24px 20px",textAlign:"center",marginBottom:16}}>
         <div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.5,marginBottom:8}}>Conhece o resto da nossa padaria?</div>
         <button onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0}}>→ Ver tudo no Cardápio</button>
@@ -560,17 +660,7 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
       onConfirmedToast={()=>showToast(`Cesta confirmada. Entrega ${deliveryLabelShort}.`)}
     />}
 
-    {modal&&<Modal product={modal} onClose={()=>setModal(null)}
-      onAction={async()=>{await addExtraToCart(modal);}}
-      onComplete={()=>{
-        const verb=modal.genero==="f"?"adicionada":"adicionado";
-        showToast(`${modal.nome} ${verb} à cesta. Confirme antes de terça, 12h.`);
-        setModal(null);
-      }}
-      actionLabel="Adicionar à cesta"
-      cutoff={cutoff}
-    />}
-    <Toast msg={toastMsg} vis={toast}/>
+    <ToastStack toasts={toasts}/>
   </div>;
 };
 
@@ -694,56 +784,70 @@ const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,assinaturaBaseline,onS
 };
 
 // ═══ CARDÁPIO ═══
-// Refactor Frente C item 1 (briefing 8):
-//  - Click no ProductCard → abre Modal (sem QtyBtn embutido no card)
-//  - "✓ Nx na sua cesta" substitui o CTA "Pedir" quando o produto já está no carrinho
-//  - Sem banner "confirmado" no topo; sem toast "Item removido"
-const Cardapio=({currentExtras,addExtraToCart,cutoff,pendingPayment})=>{
-  const[modal,setModal]=useState(null);
-  const[toast,setToast]=useState(false);
-  const[toastMsg,setToastMsg]=useState("");
-  const showToast=(msg)=>{setToastMsg(msg);setToast(true);setTimeout(()=>setToast(false),5000);};
+// Refactor Frente C item 3 (wireframe v2):
+//  - Linha micro-tipográfica "Extras entram na sua próxima fatura."
+//  - NovidadeCard Hero (D.extras[0]) antes da lista
+//  - Lista unificada de 6 produtos na ordem do wireframe (Original → Integral →
+//    Focaccia → Multigrãos → Brioche → Ciabatta), buscando primeiro em D.pães,
+//    fallback em D.rotativos pra cobrir os 4 do catálogo rotativo
+//  - ProductCard expande inline (sem modal sobreposto)
+//  - Click no botão "Adicionar à cesta" dispara POST + toast (stack até 3)
+const CARDAPIO_PRODUCT_ORDER=["original","integral","focaccia","multigraos","brioche","ciabatta"];
+const Cardapio=({addExtraToCart,cutoff,pendingPayment})=>{
+  const{toasts,push:pushToast}=useToastStack();
   const lockedReason=pendingPayment?LOCK_REASON_PENDING:undefined;
-  const qtyOf=(id)=>currentExtras.find(e=>e.id===id)?.qty||0;
+
+  // Lista unificada na ordem curada do wireframe. Resolve cada id contra
+  // D.pães e D.rotativos (Pão Original/Integral em pães; demais em rotativos).
+  const cardapioProducts=CARDAPIO_PRODUCT_ORDER
+    .map(id=>D.pães.find(p=>p.id===id)||D.rotativos.find(p=>p.id===id))
+    .filter(Boolean);
+
+  const handleAdd=async(product)=>{
+    try{await addExtraToCart(product);}
+    catch(err){
+      console.error("[Cardapio] addExtraToCart failed",err);
+      return;
+    }
+    const verb=(product.genero||"m")==="f"?"adicionada":"adicionado";
+    pushToast(`${product.nome} ${verb} à cesta.`);
+  };
+
+  const novidade=D.extras[0];
 
   return<div style={{padding:"24px 16px 16px"}}>
     <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[500],margin:"0 0 4px"}}>Cardápio</h2>
     <div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:12}}>Peça itens extras para esta semana</div>
     <DeadlineWarning/>
 
-    {D.extras.length>0
-      ?D.extras.map((ex,i)=><NovidadeCard key={i} extra={ex} onCardClick={()=>setModal(ex)} cutoff={cutoff} lockedReason={lockedReason}/>)
+    {/* Aviso de cobrança — micro-tipográfico, abaixo do cutoff (briefing 3.2). */}
+    <div style={{display:"inline-flex",alignItems:"center",gap:6,fontFamily:fb,fontSize:13,color:W[500],marginBottom:16}}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={W[500]} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <rect x="3" y="6" width="18" height="13" rx="2"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      Extras entram na sua próxima fatura.
+    </div>
+
+    {/* Novidade Hero — apenas o primeiro extra, em destaque visual */}
+    {novidade
+      ?<NovidadeCard extra={novidade} onAdd={()=>handleAdd(novidade)} cutoff={cutoff} lockedReason={lockedReason}/>
       :<EmptyState title="Novidade da semana" body="Nenhuma novidade esta semana."/>
     }
 
-    <div style={{height:1,background:W[200],margin:"4px 0 20px"}}/>
-    <div style={{fontFamily:fd,fontSize:16,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",marginBottom:12}}>Nossos pães</div>
-
-    {D.pães.map((p,i)=>{
-      const q=qtyOf(p.id);
-      return<ProductCard key={i}
+    {/* Lista unificada de pães */}
+    <div style={{fontFamily:fd,fontSize:16,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",margin:"8px 0 12px"}}>Nossos pães</div>
+    {cardapioProducts.map(p=>(
+      <ProductCard key={p.id}
         product={{...p,preco:`${p.preco}/un`}}
-        qty={0}
-        ctaLabel="Pedir"
+        ctaLabel="Adicionar à cesta"
         cutoff={cutoff}
         lockedReason={lockedReason}
-        onCardClick={()=>setModal(p)}
-        onAdd={()=>setModal(p)}
-        inBasketLabel={q>0?`✓ ${q}× na sua cesta`:undefined}
-      />;
-    })}
+        onAdd={()=>handleAdd(p)}
+      />
+    ))}
 
-    {modal&&<Modal product={modal} onClose={()=>setModal(null)}
-      onAction={async()=>{await addExtraToCart(modal);}}
-      onComplete={()=>{
-        const verb=modal.genero==="f"?"adicionada":"adicionado";
-        showToast(`${modal.nome} ${verb} à cesta. Confirme antes de terça, 12h.`);
-        setModal(null);
-      }}
-      actionLabel="Adicionar à cesta"
-      cutoff={cutoff}
-    />}
-    <Toast msg={toastMsg} vis={toast}/>
+    <ToastStack toasts={toasts}/>
   </div>;
 };
 
@@ -1136,7 +1240,7 @@ const params = new URLSearchParams(window.location.search);
       <div key={scr} className="tab-content">
         {scr==="home"&&<Home onNav={handleNav} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaAtual={cestaAtual} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} pendingPayment={pendingPayment} currentWeeklyOrder={currentWeeklyOrder} currentExtras={currentExtras} addExtraToCart={addExtraToCart} removeExtraFromCart={removeExtraFromCart} updateComposition={updateComposition} confirmCurrentOrder={confirmCurrentOrder}/>}
         {scr==="assinatura"&&<Assinatura onNav={handleNav} hasPending={false} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} onSalvar={handleSalvarAssinatura}/>}
-        {scr==="cardapio"&&<Cardapio currentExtras={currentExtras} addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment}/>}
+        {scr==="cardapio"&&<Cardapio addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment}/>}
         {scr==="perfil"&&<Perfil confirmed={confirmedLegacy} hasPending={false} assinaturaQtds={assinaturaQtds} historicoCicloAtual={historicoCicloAtual} historicoCiclosPassados={historicoCiclosPassados}/>}
       </div>
     </main>
