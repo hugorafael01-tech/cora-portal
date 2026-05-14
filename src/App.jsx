@@ -678,7 +678,7 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
       // Cleanup do Set no próprio callback do timer (evita setState-in-effect).
       setRemoving(prev=>{const next=new Set(prev);next.delete(extra.id);return next;});
       delete removingTimersRef.current[extra.id];
-    },350);
+    },450);
   };
 
   useEffect(()=>{if(!isFirstVisit||!onSeen)return;const t=setTimeout(onSeen,5000);return()=>clearTimeout(t);},[isFirstVisit,onSeen]);
@@ -1426,9 +1426,9 @@ const params = new URLSearchParams(window.location.search);
       @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
       /* Toast: fadeUp dedicado (280ms ease-out) — translateY 8px → 0 + fade */
       @keyframes toastFadeUp{from{opacity:0;transform:translateY(8px) scale(1)}to{opacity:1;transform:translateY(0) scale(1)}}
-      /* Remoção de linha do Card de Cesta: slide-out horizontal + fade + colapso vertical (350ms ease-out — 200ms ficava abrupto, 350ms dá tempo do user perceber). */
+      /* Remoção de linha do Card de Cesta + Drawer: slide-out horizontal + fade + colapso vertical (450ms ease-out — abaixo disso o user não acompanha a transição). */
       @keyframes slideOutFade{to{opacity:0;transform:translateX(40px);max-height:0;padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0;border-bottom-width:0}}
-      .cesta-row-removing{animation:slideOutFade 350ms ease-out forwards;overflow:hidden}
+      .cesta-row-removing{animation:slideOutFade 450ms ease-out forwards;overflow:hidden}
       .bp:hover{background:${B[600]}!important}
       .bw:hover{background:#1FAF54!important}
       .bl:hover{background:${W[100]}!important}
