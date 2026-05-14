@@ -174,8 +174,11 @@ export default function ProductCard({
         </div>
       </div>
 
-      {/* CTA full-width "Adicionar à cesta" */}
-      <div style={{ padding: "0 12px 12px" }}>
+      {/* CTA full-width "Adicionar à cesta".
+          padding-top 12px garante respiro consistente entre a row (foto+info)
+          e o botão — sem isso, descrições curtas fazem o botão grudar na
+          borda inferior da foto de 88px. */}
+      <div style={{ padding: "12px 12px 12px" }}>
         <button
           onClick={handleCta}
           disabled={isCtaLocked || ctaSt !== "idle"}
