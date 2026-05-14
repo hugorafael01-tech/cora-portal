@@ -678,7 +678,7 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
       // Cleanup do Set no próprio callback do timer (evita setState-in-effect).
       setRemoving(prev=>{const next=new Set(prev);next.delete(extra.id);return next;});
       delete removingTimersRef.current[extra.id];
-    },200);
+    },350);
   };
 
   useEffect(()=>{if(!isFirstVisit||!onSeen)return;const t=setTimeout(onSeen,5000);return()=>clearTimeout(t);},[isFirstVisit,onSeen]);
@@ -705,33 +705,40 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
       <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:B[600],marginBottom:4}}>Sua cesta desta semana</div>
       <div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:B[800],lineHeight:1.3,marginBottom:10}}>Entrega {deliveryLabelFull}</div>
 
-      {/* Lista — assinatura primeiro, extras depois. Rows separadas por dashed border. */}
+      {/* Lista — assinatura primeiro, extras depois. Rows separadas por dashed
+          border, exceto a última (evita fio duplo com o sólido do total: a
+          hierarquia visual é tracejado = itens da lista, sólido = transição
+          lista → resumo). */}
       <div style={{display:"flex",flexDirection:"column"}}>
-        {assinaturaItems.map((item)=>(
-          <div key={`a-${item.id}-${item.tag}`} style={{
-            display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
-            padding:"10px 0",borderBottom:`1px dashed ${B[100]}`,
-            fontFamily:fb,fontSize:14,color:B[800],lineHeight:1.4,
-          }}>
-            <div style={{flex:1}}>
-              {item.qty}× {item.nome}{" "}
-              <span style={{
-                display:"inline-block",marginLeft:4,fontFamily:fd,fontSize:11,
-                textTransform:"uppercase",letterSpacing:"0.06em",color:B[600],
-                background:"#FFF",border:`1px solid ${B[100]}`,
-                padding:"1px 5px",borderRadius:radii.xs,verticalAlign:"1px",
-              }}>{item.tag}</span>
+        {assinaturaItems.map((item,idx)=>{
+          // Borda some na última row da seção SE não houver extras depois.
+          const isLastGlobal=idx===assinaturaItems.length-1&&currentExtras.length===0;
+          return (
+            <div key={`a-${item.id}-${item.tag}`} style={{
+              display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
+              padding:"10px 0",borderBottom:isLastGlobal?"none":`1px dashed ${B[100]}`,
+              fontFamily:fb,fontSize:14,color:B[800],lineHeight:1.4,
+            }}>
+              <div style={{flex:1}}>
+                {item.qty}× {item.nome}{" "}
+                <span style={{
+                  display:"inline-block",marginLeft:4,fontFamily:fd,fontSize:11,
+                  textTransform:"uppercase",letterSpacing:"0.06em",color:B[600],
+                  background:"#FFF",border:`1px solid ${B[100]}`,
+                  padding:"1px 5px",borderRadius:radii.xs,verticalAlign:"1px",
+                }}>{item.tag}</span>
+              </div>
+              <div style={{fontFamily:fb,fontWeight:600,fontSize:14,color:B[700],fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>Incluso</div>
             </div>
-            <div style={{fontFamily:fb,fontWeight:600,fontSize:14,color:B[700],fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>Incluso</div>
-          </div>
-        ))}
-        {currentExtras.map((e)=>{
-          const isLast=false; // borda dashed em todas; o "last-child" some via :last-child no estilo do total
+          );
+        })}
+        {currentExtras.map((e,idx)=>{
+          const isLastGlobal=idx===currentExtras.length-1;
           const isRemoving=removing.has(e.id);
           return (
             <div key={`e-${e.id}`} className={isRemoving?"cesta-row-removing":undefined} style={{
               display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
-              padding:"10px 0",borderBottom:isLast?"0":`1px dashed ${B[100]}`,
+              padding:"10px 0",borderBottom:isLastGlobal?"none":`1px dashed ${B[100]}`,
               fontFamily:fb,fontSize:14,color:B[800],lineHeight:1.4,
             }}>
               <div style={{flex:1}}>{e.qty}× {e.nome}</div>
@@ -1419,9 +1426,9 @@ const params = new URLSearchParams(window.location.search);
       @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
       /* Toast: fadeUp dedicado (280ms ease-out) — translateY 8px → 0 + fade */
       @keyframes toastFadeUp{from{opacity:0;transform:translateY(8px) scale(1)}to{opacity:1;transform:translateY(0) scale(1)}}
-      /* Remoção de linha do Card de Cesta: slide-out horizontal + fade + colapso vertical (200ms ease-out, briefing 3.4) */
+      /* Remoção de linha do Card de Cesta: slide-out horizontal + fade + colapso vertical (350ms ease-out — 200ms ficava abrupto, 350ms dá tempo do user perceber). */
       @keyframes slideOutFade{to{opacity:0;transform:translateX(40px);max-height:0;padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0;border-bottom-width:0}}
-      .cesta-row-removing{animation:slideOutFade 200ms ease-out forwards;overflow:hidden}
+      .cesta-row-removing{animation:slideOutFade 350ms ease-out forwards;overflow:hidden}
       .bp:hover{background:${B[600]}!important}
       .bw:hover{background:#1FAF54!important}
       .bl:hover{background:${W[100]}!important}
