@@ -467,7 +467,7 @@ const slotsToQtds=(slots)=>slots.reduce((a,id)=>{a[id]=(a[id]||0)+1;return a;},{
 // Trocar pão dispara updateComposition com debounce de 300ms (briefing 6.2).
 // Remover extra dispara removeExtraFromCart imediato.
 // Pós-cutoff: controles disabled.
-const EditarCarrinhoDrawer=({
+const EditarCestaDrawer=({
   onClose,
   currentWeeklyOrder,
   currentExtras,
@@ -477,6 +477,7 @@ const EditarCarrinhoDrawer=({
   onSetCestaSemana,
   updateComposition,
   removeExtraFromCart,
+  addExtraToCart,
   confirmCurrentOrder,
   cutoff,
   pendingPayment,
@@ -491,13 +492,27 @@ const EditarCarrinhoDrawer=({
   const[slots,setSlots]=useState(()=>qtdsToSlots(cestaAtual||baselineQtds));
   const compDebounceRef=useRef(null);
 
-  // Briefing 10.4: pending_payment mantém o drawer acessível mas com controles
-  // disabled. Backend já rejeita o POST (409 subscription_not_active), e o UI
-  // deixa explícito.
-  const isDisabled=cutoff||pendingPayment;
+  const isLocked=cutoff||pendingPayment;
   const isConfirmado=currentWeeklyOrder?.status==="confirmado";
-  const hasAlteration=!!(currentWeeklyOrder?.composition)||currentExtras.length>0;
-  const canConfirmar=!isDisabled&&!isConfirmado&&!!currentWeeklyOrder&&hasAlteration;
+
+  // Animação de remoção idêntica à Home (reusa keyframe slideOutFade 450ms).
+  const[removing,setRemoving]=useState(()=>new Set());
+  const removingTimersRef=useRef({});
+  useEffect(()=>()=>{
+    Object.values(removingTimersRef.current).forEach(clearTimeout);
+    removingTimersRef.current={};
+    if(compDebounceRef.current) clearTimeout(compDebounceRef.current);
+  },[]);
+  const handleExtraDecrement=(extra)=>{
+    if(extra.qty>1){removeExtraFromCart(extra.id);return;}
+    if(removing.has(extra.id)) return;
+    setRemoving(prev=>{const next=new Set(prev);next.add(extra.id);return next;});
+    removingTimersRef.current[extra.id]=setTimeout(()=>{
+      removeExtraFromCart(extra.id);
+      setRemoving(prev=>{const next=new Set(prev);next.delete(extra.id);return next;});
+      delete removingTimersRef.current[extra.id];
+    },450);
+  };
 
   const triggerCompositionSave=(nextSlots)=>{
     if(compDebounceRef.current) clearTimeout(compDebounceRef.current);
@@ -512,7 +527,7 @@ const EditarCarrinhoDrawer=({
   };
 
   const setSlot=(idx,novoId)=>{
-    if(isDisabled) return;
+    if(isLocked) return;
     setSlots(prev=>{
       const next=[...prev]; next[idx]=novoId;
       triggerCompositionSave(next);
@@ -523,73 +538,178 @@ const EditarCarrinhoDrawer=({
   const totalExtras=currentExtras.reduce((s,e)=>s+e.qty*Number(e.preco_unit),0);
   const assinaturaSlotsBase=qtdsToSlots(baselineQtds);
 
+  // Sub-header copy (1 linha): contexto da entrega + cutoff.
+  const headerSub=pendingPayment
+    ? "Disponível após confirmação do primeiro pagamento."
+    : cutoff
+      ? "Prazo encerrado. Você poderá editar a próxima cesta."
+      : `Entrega ${deliveryLabelFull} · pedidos até terça, 12h`;
+
+  // Estados do botão Confirmar pedido (sempre visível no rodapé):
+  //   - cutoff/pendingPayment → disabled (estado bloqueante)
+  //   - status === 'confirmado' && !cutoff → "Confirmado ✓" disabled (success)
+  //   - demais → "Confirmar pedido" enabled; POST só se rascunho, senão no-op
+  const showConfirmadoState=isConfirmado&&!cutoff&&!pendingPayment;
+
   return<>
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
-    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Editar carrinho da semana" style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:`${radii.xl} ${radii.xl} 0 0`,zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",padding:20}}>
-      {/* Cabeçalho */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,marginBottom:12}}>
-        <div style={{flex:1}}>
-          <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em"}}>EDITAR CARRINHO</div>
-          <div style={{fontFamily:fb,fontSize:13,color:W[600],marginTop:6,lineHeight:1.5}}>Entrega: {deliveryLabelFull}.</div>
-          <div style={{fontFamily:fb,fontSize:13,color:isDisabled?W[500]:W[600],lineHeight:1.5}}>{pendingPayment?"Disponível após confirmação do primeiro pagamento.":cutoff?"Prazo encerrado. Você poderá editar a próxima cesta.":"Confirme até terça, 12h."}</div>
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Editar cesta da semana" style={{
+      position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",
+      background:"#FFF",borderRadius:`${radii.xl} ${radii.xl} 0 0`,
+      zIndex:51,maxHeight:"92vh",
+      boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",
+      display:"flex",flexDirection:"column",
+    }}>
+      {/* Grab handle decorativo (sinaliza bottom sheet) */}
+      <div aria-hidden="true" style={{width:36,height:4,background:W[300],borderRadius:radii.full,margin:"8px auto 6px",flexShrink:0}}/>
+
+      {/* HEAD — título + sub + fechar */}
+      <div style={{padding:"6px 18px 12px",borderBottom:`1px solid ${W[200]}`,flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+        <div style={{flex:1,minWidth:0}}>
+          <h3 style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",margin:0,lineHeight:1.1}}>Editar cesta</h3>
+          <div style={{fontFamily:fb,fontSize:12,color:isLocked?W[500]:W[500],marginTop:4,lineHeight:1.5}}>{headerSub}</div>
         </div>
         <button aria-label="Fechar" onClick={onClose} style={{width:36,height:36,borderRadius:radii.full,background:W[100],border:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>✕</button>
       </div>
 
-      <div style={{height:1,background:W[200],margin:"12px 0 16px"}}/>
+      {/* BODY — scrollável */}
+      <div style={{padding:"14px 18px",overflowY:"auto",flex:1}}>
 
-      {/* Seção: SUA ASSINATURA */}
-      <div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:12}}>SUA ASSINATURA</div>
-      {assinaturaSlotsBase.map((produtoPadraoId,idx)=>{
-        const produtoAtualId=slots[idx]||produtoPadraoId;
-        return<div key={idx} style={{marginBottom:14}}>
-          {assinaturaSlotsBase.length>1&&<div style={{fontFamily:fd,fontSize:12,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:6}}>Pão {idx+1}</div>}
-          {D.pães.map(p=>{
-            const sel=produtoAtualId===p.id;
-            return<button key={p.id} onClick={()=>setSlot(idx,p.id)} disabled={isDisabled} style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"10px 12px",marginBottom:6,borderRadius:radii.md,border:`2px solid ${sel?B[500]:W[200]}`,background:sel?B[50]:"#FFF",cursor:isDisabled?"default":"pointer",textAlign:"left",opacity:isDisabled?0.55:1}}>
-              <div style={{width:20,height:20,borderRadius:radii.full,border:`2px solid ${sel?B[500]:W[300]}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<div style={{width:10,height:10,borderRadius:radii.full,background:B[500]}}/>}</div>
-              <div style={{flex:1}}><div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:sel?B[700]:W[700]}}>{p.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>({p.peso})</span></div></div>
-            </button>;
-          })}
-        </div>;
-      })}
+        {/* Seção: Sua assinatura */}
+        <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"0 0 8px"}}>Sua assinatura</div>
+        {assinaturaSlotsBase.map((produtoPadraoId,idx)=>{
+          const produtoAtualId=slots[idx]||produtoPadraoId;
+          return<div key={idx} style={{marginBottom:8}}>
+            {assinaturaSlotsBase.length>1&&<div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],marginBottom:6}}>Pão {idx+1}</div>}
+            {D.pães.map(p=>{
+              const sel=produtoAtualId===p.id;
+              const isSwapped=sel&&p.id!==produtoPadraoId;
+              return<button key={p.id} onClick={()=>setSlot(idx,p.id)} disabled={isLocked} style={{
+                display:"flex",alignItems:"center",gap:10,width:"100%",
+                padding:"12px 14px",marginBottom:8,
+                borderRadius:radii.md,
+                border:`1.5px solid ${sel?B[500]:W[200]}`,
+                background:sel?B[50]:"#FFF",
+                cursor:isLocked?"default":"pointer",textAlign:"left",
+                opacity:isLocked?0.55:1,
+                transition:"border-color 150ms ease, background 150ms ease",
+              }}>
+                <div style={{width:18,height:18,borderRadius:radii.full,border:`1.5px solid ${sel?B[500]:W[300]}`,position:"relative",flexShrink:0}}>
+                  {sel&&<div style={{position:"absolute",inset:3,background:B[500],borderRadius:radii.full}}/>}
+                </div>
+                <div style={{flex:1,fontFamily:fb,fontSize:14,fontWeight:500,color:sel?B[700]:W[800]}}>
+                  {p.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>· {p.peso}</span>
+                  {isSwapped&&<span style={{
+                    display:"inline-block",marginLeft:6,fontFamily:fd,fontSize:11,
+                    textTransform:"uppercase",letterSpacing:"0.06em",color:B[600],
+                    background:"#FFF",border:`1px solid ${B[100]}`,
+                    padding:"1px 5px",borderRadius:radii.xs,verticalAlign:"1px",fontWeight:500,
+                  }}>Trocado</span>}
+                </div>
+                <div style={{fontFamily:fb,fontSize:12,color:W[500],flexShrink:0}}>Incluso</div>
+              </button>;
+            })}
+          </div>;
+        })}
 
-      <div style={{height:1,background:W[200],margin:"16px 0"}}/>
+        {/* Seção: Extras desta semana */}
+        <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"18px 0 8px"}}>Extras desta semana</div>
+        {currentExtras.length===0
+          ?<div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6,marginBottom:10}}>
+              Você ainda não adicionou extras.<br/>
+              <button onClick={()=>{onClose();onNav&&onNav("cardapio");}} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0,marginTop:6}}>→ Ver tudo no Cardápio</button>
+            </div>
+          :currentExtras.map((e,idx)=>{
+              const isRemoving=removing.has(e.id);
+              const isLastExtra=idx===currentExtras.length-1;
+              return (
+                <div key={e.id} className={isRemoving?"cesta-row-removing":undefined} style={{
+                  display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
+                  padding:"12px 0",
+                  borderBottom:isLastExtra?"none":`1px solid ${W[200]}`,
+                }}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontFamily:fb,fontWeight:600,fontSize:14,color:W[800],lineHeight:1.3}}>{e.nome}</div>
+                    <div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:2,fontVariantNumeric:"tabular-nums"}}>{fmt(Number(e.preco_unit))} · un.</div>
+                  </div>
+                  <QtyStepper
+                    qty={e.qty}
+                    name={e.nome}
+                    variant="neutral"
+                    disabled={isLocked||isRemoving}
+                    onIncrement={()=>addExtraToCart({id:e.id,nome:e.nome,precoNum:Number(e.preco_unit)})}
+                    onDecrement={()=>handleExtraDecrement(e)}
+                  />
+                </div>
+              );
+            })
+        }
 
-      {/* Seção: EXTRAS DESTA SEMANA */}
-      <div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:12}}>EXTRAS DESTA SEMANA</div>
-      {currentExtras.length===0
-        ?<div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6,marginBottom:16}}>
-            Você ainda não adicionou extras.<br/>
-            <button onClick={()=>{onClose();onNav&&onNav("cardapio");}} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0,marginTop:6}}>→ Ver tudo no Cardápio</button>
-          </div>
-        :<div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
-            {currentExtras.map(e=><div key={e.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
-              <span style={{fontFamily:fb,fontSize:14,color:W[800],flex:1}}>{e.qty}× {e.nome}</span>
-              <span style={{fontFamily:fb,fontSize:14,color:W[700],fontWeight:500}}>{fmt(Number(e.preco_unit)*e.qty)}</span>
-              {!isDisabled&&<button aria-label={`Remover ${e.nome}`} onClick={()=>removeExtraFromCart(e.id)} className="press-scale" style={{width:28,height:28,minWidth:28,borderRadius:radii.full,border:"none",background:"transparent",color:W[500],cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
-            </div>)}
-          </div>
-      }
+        {/* Total — card warm-100 destacado */}
+        <div style={{
+          display:"flex",justifyContent:"space-between",alignItems:"baseline",
+          marginTop:10,padding:"12px 14px",
+          background:W[100],borderRadius:radii.md,
+        }}>
+          <span style={{fontFamily:fb,fontSize:13,color:W[700]}}>Total de extras desta semana</span>
+          <span style={{fontFamily:fb,fontSize:18,fontWeight:700,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(totalExtras)}</span>
+        </div>
 
-      {/* Sumário */}
-      <div style={{height:1,background:W[200],margin:"4px 0 16px"}}/>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontFamily:fb,fontSize:14,marginBottom:20}}>
-        <span style={{color:W[700]}}>Total de extras desta semana</span>
-        <span style={{color:B[700],fontWeight:600}}>{fmt(totalExtras)}</span>
+        {/* Microcopy rodapé: lembrete de cobrança + cutoff (briefing 3.6) */}
+        <div style={{
+          display:"flex",alignItems:"flex-start",gap:6,marginTop:14,
+          fontFamily:fb,fontSize:12,color:W[500],lineHeight:1.5,
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={W[400]} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}} aria-hidden="true">
+            <rect x="2" y="5" width="20" height="14" rx="2"/>
+            <line x1="2" y1="10" x2="22" y2="10"/>
+          </svg>
+          <span>Extras entram na sua próxima fatura. Alterações até terça, 12h.</span>
+        </div>
       </div>
 
-      {/* Botões */}
-      <div style={{display:"flex",gap:8}}>
+      {/* FOOT — 2 botões SEMPRE visíveis */}
+      <div style={{
+        padding:"12px 18px 18px",borderTop:`1px solid ${W[200]}`,
+        display:"flex",gap:10,flexShrink:0,background:"#FFF",
+      }}>
         <Btn onClick={onClose} style={{flex:1}}>Cancelar</Btn>
-        {canConfirmar&&<ActionBtn primary
-          loadingText="Confirmando…"
-          successText="Confirmado ✓"
-          onAction={async()=>{await confirmCurrentOrder();}}
-          onComplete={()=>{onConfirmedToast&&onConfirmedToast();onClose();}}
-          style={{flex:2}}
-          ariaLabel="Confirmar pedido"
-        >Confirmar pedido</ActionBtn>}
+        {showConfirmadoState
+          ?(
+            // Estado success: refinement do Hugo. Ação já feita, sem ambiguidade.
+            <button disabled aria-label="Pedido confirmado" style={{
+              flex:2,padding:"13px",borderRadius:radii.md,
+              background:"#D1FAE5",color:"#065F46",
+              border:"1px solid #6EE7B7",
+              fontFamily:fb,fontSize:14,fontWeight:500,
+              cursor:"default",minHeight:44,
+              display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Confirmado
+            </button>
+          )
+          :(
+            <ActionBtn primary
+              disabled={isLocked}
+              loadingText="Confirmando…"
+              successText="Confirmado ✓"
+              onAction={async()=>{
+                // Promove rascunho → confirmado. Sem rascunho/já confirmado: no-op silencioso.
+                if(currentWeeklyOrder?.status==="rascunho") await confirmCurrentOrder();
+              }}
+              onComplete={()=>{
+                // Toast só quando houve POST (status era rascunho na hora do click).
+                if(currentWeeklyOrder?.status==="rascunho") onConfirmedToast&&onConfirmedToast();
+                onClose();
+              }}
+              style={{flex:2}}
+              ariaLabel="Confirmar pedido"
+            >Confirmar pedido</ActionBtn>
+          )
+        }
       </div>
     </div>
   </>;
@@ -809,7 +929,7 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
     <div onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,textAlign:"center",padding:"8px 0",cursor:"pointer"}}>→ Ver tudo no Cardápio</div>
 
     {/* Drawer */}
-    {drawerOpen&&<EditarCarrinhoDrawer
+    {drawerOpen&&<EditarCestaDrawer
       onClose={()=>setDrawerOpen(false)}
       currentWeeklyOrder={currentWeeklyOrder}
       currentExtras={currentExtras}
@@ -819,6 +939,7 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
       onSetCestaSemana={onSetCestaSemana}
       updateComposition={updateComposition}
       removeExtraFromCart={removeExtraFromCart}
+      addExtraToCart={addExtraToCart}
       confirmCurrentOrder={confirmCurrentOrder}
       cutoff={cutoff}
       pendingPayment={pendingPayment}
