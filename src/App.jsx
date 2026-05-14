@@ -170,51 +170,60 @@ const useToastStack = () => {
   return { toasts, push };
 };
 
-// Visual do toast (wireframe v2 tela 6):
-//   - Fundo branco #FFFFFF
-//   - Borda lateral 3px à esquerda em verde #10B981
-//   - Texto em warm-800
-//   - Check verde sólido em círculo
-//   - Animação fadeUp 280ms ease-out (translateY 8px → 0)
+// Toast stack — wireframe v2 tela 6 (CSS copiado quase verbatim).
+//
+// Container `.toast-stack`: flex column + gap:8px → separação real entre
+// toasts (sem position:absolute em cada item). Toasts são filhos naturais
+// do flex, na ordem do DOM (mais antigo primeiro, mais novo por último).
+// Resultado visual: mais novo fica embaixo a 100% opacity; anteriores
+// "sobem" no topo com classes `stacked-1` / `stacked-2`.
 const TOAST_ACCENT = "#10B981";
+const TOAST_SUCCESS_BORDER = "#6EE7B7";
 const ToastStack = ({ toasts }) => {
   if (!toasts?.length) return null;
+  // Ordena do mais antigo (topo) ao mais novo (fundo) — DOM order.
   const last = toasts.length - 1;
   return (
-    <div aria-live="polite" style={{
-      position:"fixed", bottom:72, left:16, right:16, maxWidth:358,
-      margin:"0 auto", zIndex:60, pointerEvents:"none",
+    <div className="toast-stack" aria-live="polite" style={{
+      position:"fixed", left:16, right:16, bottom:72,
+      maxWidth:358, margin:"0 auto",
+      display:"flex", flexDirection:"column", gap:8, alignItems:"stretch",
+      zIndex:60, pointerEvents:"none",
     }}>
       {toasts.map((t, i) => {
-        const fromTop = last - i; // 0 = mais novo, 1 = anterior, 2 = mais antigo
-        const opacity = fromTop === 0 ? 1 : fromTop === 1 ? 0.85 : 0.65;
-        const scale = fromTop === 0 ? 1 : fromTop === 1 ? 0.97 : 0.94;
-        const translateY = -fromTop * 8; // empilha verticalmente
+        // Conta a partir do mais novo (último do array). 0 = novo, 1 = anterior, 2 = mais antigo.
+        const fromNewest = last - i;
+        // Visual stacked-1 / stacked-2 conforme wireframe v2 tela 6.
+        const opacity = fromNewest === 0 ? 1 : fromNewest === 1 ? 0.85 : 0.65;
+        const scale = fromNewest === 0 ? 1 : fromNewest === 1 ? 0.97 : 0.94;
+        const translateY = fromNewest === 0 ? 0 : fromNewest === 1 ? 2 : 4;
         return (
           <div key={t.id} role="status" style={{
-            position:"absolute", bottom:0, left:0, right:0,
-            background:"#FFFFFF",
-            borderLeft:`3px solid ${TOAST_ACCENT}`,
+            background: "#FFFFFF",
+            border: `1px solid ${TOAST_SUCCESS_BORDER}`,
+            borderLeft: `3px solid ${TOAST_ACCENT}`,
             borderRadius: radii.md,
-            color: W[800],
-            padding:"12px 14px", fontFamily: fb, fontSize:13, fontWeight:500,
-            display:"flex", alignItems:"center", gap:10,
-            opacity, transform:`translateY(${translateY}px) scale(${scale})`,
-            transition:"opacity 200ms ease, transform 200ms ease",
-            animation: fromTop === 0 ? "toastFadeUp 280ms ease-out" : undefined,
-            boxShadow:"0 4px 12px rgba(26,24,21,0.12)",
+            padding: "12px 14px",
+            display: "flex", alignItems: "flex-start", gap: 10,
+            fontFamily: fb, fontSize: 13, color: W[800], lineHeight: 1.4,
+            opacity,
+            transform: `scale(${scale}) translateY(${translateY}px)`,
+            transition: "opacity 200ms ease, transform 200ms ease",
+            // fadeUp dedicado só pro toast mais novo (entrada do topo).
+            animation: fromNewest === 0 ? "toastFadeUp 280ms ease-out" : undefined,
+            boxShadow: "0 4px 12px rgba(26,24,21,0.10)",
           }}>
             <span aria-hidden="true" style={{
-              width:20, height:20, borderRadius:"50%",
-              background: TOAST_ACCENT,
-              display:"inline-flex", alignItems:"center", justifyContent:"center",
-              flexShrink:0,
+              width: 18, height: 18, borderRadius: "50%",
+              background: TOAST_ACCENT, color: "#FFFFFF", flexShrink: 0,
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              marginTop: 1,
             }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
             </span>
-            <span>{t.message}</span>
+            <span style={{ flex: 1 }}>{t.message}</span>
           </div>
         );
       })}
