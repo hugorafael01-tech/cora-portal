@@ -170,10 +170,15 @@ const useToastStack = () => {
   return { toasts, push };
 };
 
+// Visual do toast (wireframe v2 tela 6):
+//   - Fundo branco #FFFFFF
+//   - Borda lateral 3px à esquerda em verde #10B981
+//   - Texto em warm-800
+//   - Check verde sólido em círculo
+//   - Animação fadeUp 280ms ease-out (translateY 8px → 0)
+const TOAST_ACCENT = "#10B981";
 const ToastStack = ({ toasts }) => {
   if (!toasts?.length) return null;
-  // O toast no fim do array é o mais novo — renderizar com z-index/posição maior.
-  // Recuo visual: itens mais antigos têm opacity menor e scale menor, empilhados acima.
   const last = toasts.length - 1;
   return (
     <div aria-live="polite" style={{
@@ -188,15 +193,27 @@ const ToastStack = ({ toasts }) => {
         return (
           <div key={t.id} role="status" style={{
             position:"absolute", bottom:0, left:0, right:0,
-            background: W[800], color: "#FFF", borderRadius: radii.md,
-            padding:"12px 16px", fontFamily: fb, fontSize:13, fontWeight:500,
-            display:"flex", alignItems:"center", gap:8,
+            background:"#FFFFFF",
+            borderLeft:`3px solid ${TOAST_ACCENT}`,
+            borderRadius: radii.md,
+            color: W[800],
+            padding:"12px 14px", fontFamily: fb, fontSize:13, fontWeight:500,
+            display:"flex", alignItems:"center", gap:10,
             opacity, transform:`translateY(${translateY}px) scale(${scale})`,
             transition:"opacity 200ms ease, transform 200ms ease",
-            animation: fromTop === 0 ? "fadeUp 300ms ease" : undefined,
-            boxShadow:"0 4px 12px rgba(26,24,21,0.18)",
+            animation: fromTop === 0 ? "toastFadeUp 280ms ease-out" : undefined,
+            boxShadow:"0 4px 12px rgba(26,24,21,0.12)",
           }}>
-            <I d={ic.check} size={16} color="#6EE7B7"/>
+            <span aria-hidden="true" style={{
+              width:20, height:20, borderRadius:"50%",
+              background: TOAST_ACCENT,
+              display:"inline-flex", alignItems:"center", justifyContent:"center",
+              flexShrink:0,
+            }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </span>
             <span>{t.message}</span>
           </div>
         );
@@ -835,8 +852,9 @@ const Cardapio=({addExtraToCart,cutoff,pendingPayment})=>{
       :<EmptyState title="Novidade da semana" body="Nenhuma novidade esta semana."/>
     }
 
-    {/* Lista unificada de pães */}
-    <div style={{fontFamily:fd,fontSize:16,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",margin:"8px 0 12px"}}>Nossos pães</div>
+    {/* Lista unificada: flui direto do Hero, sem header categórico (briefing
+        wireframe v2 tela 3 — "Nossos pães" cria categorização falsa porque a
+        lista mistura pães fixos e extras rotativos). */}
     {cardapioProducts.map(p=>(
       <ProductCard key={p.id}
         product={{...p,preco:`${p.preco}/un`}}
@@ -1256,6 +1274,8 @@ const params = new URLSearchParams(window.location.search);
       @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
       @keyframes fadeIn{from{opacity:0}to{opacity:1}}
       @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+      /* Toast: fadeUp dedicado (280ms ease-out) — translateY 8px → 0 + fade */
+      @keyframes toastFadeUp{from{opacity:0;transform:translateY(8px) scale(1)}to{opacity:1;transform:translateY(0) scale(1)}}
       .bp:hover{background:${B[600]}!important}
       .bw:hover{background:#1FAF54!important}
       .bl:hover{background:${W[100]}!important}
