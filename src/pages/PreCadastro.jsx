@@ -333,6 +333,7 @@ const FormScreen = ({ onSubmit }) => {
           style={{
             fontFamily: "'League Gothic', Impact, sans-serif",
             fontSize: 24,
+            fontWeight: 400,
             color: B[500],
             textTransform: "uppercase",
             letterSpacing: "0.02em",
@@ -773,6 +774,7 @@ const ConfirmScreen = ({ nome }) => (
         style={{
           fontFamily: "'League Gothic', Impact, sans-serif",
           fontSize: "clamp(32px, 8.5vw, 42px)",
+          fontWeight: 400,
           color: B[800],
           textTransform: "uppercase",
           letterSpacing: "0.02em",
