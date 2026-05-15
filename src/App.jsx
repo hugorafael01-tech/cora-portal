@@ -316,7 +316,7 @@ const Nav=({active,onNav,inicioBadge=false})=>{
 // ─── NOVIDADE HERO ───
 // Wireframe v2 (Frente C item 3): foto grande edge-to-edge com tag "Novidade
 // da semana" sobreposta no canto superior esquerdo, body com nome + meta
-// ("{peso} · estreia desta quinta") + sub-copy emocional + CTA split (label
+// ("{peso}") + sub-copy emocional + CTA split (label
 // + preço tabular dentro do mesmo botão). Click no CTA adiciona direto ao
 // carrinho — não abre modal.
 const NovidadeCard=({extra,onAdd,cutoff,lockedReason})=>{
@@ -343,7 +343,7 @@ const NovidadeCard=({extra,onAdd,cutoff,lockedReason})=>{
     {/* Body */}
     <div style={{padding:16}}>
       <div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800],lineHeight:1.3}}>{extra.nome}</div>
-      <div style={{fontFamily:fb,fontSize:13,color:W[500],marginTop:2}}>{extra.peso} · estreia desta quinta</div>
+      <div style={{fontFamily:fb,fontSize:13,color:W[500],marginTop:2}}>{extra.peso}</div>
       {extra.subCopy&&<div style={{fontFamily:fb,fontSize:14,color:W[600],fontWeight:400,lineHeight:1.5,marginTop:10}}>{extra.subCopy}</div>}
       <button
         onClick={(e)=>{e.stopPropagation();if(!disabled) onAdd&&onAdd();}}
@@ -1409,7 +1409,16 @@ export default function CoraPortal(){
     if (!currentWeeklyOrder?.id) return;
     try {
       const saved = await confirmWeeklyOrder(currentWeeklyOrder.id);
-      setWeeklyOrders(prev => prev.map(o => (o.id === saved.id ? saved : o)));
+      setWeeklyOrders(prev => {
+        // Defensivo: se saved.id não bate com nenhum order local (cenário
+        // inesperado de stale state ou race), substitui pelo saved direto
+        // pra garantir que o estado reflita a confirmação.
+        if (!prev.some(o => o.id === saved.id)) {
+          console.warn("[App] confirmCurrentOrder: saved.id sem match local — forçando substituição por delivery_date", { savedId: saved.id, prevIds: prev.map(o => o.id) });
+          return mergeOrder(prev, saved);
+        }
+        return prev.map(o => (o.id === saved.id ? saved : o));
+      });
     } catch (err) {
       console.error("[App] confirmCurrentOrder failed", err);
     }
@@ -1536,7 +1545,10 @@ const params = new URLSearchParams(window.location.search);
     {/* Footers fixos (OrderFooter/ConfirmedFooter) removidos no PR 2 Fase 1.
         Confirmação do pedido vai pro botão "Confirmar pedido" no card da Home
         e no EditarCarrinhoDrawer (Fase 2). */}
-    <Nav active={scr} onNav={handleNav} inicioBadge={currentWeeklyOrder?.status==="rascunho"}/>
+    <Nav active={scr} onNav={handleNav} inicioBadge={
+      currentWeeklyOrder?.status==="rascunho" &&
+      ((currentWeeklyOrder?.extras?.length||0)>0 || currentWeeklyOrder?.composition!=null)
+    }/>
     <style>{`
       *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
       body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior:none}
