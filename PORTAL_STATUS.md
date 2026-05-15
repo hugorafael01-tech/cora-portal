@@ -1,11 +1,11 @@
 # Portal do Assinante — Status Atual
 
-_Auto-gerado em 2026-05-09 por Claude Code. Não editar manualmente acima da seção "Pendências não-código"._
+_Auto-gerado em 2026-05-15 por Claude Code. Não editar manualmente acima da seção "Pendências não-código"._
 
 ## Versão
 - **App:** v0.0.0 (produto v3.2.7)
 - **Branch:** main
-- **Último commit:** `e90a00f` — 2026-05-09 — docs: consolida feedbacks UX e pendencias das telas internas
+- **Último commit:** `d8544aa` — 2026-05-15 — feat: Frente C item 3 — refactor do Cardápio, Home e Drawer
 
 ## Rotas / páginas
 - src/pages/PreCadastro.jsx
@@ -15,7 +15,9 @@ _Auto-gerado em 2026-05-09 por Claude Code. Não editar manualmente acima da se�
 - src/components/CEPField.jsx _(Fase 3)_
 - src/components/CoverageBlocker.jsx _(Fase 3)_
 - src/components/PendingPaymentBanner.jsx _(Fase 6/7)_
-- src/components/ProductCard.jsx
+- src/components/ProductCard.jsx _(Frente C item 3: expand inline + props `onCardClick`/`inBasketLabel`)_
+- `EditarCestaDrawer` _(inline em src/App.jsx — Frente C item 3)_
+- `QtyStepper` _(inline em src/App.jsx — Frente C item 3, variants brand/neutral)_
 
 ## Dependências relevantes
 - react @ ^19.2.4
@@ -25,12 +27,12 @@ _Auto-gerado em 2026-05-09 por Claude Code. Não editar manualmente acima da se�
 ## Marcadores de integração (grep)
 | Termo | Arquivos |
 |---|---|
-| asaas | 0 |
+| asaas | 1 (api/subscriptions/index.js) |
 | otp | 0 |
-| whatsapp | 8 |
-| webhook | 0 |
-| supabase | 6 (lib + 4 endpoints + 2 migrations) |
-| resend | 3 (lib + 2 endpoints) |
+| whatsapp | 13 |
+| webhook | 1 (api/lead.js) |
+| supabase | 12 (lib + 8 endpoints + 3 migrations) |
+| resend | 4 (lib + 3 endpoints) |
 | stripe | 0 |
 | pagar.me | 0 |
 
@@ -38,19 +40,19 @@ _Auto-gerado em 2026-05-09 por Claude Code. Não editar manualmente acima da se�
 Nenhum encontrado
 
 ## Últimos 10 commits
-- `e90a00f` — 2026-05-09 — docs: consolida feedbacks UX e pendencias das telas internas
-- `257bc19` — 2026-05-09 — docs: add post-Phase 7 continuation briefing
-- `b2833a0` — 2026-05-09 — docs: update PORTAL_STATUS with Phase 7 completion
-- `58da702` — 2026-05-09 — feat(onboarding): fase 7 — backend (Supabase + Resend + Vercel Functions)
-- `5adcb70` — 2026-05-05 — docs: briefing focado da Fase 7 (backend)
-- `cf97f4f` — 2026-05-05 — docs: atualiza status pos-Fase 6
-- `6021b98` — 2026-05-05 — feat(onboarding): fase 6 — banner pendente + bloqueio Cardapio + Home
-- `b3c99e3` — 2026-05-04 — feat(onboarding): fase 5 — Welcome reformulada + persistencia local
-- `9814436` — 2026-05-04 — fix(onboarding): placeholder de rua/bairro no fallback do ViaCEP
-- `e318f2a` — 2026-05-04 — feat(onboarding): fase 4 — refactor da T1 (Sobre voce + Entrega)
+- `d8544aa` — 2026-05-15 — feat: Frente C item 3 — refactor do Cardápio, Home e Drawer
+- `f5ee452` — 2026-05-14 — fix(precadastro): força fontWeight 400 nos h1 com League Gothic
+- `106a8f0` — 2026-05-14 — docs: decisoes + briefing + wireframe v2 da Frente C item 3
+- `76515f5` — 2026-05-14 — docs: decisões da Frente C item 3 — Cardápio
+- `01eb027` — 2026-05-13 — docs: atualiza PORTAL_STATUS com Frente C item 1 concluída (PR 1 + PR 2)
+- `b88f410` — 2026-05-13 — feat(home): Hierarquia da Home — carrinho persistido com confirmação (Frente C item 1, PR 2) (#3)
+- `f18335f` — 2026-05-12 — feat(weekly-orders): backend de cesta como carrinho persistido (Frente C item 1, PR 1) (#2)
+- `751d3fc` — 2026-05-12 — docs: ajusta data do Bonus técnico (Google Workspace)
+- `756ebb6` — 2026-05-11 — docs: decisões da Frente C item 1 — hierarquia da Home
+- `cf4a360` — 2026-05-11 — docs: atualiza PORTAL_STATUS com Frente A concluída
 
 ## Build / Deploy
-- **Último build local:** 2026-05-09
+- **Último build local:** 2026-05-15
 - **vercel.json:** presente _(rewrites refinados na Fase 7)_
 
 ---
