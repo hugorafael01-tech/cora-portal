@@ -69,8 +69,8 @@ const D={
   // Quando o Backoffice nascer, ambos viram campo do produto no banco.
   extras:[{id:"focaccia",nome:"Focaccia Genovesa",peso:"430g",preco:"R$ 22,00",precoNum:22,genero:"f",subCopy:"Pra um café da tarde diferente.",img:IMG.focaccia,ingredientes:"Farinha, água, azeite extra-virgem, sal, levain, cebola roxa, alecrim fresco.",historia:"A receita veio de Gênova, onde a focaccia é assunto sério. Lá, cada padeiro tem sua versão. A da Cora leva fermentação longa de 24h e azeite generoso. A cebola roxa carameliza no forno e o alecrim perfuma a cozinha inteira."}],
   pães:[
-    {id:"original",nome:"Pão Original",peso:"700g",preco:"R$ 27,00",precoNum:27,genero:"m",img:IMG.original,desc:"Pão de toda mesa. Vai com azeite, queijo, bruschetta de tomate ou o que você abrir na cozinha.",sobre:"Blend de farinha branca italiana e integral brasileira. Levain da Cora, água, sal. Hidratação 70%.",qtd:1},
-    {id:"integral",nome:"Pão Integral",peso:"700g",preco:"R$ 29,00",precoNum:29,genero:"m",img:IMG.integral,desc:"Sabor de grão inteiro, miolo leve. Torrado pela manhã ou ao lado da salada no almoço.",sobre:"100% integral em blend de farinha brasileira e italiana. Levain da Cora, água, sal, azeite. Hidratação 75%.",qtd:0},
+    {id:"original",nome:"Pão Original",peso:"700g",preco:"R$ 27,00",precoNum:27,genero:"m",img:IMG.original,desc:"Pão de toda mesa. Vai com azeite, queijo, bruschetta de tomate ou o que você abrir na cozinha.",sobre:"Blend de farinha branca italiana e integral brasileira. Levain da Cora, água, sal. Hidratação 70%.",ingredientes:"Farinha de trigo, Água, Sal marinho, Levain natural",qtd:1},
+    {id:"integral",nome:"Pão Integral",peso:"700g",preco:"R$ 29,00",precoNum:29,genero:"m",img:IMG.integral,desc:"Sabor de grão inteiro, miolo leve. Torrado pela manhã ou ao lado da salada no almoço.",sobre:"100% integral em blend de farinha brasileira e italiana. Levain da Cora, água, sal, azeite. Hidratação 75%.",ingredientes:"Farinha integral, Água, Sal marinho, Levain natural",qtd:0},
   ],
   rotativos:[
     {id:"multigraos",nome:"Multigrãos",peso:"615g",preco:"R$ 32,00",precoNum:32,genero:"m",img:IMG.multigraos,desc:"Aveia, centeio, gergelim e mel.",ingredientes:"Farinha de trigo, centeio, aveia, água, mel, sal, levain, gergelim.",detalhe:"Cinco grãos na massa, mel na fermentação. Miolo denso, casca com gergelim tostado."},
@@ -86,7 +86,6 @@ const D={
     {sem:"Semana 07/03",itens:"1 Pão Original (700g)",st:"Entregue",extra:null},
   ],
 };
-const greet=()=>{const h=new Date().getHours();return h<12?"Bom dia":h<18?"Boa tarde":"Boa noite";};
 
 const I=({d,size=20,color=W[400],sw=1.5})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
 const ic={
@@ -118,8 +117,155 @@ const Card=({children,style,onClick,ariaLabel})=>{const[h,setH]=useState(false);
 const SL=({t})=><div style={{fontFamily:fd,fontSize:15,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:8,lineHeight:1}}>{t}</div>;
 const Badge=({label,type="success"})=>{const s=ST[type]||ST.success;return<span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:12,fontWeight:500,fontFamily:fb,padding:"4px 10px",borderRadius:radii.xs,background:s.bg,color:s.t,border:`1px solid ${s.b}`}}><span style={{fontSize:8}}>●</span>{label}</span>;};
 const Btn=({children,primary,disabled,onClick,style:es,full,ariaLabel})=>{const[h,setH]=useState(false);return<button aria-label={ariaLabel} disabled={disabled} onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} className="press-scale" style={{padding:"12px 20px",borderRadius:radii.md,border:primary?"none":`1px solid ${h&&!disabled?B[600]:B[500]}`,background:primary?(disabled?W[200]:h?B[600]:B[500]):(h&&!disabled?B[50]:"none"),color:primary?(disabled?W[500]:"#FFF"):B[500],fontFamily:fb,fontSize:14,fontWeight:500,cursor:disabled?"default":"pointer",opacity:disabled?0.5:1,minHeight:44,width:full?"100%":"auto",transition:"all 150ms ease",...es}}>{children}</button>;};
-const QtyBtn=({qty,onAdd,onRemove,name})=>{const removeDisabled=qty<=0;return<div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}><button aria-label={`Remover ${name}`} onClick={onRemove} disabled={removeDisabled} className="qb press-scale" style={{width:32,height:32,borderRadius:radii.md,border:`1px solid ${W[300]}`,background:"none",cursor:removeDisabled?"not-allowed":"pointer",fontSize:18,color:removeDisabled?W[300]:W[600],display:"flex",alignItems:"center",justifyContent:"center",opacity:removeDisabled?0.35:1}}>−</button><span style={{fontFamily:fb,fontSize:16,fontWeight:600,color:B[500],width:24,textAlign:"center"}}>{qty}</span><button aria-label={`Adicionar ${name}`} onClick={onAdd} className="qb press-scale" style={{width:32,height:32,borderRadius:radii.md,border:`1px solid ${B[500]}`,background:B[50],cursor:"pointer",fontSize:18,color:B[500],display:"flex",alignItems:"center",justifyContent:"center"}}>+</button></div>;};
+// QtyStepper [- N +] — usado na lista de extras do Card de Cesta da Home
+// (variant brand sobre fundo brand-50) e no Drawer (Fase 3, variant neutro).
+// SVG inline pros sinais − e + (mantém peso visual consistente, sem confusão
+// com fontes do sistema). Borda muda conforme variant.
+const QtyStepper=({qty,onIncrement,onDecrement,name,disabled=false,variant="brand"})=>{
+  const bColor=variant==="brand"?B[100]:W[300];
+  const iconColor=disabled?W[300]:B[500];
+  const btnStyle={
+    width:32,height:32,padding:0,
+    background:"transparent",border:"none",
+    cursor:disabled?"not-allowed":"pointer",
+    color:iconColor,
+    display:"flex",alignItems:"center",justifyContent:"center",
+  };
+  return (
+    <div onClick={e=>e.stopPropagation()} style={{
+      display:"inline-flex",alignItems:"center",
+      border:`1px solid ${bColor}`,borderRadius:radii.md,
+      background:"#FFF",overflow:"hidden",flexShrink:0,
+    }}>
+      <button type="button" onClick={onDecrement} disabled={disabled} aria-label={`Diminuir ${name}`} style={btnStyle}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+      <span style={{
+        minWidth:28,textAlign:"center",lineHeight:"32px",
+        fontFamily:fb,fontWeight:600,fontSize:14,color:W[800],
+        borderLeft:`1px solid ${bColor}`,borderRight:`1px solid ${bColor}`,
+        fontVariantNumeric:"tabular-nums",
+      }}>{qty}</span>
+      <button type="button" onClick={onIncrement} disabled={disabled} aria-label={`Aumentar ${name}`} style={btnStyle}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+    </div>
+  );
+};
+// Toast simples (1 mensagem com timer próprio). Mantido pra compat de chamadas
+// que ainda passam `msg`/`vis` (toasts de polish em outras telas).
 const Toast=({msg,vis})=>vis?<div role="status" aria-live="polite" style={{position:"fixed",bottom:72,left:16,right:16,maxWidth:358,margin:"0 auto",background:W[800],color:"#FFF",borderRadius:radii.md,padding:"12px 16px",zIndex:60,fontFamily:fb,fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8,animation:"fadeUp 300ms ease"}}><I d={ic.check} size={16} color="#6EE7B7"/>{msg}</div>:null;
+
+// ToastStack — pilha de até 3 toasts simultâneos (briefing 5.5).
+// Mais recente no topo a 100% opacity; anteriores recuam (85% / 65%, scale
+// 0.97 / 0.94). 4º toast empurra o mais antigo (auto-remove na hora). Cada
+// toast tem timer próprio de 3.5s.
+//
+// API: `useToastStack()` retorna `{ toasts, push }`. `push(message)` adiciona
+// um toast novo no topo. Renderizar `<ToastStack toasts={toasts}/>` perto do
+// rodapé da tela (acima do Nav).
+const TOAST_TTL_MS = 3500;
+const TOAST_STACK_MAX = 3;
+let __toastSeq = 0;
+const useToastStack = () => {
+  const [toasts, setToasts] = useState([]);
+  const timersRef = useRef({});
+  useEffect(() => () => {
+    // cleanup: limpa todos os timers pendentes
+    Object.values(timersRef.current).forEach(clearTimeout);
+    timersRef.current = {};
+  }, []);
+  const dismiss = (id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+    if (timersRef.current[id]) {
+      clearTimeout(timersRef.current[id]);
+      delete timersRef.current[id];
+    }
+  };
+  const push = (message) => {
+    const id = ++__toastSeq;
+    setToasts((prev) => {
+      const next = [...prev, { id, message }];
+      // Se passou do limite, dropa o mais antigo (e cancela o timer dele).
+      while (next.length > TOAST_STACK_MAX) {
+        const stale = next.shift();
+        if (timersRef.current[stale.id]) {
+          clearTimeout(timersRef.current[stale.id]);
+          delete timersRef.current[stale.id];
+        }
+      }
+      return next;
+    });
+    timersRef.current[id] = setTimeout(() => dismiss(id), TOAST_TTL_MS);
+  };
+  return { toasts, push };
+};
+
+// Toast stack — wireframe v2 tela 6 (CSS copiado quase verbatim).
+//
+// Container `.toast-stack`: flex column + gap:8px → separação real entre
+// toasts (sem position:absolute em cada item). Toasts são filhos naturais
+// do flex, na ordem do DOM (mais antigo primeiro, mais novo por último).
+// Resultado visual: mais novo fica embaixo a 100% opacity; anteriores
+// "sobem" no topo com classes `stacked-1` / `stacked-2`.
+const TOAST_ACCENT = "#10B981";
+const TOAST_SUCCESS_BORDER = "#6EE7B7";
+const ToastStack = ({ toasts }) => {
+  if (!toasts?.length) return null;
+  // Ordena do mais antigo (topo) ao mais novo (fundo) — DOM order.
+  const last = toasts.length - 1;
+  return (
+    <div className="toast-stack" aria-live="polite" style={{
+      position:"fixed", left:16, right:16, bottom:72,
+      maxWidth:358, margin:"0 auto",
+      display:"flex", flexDirection:"column", gap:8, alignItems:"stretch",
+      zIndex:60, pointerEvents:"none",
+    }}>
+      {toasts.map((t, i) => {
+        // Conta a partir do mais novo (último do array). 0 = novo, 1 = anterior, 2 = mais antigo.
+        const fromNewest = last - i;
+        // Visual stacked-1 / stacked-2 conforme wireframe v2 tela 6.
+        const opacity = fromNewest === 0 ? 1 : fromNewest === 1 ? 0.85 : 0.65;
+        const scale = fromNewest === 0 ? 1 : fromNewest === 1 ? 0.97 : 0.94;
+        const translateY = fromNewest === 0 ? 0 : fromNewest === 1 ? 2 : 4;
+        return (
+          <div key={t.id} role="status" style={{
+            background: "#FFFFFF",
+            border: `1px solid ${TOAST_SUCCESS_BORDER}`,
+            borderLeft: `3px solid ${TOAST_ACCENT}`,
+            borderRadius: radii.md,
+            padding: "12px 14px",
+            display: "flex", alignItems: "flex-start", gap: 10,
+            fontFamily: fb, fontSize: 13, color: W[800], lineHeight: 1.4,
+            opacity,
+            transform: `scale(${scale}) translateY(${translateY}px)`,
+            transition: "opacity 200ms ease, transform 200ms ease",
+            // fadeUp dedicado só pro toast mais novo (entrada do topo).
+            animation: fromNewest === 0 ? "toastFadeUp 280ms ease-out" : undefined,
+            boxShadow: "0 4px 12px rgba(26,24,21,0.10)",
+          }}>
+            <span aria-hidden="true" style={{
+              width: 18, height: 18, borderRadius: "50%",
+              background: TOAST_ACCENT, color: "#FFFFFF", flexShrink: 0,
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              marginTop: 1,
+            }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </span>
+            <span style={{ flex: 1 }}>{t.message}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 const DeadlineWarning=()=><div style={{fontFamily:fb,fontSize:12,color:ST.warning.t,background:ST.warning.bg,padding:"8px 12px",borderRadius:radii.md,marginBottom:20,display:"inline-flex",alignItems:"center",gap:8,border:`1px solid ${ST.warning.b}`}}><I d={ic.clock} size={14} color={ST.warning.t}/>Pedidos até terça, 12h, para entrega na quinta</div>;
 const CutoffMsg=()=><div style={{fontFamily:fb,fontSize:13,color:"#7A766E",marginTop:6}}>Prazo encerrado. Alterações valem a partir da próxima semana.</div>;
 const CutoffBanner=({cutoff})=>{
@@ -142,59 +288,90 @@ const simulate=()=>new Promise(r=>setTimeout(r,600));
 const LOCK_REASON_PENDING="Disponível após confirmação do primeiro pagamento.";
 const ActionBtn=({children,loadingText,successText,onAction,onComplete,primary,disabled:extDisabled,full,style:es,ariaLabel})=>{const[st,setSt]=useState('idle');const[err,setErr]=useState('');const handle=async()=>{if(st!=='idle')return;setSt('loading');setErr('');try{await onAction();setSt('success');setTimeout(()=>{setSt('idle');onComplete?.();},1500);}catch(e){setErr(e.message||'Erro ao processar. Tente novamente.');setSt('idle');}};const busy=st==='loading'||st==='success';const label=st==='loading'?loadingText:st==='success'?successText:children;const stStyle=st==='success'?{background:'#D1FAE5',color:'#065F46',border:'1px solid #6EE7B7',opacity:1}:{};return<><Btn primary={st!=='success'&&primary} disabled={busy||extDisabled} onClick={handle} full={full} ariaLabel={ariaLabel} style={{...es,...stStyle}}>{label}</Btn>{err&&<div style={{fontFamily:fb,fontSize:13,color:'#9A3412',background:'#FFEDD5',padding:'8px 12px',borderRadius:radii.md,marginTop:6}}>{err}</div>}</>;};
 
-// ─── MODAL ───
-const Modal=({product,onClose,onAction,onComplete,actionLabel,hint,qty,onAdd,onRemove,cutoff})=>{
-  const dialogRef=useRef(null);
-  useModalA11y(dialogRef,!!product,onClose);
-  if(!product)return null;
-  return<>
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
-    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={`Detalhes: ${product.nome}`} style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:`${radii.xl} ${radii.xl} 0 0`,zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease"}}>
-      <div style={{position:"relative"}}>
-        <ProductImg src={product.img} h={220} alt={product.nome} rounded={false} style={{borderRadius:`${radii.xl} ${radii.xl} 0 0`}}/>
-        <button aria-label="Fechar" onClick={onClose} style={{position:"absolute",top:12,right:12,width:36,height:36,borderRadius:radii.full,background:"rgba(255,255,255,0.9)",border:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
-      </div>
-      <div style={{padding:20}}>
-        <div style={{fontFamily:fd,fontSize:24,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",lineHeight:1.2}}>{product.nome}</div>
-        <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:4}}>{product.peso}</div>
-        <div style={{fontFamily:fb,fontSize:20,fontWeight:600,color:B[500],marginTop:8}}>{product.preco}</div>
-        <div style={{height:1,background:W[200],margin:"16px 0"}}/>
-        {product.ingredientes&&<div style={{marginBottom:16}}><div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:6}}>Ingredientes</div><div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6}}>{product.ingredientes}</div></div>}
-        {product.historia&&<div style={{marginBottom:16,fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.7}}>{product.historia}</div>}
-        {product.detalhe&&!product.historia&&<div style={{marginBottom:16}}><div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:6}}>Sobre este pão</div><div style={{fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.6}}>{product.detalhe}</div></div>}
-        <div style={{marginTop:4}}>
-          {cutoff?<><Btn primary full disabled ariaLabel={actionLabel}>{actionLabel}</Btn><CutoffMsg/></>:qty>0?<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0"}}><div style={{fontFamily:fb,fontSize:14,color:ST.success.t,fontWeight:500,display:"flex",alignItems:"center",gap:6}}><I d={ic.check} size={16} color={ST.success.t}/>Na sua cesta</div><QtyBtn qty={qty} onAdd={onAdd} onRemove={onRemove} name={product.nome}/></div>:<>{onAction&&<ActionBtn primary full loadingText="Adicionando…" successText="Adicionado ✓" onAction={onAction} onComplete={onComplete} ariaLabel={actionLabel}>{actionLabel}</ActionBtn>}{hint&&<div style={{fontFamily:fb,fontSize:12,color:W[500],textAlign:"center",marginTop:8}}>{hint}</div>}</>}
-        </div>
-      </div>
-    </div>
-  </>;
+// O Modal de detalhes do produto saiu na Frente C item 3 (wireframe v2).
+// ProductCard agora expande inline; NovidadeCard adiciona direto sem modal.
+// QtyBtn local também sai junto (era usado pelo branch qty>0 do Modal).
+// Nav inferior. `inicioBadge` true mostra um dot brand-500 no canto superior
+// direito do ícone Início — indica `currentWeeklyOrder?.status === 'rascunho'`
+// (briefing 3.6 / wireframe v2 tela 1, 4, 6).
+const Nav=({active,onNav,inicioBadge=false})=>{
+  const items=[{id:"home",label:"INÍCIO",icon:ic.home},{id:"assinatura",label:"ASSINATURA",icon:ic.wheat},{id:"cardapio",label:"CARDÁPIO",icon:ic.utensils},{id:"perfil",label:"PERFIL",icon:ic.user}];
+  return<div style={{display:"flex",justifyContent:"space-around",alignItems:"center",padding:"8px 0 12px",borderTop:`1px solid ${W[200]}`,background:"#FFF",position:"sticky",bottom:0,zIndex:10,minHeight:56}}>
+    {items.map(it=>(
+      <button key={it.id} aria-label={`Ir para ${it.label}`} onClick={()=>onNav(it.id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,border:"none",background:"none",cursor:"pointer",minWidth:56,minHeight:44,padding:"4px 0",position:"relative"}}>
+        <span style={{position:"relative",display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
+          <I d={it.icon} size={22} color={active===it.id?B[500]:W[400]}/>
+          {it.id==="home"&&inicioBadge&&<span aria-label="Você tem alterações na cesta" style={{
+            position:"absolute",top:-2,right:-4,
+            width:9,height:9,borderRadius:"50%",
+            background:B[500],boxShadow:"0 0 0 2px #FFF",
+          }}/>}
+        </span>
+        <span style={{fontFamily:fd,fontSize:11,letterSpacing:"0.02em",textTransform:"uppercase",color:active===it.id?B[500]:W[400]}}>{it.label}</span>
+      </button>
+    ))}
+  </div>;
 };
 
-const Nav=({active,onNav,badge})=>{const items=[{id:"home",label:"INÍCIO",icon:ic.home},{id:"assinatura",label:"ASSINATURA",icon:ic.wheat},{id:"cardapio",label:"CARDÁPIO",icon:ic.utensils},{id:"perfil",label:"PERFIL",icon:ic.user}];return<div style={{display:"flex",justifyContent:"space-around",alignItems:"center",padding:"8px 0 12px",borderTop:`1px solid ${W[200]}`,background:"#FFF",position:"sticky",bottom:0,zIndex:10,minHeight:56}}>{items.map(it=><button key={it.id} aria-label={`Ir para ${it.label}`} onClick={()=>onNav(it.id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,border:"none",background:"none",cursor:"pointer",minWidth:56,minHeight:44,padding:"4px 0",position:"relative"}}><I d={it.icon} size={22} color={active===it.id?B[500]:W[400]}/>{it.id==="cardapio"&&badge>0&&<span style={{position:"absolute",top:0,right:4,width:18,height:18,borderRadius:radii.full,background:B[500],color:"#FFF",fontFamily:fb,fontSize:10,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{badge}</span>}<span style={{fontFamily:fd,fontSize:11,letterSpacing:"0.02em",textTransform:"uppercase",color:active===it.id?B[500]:W[400]}}>{it.label}</span></button>)}</div>;};
-
-// ─── NOVIDADE CARD (edge-to-edge photo) ───
-// Briefing 5.3 (Home) e 8.1 (Cardapio): card sempre abre o Modal de detalhes.
-// CTA com preço inline ("+ Adicionar à cesta — R$ X"). Sem QtyBtn embutido —
-// re-adicionar passa pelo Modal de novo. `ctaText` é opcional; default usa "Quero"
-// pra manter compat com callers que não passam (ex: Cardapio na grade).
-const NovidadeCard=({extra,onCardClick,cutoff,lockedReason,ctaText})=>{
+// ─── NOVIDADE HERO ───
+// Wireframe v2 (Frente C item 3): foto grande edge-to-edge com tag "Novidade
+// da semana" sobreposta no canto superior esquerdo, body com nome + meta
+// ("{peso}") + sub-copy emocional + CTA split (label
+// + preço tabular dentro do mesmo botão). Click no CTA adiciona direto ao
+// carrinho — não abre modal.
+const NovidadeCard=({extra,onAdd,cutoff,lockedReason})=>{
   const isLocked=!!lockedReason;
   const disabled=cutoff||isLocked;
-  const label=ctaText||`+ Adicionar à cesta — ${(extra.preco||"").replace(/,00$/,"")}`;
-  return<Card style={{padding:0,overflow:"hidden",cursor:disabled?"default":"pointer",marginBottom:16}} onClick={disabled?undefined:onCardClick} ariaLabel={`Novidade: ${extra.nome}`}>
-    <ProductImg src={extra.img} h={200} alt={extra.nome} rounded={false}/>
+  const precoLabel=(extra.preco||"").replace(/,00$/,"");
+  return<div style={{
+    background:"#FFF",
+    border:`1px solid ${W[200]}`,
+    borderRadius:radii.lg,
+    overflow:"hidden",
+    marginBottom:16,
+  }} aria-label={`Novidade: ${extra.nome}`}>
+    {/* Foto edge-to-edge com tag overlay */}
+    <div style={{position:"relative"}}>
+      <ProductImg src={extra.img} h={200} alt={extra.nome} rounded={false}/>
+      <span style={{
+        position:"absolute",top:12,left:12,
+        fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",
+        color:B[700],background:"rgba(255,255,255,0.92)",
+        padding:"5px 10px",borderRadius:radii.xs,fontWeight:600,
+      }}>Novidade da semana</span>
+    </div>
+    {/* Body */}
     <div style={{padding:16}}>
-      <SL t="Novidade da semana"/>
-      <div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800]}}>{extra.nome}</div>
-      {extra.subCopy&&<div style={{fontFamily:fb,fontSize:14,color:W[600],fontWeight:400,lineHeight:1.5,margin:"4px 0 12px"}}>{extra.subCopy}</div>}
-      {disabled
-        ?<button disabled className="bp" style={{width:"100%",padding:"12px 16px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"default",minHeight:44,opacity:0.5,marginTop:extra.subCopy?0:12}}>{label}</button>
-        :<button onClick={e=>{e.stopPropagation();onCardClick&&onCardClick();}} className="bp press-scale" style={{width:"100%",padding:"12px 16px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:500,cursor:"pointer",minHeight:44,marginTop:extra.subCopy?0:12}}>{label}</button>
-      }
+      <div style={{fontFamily:fb,fontSize:18,fontWeight:600,color:W[800],lineHeight:1.3}}>{extra.nome}</div>
+      <div style={{fontFamily:fb,fontSize:13,color:W[500],marginTop:2}}>{extra.peso}</div>
+      {extra.subCopy&&<div style={{fontFamily:fb,fontSize:14,color:W[600],fontWeight:400,lineHeight:1.5,marginTop:10}}>{extra.subCopy}</div>}
+      <button
+        onClick={(e)=>{e.stopPropagation();if(!disabled) onAdd&&onAdd();}}
+        disabled={disabled}
+        className={disabled?"":"press-scale"}
+        style={{
+          marginTop:14,
+          width:"100%",
+          display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,
+          padding:"12px 16px",
+          borderRadius:radii.md,border:"none",
+          background:B[500],color:"#FFF",
+          fontFamily:fb,fontSize:14,fontWeight:500,
+          cursor:disabled?"default":"pointer",
+          opacity:disabled?0.5:1,
+          minHeight:44,
+        }}
+      >
+        <span style={{display:"inline-flex",alignItems:"center",gap:6}}>
+          <span style={{fontSize:18,lineHeight:1}} aria-hidden="true">+</span>
+          Adicionar à cesta
+        </span>
+        <span style={{fontVariantNumeric:"tabular-nums",fontWeight:500}}>{precoLabel}</span>
+      </button>
       {cutoff&&<CutoffMsg/>}
       {isLocked&&!cutoff&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:6,lineHeight:1.4}}>{lockedReason}</div>}
     </div>
-  </Card>;
+  </div>;
 };
 
 // ─── HELPERS ───
@@ -290,7 +467,7 @@ const slotsToQtds=(slots)=>slots.reduce((a,id)=>{a[id]=(a[id]||0)+1;return a;},{
 // Trocar pão dispara updateComposition com debounce de 300ms (briefing 6.2).
 // Remover extra dispara removeExtraFromCart imediato.
 // Pós-cutoff: controles disabled.
-const EditarCarrinhoDrawer=({
+const EditarCestaDrawer=({
   onClose,
   currentWeeklyOrder,
   currentExtras,
@@ -300,6 +477,7 @@ const EditarCarrinhoDrawer=({
   onSetCestaSemana,
   updateComposition,
   removeExtraFromCart,
+  addExtraToCart,
   confirmCurrentOrder,
   cutoff,
   pendingPayment,
@@ -314,13 +492,27 @@ const EditarCarrinhoDrawer=({
   const[slots,setSlots]=useState(()=>qtdsToSlots(cestaAtual||baselineQtds));
   const compDebounceRef=useRef(null);
 
-  // Briefing 10.4: pending_payment mantém o drawer acessível mas com controles
-  // disabled. Backend já rejeita o POST (409 subscription_not_active), e o UI
-  // deixa explícito.
-  const isDisabled=cutoff||pendingPayment;
+  const isLocked=cutoff||pendingPayment;
   const isConfirmado=currentWeeklyOrder?.status==="confirmado";
-  const hasAlteration=!!(currentWeeklyOrder?.composition)||currentExtras.length>0;
-  const canConfirmar=!isDisabled&&!isConfirmado&&!!currentWeeklyOrder&&hasAlteration;
+
+  // Animação de remoção idêntica à Home (reusa keyframe slideOutFade 450ms).
+  const[removing,setRemoving]=useState(()=>new Set());
+  const removingTimersRef=useRef({});
+  useEffect(()=>()=>{
+    Object.values(removingTimersRef.current).forEach(clearTimeout);
+    removingTimersRef.current={};
+    if(compDebounceRef.current) clearTimeout(compDebounceRef.current);
+  },[]);
+  const handleExtraDecrement=(extra)=>{
+    if(extra.qty>1){removeExtraFromCart(extra.id);return;}
+    if(removing.has(extra.id)) return;
+    setRemoving(prev=>{const next=new Set(prev);next.add(extra.id);return next;});
+    removingTimersRef.current[extra.id]=setTimeout(()=>{
+      removeExtraFromCart(extra.id);
+      setRemoving(prev=>{const next=new Set(prev);next.delete(extra.id);return next;});
+      delete removingTimersRef.current[extra.id];
+    },450);
+  };
 
   const triggerCompositionSave=(nextSlots)=>{
     if(compDebounceRef.current) clearTimeout(compDebounceRef.current);
@@ -335,7 +527,7 @@ const EditarCarrinhoDrawer=({
   };
 
   const setSlot=(idx,novoId)=>{
-    if(isDisabled) return;
+    if(isLocked) return;
     setSlots(prev=>{
       const next=[...prev]; next[idx]=novoId;
       triggerCompositionSave(next);
@@ -346,73 +538,178 @@ const EditarCarrinhoDrawer=({
   const totalExtras=currentExtras.reduce((s,e)=>s+e.qty*Number(e.preco_unit),0);
   const assinaturaSlotsBase=qtdsToSlots(baselineQtds);
 
+  // Sub-header copy (1 linha): contexto da entrega + cutoff.
+  const headerSub=pendingPayment
+    ? "Disponível após confirmação do primeiro pagamento."
+    : cutoff
+      ? "Prazo encerrado. Você poderá editar a próxima cesta."
+      : `Entrega ${deliveryLabelFull} · pedidos até terça, 12h`;
+
+  // Estados do botão Confirmar pedido (sempre visível no rodapé):
+  //   - cutoff/pendingPayment → disabled (estado bloqueante)
+  //   - status === 'confirmado' && !cutoff → "Confirmado ✓" disabled (success)
+  //   - demais → "Confirmar pedido" enabled; POST só se rascunho, senão no-op
+  const showConfirmadoState=isConfirmado&&!cutoff&&!pendingPayment;
+
   return<>
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
-    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Editar carrinho da semana" style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:`${radii.xl} ${radii.xl} 0 0`,zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",padding:20}}>
-      {/* Cabeçalho */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,marginBottom:12}}>
-        <div style={{flex:1}}>
-          <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em"}}>EDITAR CARRINHO</div>
-          <div style={{fontFamily:fb,fontSize:13,color:W[600],marginTop:6,lineHeight:1.5}}>Entrega: {deliveryLabelFull}.</div>
-          <div style={{fontFamily:fb,fontSize:13,color:isDisabled?W[500]:W[600],lineHeight:1.5}}>{pendingPayment?"Disponível após confirmação do primeiro pagamento.":cutoff?"Prazo encerrado. Você poderá editar a próxima cesta.":"Confirme até terça, 12h."}</div>
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Editar cesta da semana" style={{
+      position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",
+      background:"#FFF",borderRadius:`${radii.xl} ${radii.xl} 0 0`,
+      zIndex:51,maxHeight:"92vh",
+      boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",
+      display:"flex",flexDirection:"column",
+    }}>
+      {/* Grab handle decorativo (sinaliza bottom sheet) */}
+      <div aria-hidden="true" style={{width:36,height:4,background:W[300],borderRadius:radii.full,margin:"8px auto 6px",flexShrink:0}}/>
+
+      {/* HEAD — título + sub + fechar */}
+      <div style={{padding:"6px 18px 12px",borderBottom:`1px solid ${W[200]}`,flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+        <div style={{flex:1,minWidth:0}}>
+          <h3 style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",margin:0,lineHeight:1.1}}>Editar cesta</h3>
+          <div style={{fontFamily:fb,fontSize:12,color:isLocked?W[500]:W[500],marginTop:4,lineHeight:1.5}}>{headerSub}</div>
         </div>
         <button aria-label="Fechar" onClick={onClose} style={{width:36,height:36,borderRadius:radii.full,background:W[100],border:"none",cursor:"pointer",fontSize:18,color:W[600],display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>✕</button>
       </div>
 
-      <div style={{height:1,background:W[200],margin:"12px 0 16px"}}/>
+      {/* BODY — scrollável */}
+      <div style={{padding:"14px 18px",overflowY:"auto",flex:1}}>
 
-      {/* Seção: SUA ASSINATURA */}
-      <div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:12}}>SUA ASSINATURA</div>
-      {assinaturaSlotsBase.map((produtoPadraoId,idx)=>{
-        const produtoAtualId=slots[idx]||produtoPadraoId;
-        return<div key={idx} style={{marginBottom:14}}>
-          {assinaturaSlotsBase.length>1&&<div style={{fontFamily:fd,fontSize:12,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:6}}>Pão {idx+1}</div>}
-          {D.pães.map(p=>{
-            const sel=produtoAtualId===p.id;
-            return<button key={p.id} onClick={()=>setSlot(idx,p.id)} disabled={isDisabled} style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"10px 12px",marginBottom:6,borderRadius:radii.md,border:`2px solid ${sel?B[500]:W[200]}`,background:sel?B[50]:"#FFF",cursor:isDisabled?"default":"pointer",textAlign:"left",opacity:isDisabled?0.55:1}}>
-              <div style={{width:20,height:20,borderRadius:radii.full,border:`2px solid ${sel?B[500]:W[300]}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<div style={{width:10,height:10,borderRadius:radii.full,background:B[500]}}/>}</div>
-              <div style={{flex:1}}><div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:sel?B[700]:W[700]}}>{p.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>({p.peso})</span></div></div>
-            </button>;
-          })}
-        </div>;
-      })}
+        {/* Seção: Sua assinatura */}
+        <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"0 0 8px"}}>Sua assinatura</div>
+        {assinaturaSlotsBase.map((produtoPadraoId,idx)=>{
+          const produtoAtualId=slots[idx]||produtoPadraoId;
+          return<div key={idx} style={{marginBottom:8}}>
+            {assinaturaSlotsBase.length>1&&<div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],marginBottom:6}}>Pão {idx+1}</div>}
+            {D.pães.map(p=>{
+              const sel=produtoAtualId===p.id;
+              const isSwapped=sel&&p.id!==produtoPadraoId;
+              return<button key={p.id} onClick={()=>setSlot(idx,p.id)} disabled={isLocked} style={{
+                display:"flex",alignItems:"center",gap:10,width:"100%",
+                padding:"12px 14px",marginBottom:8,
+                borderRadius:radii.md,
+                border:`1.5px solid ${sel?B[500]:W[200]}`,
+                background:sel?B[50]:"#FFF",
+                cursor:isLocked?"default":"pointer",textAlign:"left",
+                opacity:isLocked?0.55:1,
+                transition:"border-color 150ms ease, background 150ms ease",
+              }}>
+                <div style={{width:18,height:18,borderRadius:radii.full,border:`1.5px solid ${sel?B[500]:W[300]}`,position:"relative",flexShrink:0}}>
+                  {sel&&<div style={{position:"absolute",inset:3,background:B[500],borderRadius:radii.full}}/>}
+                </div>
+                <div style={{flex:1,fontFamily:fb,fontSize:14,fontWeight:500,color:sel?B[700]:W[800]}}>
+                  {p.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>· {p.peso}</span>
+                  {isSwapped&&<span style={{
+                    display:"inline-block",marginLeft:6,fontFamily:fd,fontSize:11,
+                    textTransform:"uppercase",letterSpacing:"0.06em",color:B[600],
+                    background:"#FFF",border:`1px solid ${B[100]}`,
+                    padding:"1px 5px",borderRadius:radii.xs,verticalAlign:"1px",fontWeight:500,
+                  }}>Trocado</span>}
+                </div>
+                <div style={{fontFamily:fb,fontSize:12,color:W[500],flexShrink:0}}>Incluso</div>
+              </button>;
+            })}
+          </div>;
+        })}
 
-      <div style={{height:1,background:W[200],margin:"16px 0"}}/>
+        {/* Seção: Extras desta semana */}
+        <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"18px 0 8px"}}>Extras desta semana</div>
+        {currentExtras.length===0
+          ?<div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6,marginBottom:10}}>
+              Você ainda não adicionou extras.<br/>
+              <button onClick={()=>{onClose();onNav&&onNav("cardapio");}} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0,marginTop:6}}>→ Ver tudo no Cardápio</button>
+            </div>
+          :currentExtras.map((e,idx)=>{
+              const isRemoving=removing.has(e.id);
+              const isLastExtra=idx===currentExtras.length-1;
+              return (
+                <div key={e.id} className={isRemoving?"cesta-row-removing":undefined} style={{
+                  display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
+                  padding:"12px 0",
+                  borderBottom:isLastExtra?"none":`1px solid ${W[200]}`,
+                }}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontFamily:fb,fontWeight:600,fontSize:14,color:W[800],lineHeight:1.3}}>{e.nome}</div>
+                    <div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:2,fontVariantNumeric:"tabular-nums"}}>{fmt(Number(e.preco_unit))} · un.</div>
+                  </div>
+                  <QtyStepper
+                    qty={e.qty}
+                    name={e.nome}
+                    variant="neutral"
+                    disabled={isLocked||isRemoving}
+                    onIncrement={()=>addExtraToCart({id:e.id,nome:e.nome,precoNum:Number(e.preco_unit)})}
+                    onDecrement={()=>handleExtraDecrement(e)}
+                  />
+                </div>
+              );
+            })
+        }
 
-      {/* Seção: EXTRAS DESTA SEMANA */}
-      <div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:12}}>EXTRAS DESTA SEMANA</div>
-      {currentExtras.length===0
-        ?<div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6,marginBottom:16}}>
-            Você ainda não adicionou extras.<br/>
-            <button onClick={()=>{onClose();onNav&&onNav("cardapio");}} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0,marginTop:6}}>→ Ver tudo no Cardápio</button>
-          </div>
-        :<div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
-            {currentExtras.map(e=><div key={e.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
-              <span style={{fontFamily:fb,fontSize:14,color:W[800],flex:1}}>{e.qty}× {e.nome}</span>
-              <span style={{fontFamily:fb,fontSize:14,color:W[700],fontWeight:500}}>{fmt(Number(e.preco_unit)*e.qty)}</span>
-              {!isDisabled&&<button aria-label={`Remover ${e.nome}`} onClick={()=>removeExtraFromCart(e.id)} className="press-scale" style={{width:28,height:28,minWidth:28,borderRadius:radii.full,border:"none",background:"transparent",color:W[500],cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
-            </div>)}
-          </div>
-      }
+        {/* Total — card warm-100 destacado */}
+        <div style={{
+          display:"flex",justifyContent:"space-between",alignItems:"baseline",
+          marginTop:10,padding:"12px 14px",
+          background:W[100],borderRadius:radii.md,
+        }}>
+          <span style={{fontFamily:fb,fontSize:13,color:W[700]}}>Total de extras desta semana</span>
+          <span style={{fontFamily:fb,fontSize:18,fontWeight:700,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(totalExtras)}</span>
+        </div>
 
-      {/* Sumário */}
-      <div style={{height:1,background:W[200],margin:"4px 0 16px"}}/>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontFamily:fb,fontSize:14,marginBottom:20}}>
-        <span style={{color:W[700]}}>Total de extras desta semana</span>
-        <span style={{color:B[700],fontWeight:600}}>{fmt(totalExtras)}</span>
+        {/* Microcopy rodapé: lembrete de cobrança + cutoff (briefing 3.6) */}
+        <div style={{
+          display:"flex",alignItems:"flex-start",gap:6,marginTop:14,
+          fontFamily:fb,fontSize:12,color:W[500],lineHeight:1.5,
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={W[400]} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}} aria-hidden="true">
+            <rect x="2" y="5" width="20" height="14" rx="2"/>
+            <line x1="2" y1="10" x2="22" y2="10"/>
+          </svg>
+          <span>Extras entram na sua próxima fatura. Alterações até terça, 12h.</span>
+        </div>
       </div>
 
-      {/* Botões */}
-      <div style={{display:"flex",gap:8}}>
+      {/* FOOT — 2 botões SEMPRE visíveis */}
+      <div style={{
+        padding:"12px 18px 18px",borderTop:`1px solid ${W[200]}`,
+        display:"flex",gap:10,flexShrink:0,background:"#FFF",
+      }}>
         <Btn onClick={onClose} style={{flex:1}}>Cancelar</Btn>
-        {canConfirmar&&<ActionBtn primary
-          loadingText="Confirmando…"
-          successText="Confirmado ✓"
-          onAction={async()=>{await confirmCurrentOrder();}}
-          onComplete={()=>{onConfirmedToast&&onConfirmedToast();onClose();}}
-          style={{flex:2}}
-          ariaLabel="Confirmar pedido"
-        >Confirmar pedido</ActionBtn>}
+        {showConfirmadoState
+          ?(
+            // Estado success: refinement do Hugo. Ação já feita, sem ambiguidade.
+            <button disabled aria-label="Pedido confirmado" style={{
+              flex:2,padding:"13px",borderRadius:radii.md,
+              background:"#D1FAE5",color:"#065F46",
+              border:"1px solid #6EE7B7",
+              fontFamily:fb,fontSize:14,fontWeight:500,
+              cursor:"default",minHeight:44,
+              display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Confirmado
+            </button>
+          )
+          :(
+            <ActionBtn primary
+              disabled={isLocked}
+              loadingText="Confirmando…"
+              successText="Confirmado ✓"
+              onAction={async()=>{
+                // Promove rascunho → confirmado. Sem rascunho/já confirmado: no-op silencioso.
+                if(currentWeeklyOrder?.status==="rascunho") await confirmCurrentOrder();
+              }}
+              onComplete={()=>{
+                // Toast só quando houve POST (status era rascunho na hora do click).
+                if(currentWeeklyOrder?.status==="rascunho") onConfirmedToast&&onConfirmedToast();
+                onClose();
+              }}
+              style={{flex:2}}
+              ariaLabel="Confirmar pedido"
+            >Confirmar pedido</ActionBtn>
+          )
+        }
       </div>
     </div>
   </>;
@@ -425,15 +722,19 @@ const EditarCarrinhoDrawer=({
 //    badge/microcopy condicional, botão "Editar carrinho" e "Confirmar pedido"
 //  - Novidade hero com sub-copy emocional e CTA "+ Adicionar à cesta — R$ X"
 //  - Estado "semana sem destaque" quando D.extras vazio
-const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinaturaBaseline,cestaAtual,onSetCestaSemana,ehPrimeiroAcesso,pendingPayment,currentWeeklyOrder,currentExtras,addExtraToCart,removeExtraFromCart,updateComposition,confirmCurrentOrder})=>{
-  const[modal,setModal]=useState(null);
+const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinaturaBaseline,cestaAtual,onSetCestaSemana,pendingPayment,currentWeeklyOrder,currentExtras,addExtraToCart,removeExtraFromCart,updateComposition,confirmCurrentOrder})=>{
   const[drawerOpen,setDrawerOpen]=useState(false);
-  const[toast,setToast]=useState(false);
-  const[toastMsg,setToastMsg]=useState("");
-  const showToast=(msg)=>{setToastMsg(msg);setToast(true);setTimeout(()=>setToast(false),5000);};
+  const{toasts,push:pushToast}=useToastStack();
+  // `showToast` mantém a assinatura legacy pros callers existentes (ActionBtn
+  // do Confirmar, Drawer onConfirmedToast) — internamente vai pro stack.
+  const showToast=(msg)=>pushToast(msg);
 
   const nome=userData?.nome?userData.nome.split(" ")[0]:D.nome;
-  const saudacao=ehPrimeiroAcesso?`Que bom ter você aqui, ${nome}.`:`${greet()}, ${nome}.`;
+  // Saudação unificada (briefing Frente C item 3, seção 3.4): sempre temporal,
+  // sem flexão de gênero, sem distinção de "primeiro acesso".
+  const _hora=new Date().getHours();
+  const _periodo=_hora<12?"bom dia":_hora<18?"boa tarde":"boa noite";
+  const saudacao=`Oi, ${nome}, ${_periodo}!`;
 
   // ─── Estado da cesta ───────────────────────────────────────────────
   const hasComposition=currentWeeklyOrder?.composition!=null;
@@ -450,89 +751,175 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
   const fmtDdMm=(dt)=>`${String(dt.getDate()).padStart(2,"0")}/${String(dt.getMonth()+1).padStart(2,"0")}`;
   const deliveryLabelShort=fmtDdMm(deliveryDateObj);
 
-  // ─── Lista unificada (assinatura + extras) ─────────────────────────
+  // ─── Lista de assinatura ───────────────────────────────────────────
+  // 1 entry por pão da composição atual (com swap se houver).
+  // Linhas de extras vêm direto de currentExtras (1 entry por id, qty agregada).
   const baselineQtds=assinaturaBaseline||assinaturaQtds;
-  // 1 entry por pão da composição atual (com swap se houver)
   const assinaturaItems=Object.entries(cestaAtual||{}).filter(([,q])=>q>0).map(([id,q])=>{
     const pao=D.pães.find(p=>p.id===id);
     if(!pao) return null;
     const baselineQty=baselineQtds?.[id]||0;
     const wasSwapped=hasComposition&&baselineQty!==q;
-    return{id,nome:pao.nome,qty:q,sublabel:wasSwapped?"(assinatura, trocado)":"(assinatura)"};
+    return{id,nome:pao.nome,qty:q,tag:wasSwapped?"Trocado":"Assinatura"};
   }).filter(Boolean);
 
-  // ─── Microcopy condicional (briefing 5.2) ──────────────────────────
+  // ─── Microcopy condicional (Fase 2): só Confirmado + Cutoff ────────
+  // Briefing: Badge "Pedido não confirmado" + microcopy de rascunho saem
+  // (informação migra pro badge do Nav). Mantém pós-confirmação e pós-cutoff.
   let microcopy=null;
   if(cutoff&&!isConfirmado){
     microcopy={text:"Prazo encerrado. Esta semana você recebe a cesta da assinatura. Pode editar a próxima.",color:W[500]};
-  } else if(isRascunho&&hasAlteration){
-    microcopy={text:"Confirme seu pedido até terça, 12h para esta entrega.",color:W[600]};
   } else if(isConfirmado&&currentWeeklyOrder?.confirmed_at){
     microcopy={text:`Pedido confirmado em ${fmtDdMm(new Date(currentWeeklyOrder.confirmed_at))}.`,color:W[500]};
   }
 
-  // ─── Badge condicional ─────────────────────────────────────────────
-  let badge=null;
-  if(isConfirmado) badge=<Badge label="Confirmada" type="success"/>;
-  else if(isRascunho&&hasAlteration) badge=<Badge label="Pedido não confirmado" type="warning"/>;
-
+  // Total dos extras (assinatura é "Incluso", não soma).
+  const totalExtras=currentExtras.reduce((s,e)=>s+e.qty*Number(e.preco_unit),0);
   const showConfirmar=isRascunho&&hasAlteration&&!cutoff;
   const editarDisabled=cutoff&&isConfirmado;
 
+  // ─── Animação de remoção de extra ──────────────────────────────────
+  // Quando user clica `-` em qty=1: marca o id em `removing`, aguarda 200ms
+  // de animação CSS, e dispara removeExtraFromCart. Pra qty>1 decrementa
+  // direto sem animação.
+  const[removing,setRemoving]=useState(()=>new Set());
+  const removingTimersRef=useRef({});
+  useEffect(()=>()=>{
+    Object.values(removingTimersRef.current).forEach(clearTimeout);
+    removingTimersRef.current={};
+  },[]);
+  const handleExtraDecrement=(extra)=>{
+    if(extra.qty>1){removeExtraFromCart(extra.id);return;}
+    // qty===1 → anima e remove depois.
+    if(removing.has(extra.id)) return;
+    setRemoving(prev=>{const next=new Set(prev);next.add(extra.id);return next;});
+    removingTimersRef.current[extra.id]=setTimeout(()=>{
+      removeExtraFromCart(extra.id);
+      // Cleanup do Set no próprio callback do timer (evita setState-in-effect).
+      setRemoving(prev=>{const next=new Set(prev);next.delete(extra.id);return next;});
+      delete removingTimersRef.current[extra.id];
+    },450);
+  };
+
   useEffect(()=>{if(!isFirstVisit||!onSeen)return;const t=setTimeout(onSeen,5000);return()=>clearTimeout(t);},[isFirstVisit,onSeen]);
 
-  // Texto do CTA da novidade com preço inline. "R$ 22,00" → "R$ 22" pra ficar curto.
-  const novidadeCtaText=(extra)=>`+ Adicionar à cesta — ${extra.preco.replace(/,00$/,"")}`;
+  // Handler do CTA do NovidadeCard: POST + toast com flexão.
+  const handleNovidadeAdd=async(produto)=>{
+    try{await addExtraToCart(produto);}
+    catch(err){console.error("[Home] addExtraToCart failed",err); return;}
+    const verb=(produto.genero||"m")==="f"?"adicionada":"adicionado";
+    pushToast(`${produto.nome} ${verb} à cesta.`);
+  };
 
   return<div style={{padding:"24px 16px 16px"}}>
-    <h1 style={{fontFamily:fd,fontSize:30,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",margin:"0 0 20px",lineHeight:1.1}}>{saudacao}</h1>
+    {/* Saudação temporal unificada (wireframe v2 tela 4: page-title 26px,
+        margin-top 4px, League Gothic uppercase). */}
+    <h1 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",margin:"4px 0 16px",lineHeight:1.05}}>{saudacao}</h1>
 
     <CutoffBanner cutoff={cutoff}/>
 
-    {/* Card da Cesta — brand-50, lista unificada */}
-    <Card style={{marginBottom:16,padding:24,background:B[50],border:`1px solid ${B[100]}`,borderRadius:radii.lg}} ariaLabel={`Cesta da semana: ${deliveryLabelFull}`}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:16}}>
-        <div style={{fontFamily:fd,fontSize:22,textTransform:"uppercase",color:B[700],letterSpacing:"0.04em",lineHeight:1.15}}>SUA CESTA DESSA SEMANA</div>
-        {badge}
+    {/* Card da Cesta — fundo brand-50, lista com separadores dashed,
+        linhas de assinatura "Incluso" + extras com [- N +] (wireframe v2 tela 4). */}
+    <Card style={{marginBottom:16,padding:20,background:B[50],border:`1px solid ${B[100]}`,borderRadius:radii.lg}} ariaLabel={`Cesta da semana: ${deliveryLabelFull}`}>
+      {/* Cabeçalho: label pequeno + título da entrega */}
+      <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:B[600],marginBottom:4}}>Sua cesta desta semana</div>
+      <div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:B[800],lineHeight:1.3,marginBottom:10}}>Entrega {deliveryLabelFull}</div>
+
+      {/* Lista — assinatura primeiro, extras depois. Rows separadas por dashed
+          border, exceto a última (evita fio duplo com o sólido do total: a
+          hierarquia visual é tracejado = itens da lista, sólido = transição
+          lista → resumo). */}
+      <div style={{display:"flex",flexDirection:"column"}}>
+        {assinaturaItems.map((item,idx)=>{
+          // Borda some na última row da seção SE não houver extras depois.
+          const isLastGlobal=idx===assinaturaItems.length-1&&currentExtras.length===0;
+          return (
+            <div key={`a-${item.id}-${item.tag}`} style={{
+              display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
+              padding:"10px 0",borderBottom:isLastGlobal?"none":`1px dashed ${B[100]}`,
+              fontFamily:fb,fontSize:14,color:B[800],lineHeight:1.4,
+            }}>
+              <div style={{flex:1}}>
+                {item.qty}× {item.nome}{" "}
+                <span style={{
+                  display:"inline-block",marginLeft:4,fontFamily:fd,fontSize:11,
+                  textTransform:"uppercase",letterSpacing:"0.06em",color:B[600],
+                  background:"#FFF",border:`1px solid ${B[100]}`,
+                  padding:"1px 5px",borderRadius:radii.xs,verticalAlign:"1px",
+                }}>{item.tag}</span>
+              </div>
+              <div style={{fontFamily:fb,fontWeight:600,fontSize:14,color:B[700],fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>Incluso</div>
+            </div>
+          );
+        })}
+        {currentExtras.map((e,idx)=>{
+          const isLastGlobal=idx===currentExtras.length-1;
+          const isRemoving=removing.has(e.id);
+          return (
+            <div key={`e-${e.id}`} className={isRemoving?"cesta-row-removing":undefined} style={{
+              display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
+              padding:"10px 0",borderBottom:isLastGlobal?"none":`1px dashed ${B[100]}`,
+              fontFamily:fb,fontSize:14,color:B[800],lineHeight:1.4,
+            }}>
+              <div style={{flex:1}}>{e.qty}× {e.nome}</div>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontFamily:fb,fontWeight:600,fontSize:14,color:B[700],fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{fmt(Number(e.preco_unit)*e.qty)}</span>
+                {!cutoff&&!isConfirmado&&<QtyStepper
+                  qty={e.qty}
+                  name={e.nome}
+                  variant="brand"
+                  disabled={isRemoving}
+                  onIncrement={()=>addExtraToCart({id:e.id,nome:e.nome,precoNum:Number(e.preco_unit)})}
+                  onDecrement={()=>handleExtraDecrement(e)}
+                />}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Lista unificada */}
-      <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
-        {assinaturaItems.map((item,i)=><div key={`a-${i}`} style={{display:"flex",alignItems:"baseline",fontFamily:fb,fontSize:14,color:W[800]}}>
-          <span style={{flex:1}}>{item.qty}× {item.nome}</span>
-          <span style={{color:W[500],fontSize:12,marginLeft:6}}>{item.sublabel}</span>
-        </div>)}
-        {currentExtras.map(e=><div key={`e-${e.id}`} style={{display:"flex",alignItems:"center",gap:8,fontFamily:fb,fontSize:14,color:W[800]}}>
-          <span style={{flex:1}}>{e.qty}× {e.nome}</span>
-          <span style={{color:W[700],fontWeight:500}}>{fmt(Number(e.preco_unit)*e.qty)}</span>
-          {!cutoff&&!isConfirmado&&<button aria-label={`Remover ${e.nome}`} onClick={()=>removeExtraFromCart(e.id)} className="press-scale" style={{width:28,height:28,minWidth:28,borderRadius:radii.full,border:"none",background:"transparent",color:W[500],cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
-        </div>)}
+      {/* Total — só extras (assinatura é "Incluso", coberta pelo plano). */}
+      <div style={{
+        display:"flex",justifyContent:"space-between",alignItems:"baseline",
+        padding:"12px 0 0",marginTop:6,borderTop:`1px solid ${B[100]}`,
+      }}>
+        <span style={{fontFamily:fb,fontSize:12,color:B[700]}}>Extras desta semana</span>
+        <span style={{fontFamily:fb,fontSize:18,fontWeight:700,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(totalExtras)}</span>
       </div>
 
-      <div style={{fontFamily:fb,fontSize:13,color:W[600],marginBottom:microcopy?6:16}}>Entrega: {deliveryLabelFull}.</div>
-      {microcopy&&<div style={{fontFamily:fb,fontSize:13,color:microcopy.color,marginBottom:16,lineHeight:1.5}}>{microcopy.text}</div>}
+      {/* Microcopy condicional: só pós-confirmação e pós-cutoff. */}
+      {microcopy&&<div style={{fontFamily:fb,fontSize:13,color:microcopy.color,marginTop:8,lineHeight:1.5}}>{microcopy.text}</div>}
 
+      {/* Confirmar pedido (mantido entre total e Editar cesta). */}
       {showConfirmar&&<ActionBtn primary full
         loadingText="Confirmando…"
         successText="Confirmado ✓"
         onAction={async()=>{await confirmCurrentOrder();}}
         onComplete={()=>showToast(`Cesta confirmada. Entrega ${deliveryLabelShort}.`)}
         ariaLabel="Confirmar pedido"
-        style={{marginBottom:8}}
+        style={{marginTop:12}}
       >Confirmar pedido</ActionBtn>}
 
+      {/* Editar cesta — link ghost dashed com ícone pencil (wireframe v2 tela 4). */}
       <button onClick={()=>setDrawerOpen(true)} disabled={editarDisabled} className="press-scale" style={{
-        width:"100%",padding:"12px 16px",borderRadius:radii.md,
-        border:`1.5px solid ${B[500]}`,background:"transparent",color:B[500],
-        fontFamily:fb,fontSize:14,fontWeight:500,
-        cursor:editarDisabled?"default":"pointer",opacity:editarDisabled?0.4:1,
-        transition:"all 150ms ease",minHeight:44,
-      }} onMouseEnter={e=>{if(!editarDisabled) e.currentTarget.style.background=B[100];}} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>→ Editar carrinho</button>
+        display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+        width:"100%",marginTop:10,padding:"8px 12px",
+        background:"transparent",border:`1px dashed ${B[100]}`,borderRadius:radii.md,
+        fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",
+        color:B[500],cursor:editarDisabled?"default":"pointer",
+        opacity:editarDisabled?0.4:1,transition:"all 150ms ease",minHeight:40,
+      }} onMouseEnter={e=>{if(!editarDisabled){e.currentTarget.style.background="#FFF";e.currentTarget.style.borderStyle="solid";}}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.borderStyle="dashed";}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        Editar cesta
+      </button>
     </Card>
 
-    {/* Novidade hero — com sub-copy emocional + CTA com preço inline */}
+    {/* Novidade hero — clique no CTA adiciona direto (sem modal de detalhes) */}
     {D.extras.length>0
-      ?<NovidadeCard extra={D.extras[0]} ctaText={novidadeCtaText(D.extras[0])} onCardClick={()=>setModal(D.extras[0])} cutoff={cutoff} lockedReason={pendingPayment?LOCK_REASON_PENDING:undefined}/>
+      ?<NovidadeCard extra={D.extras[0]} onAdd={()=>handleNovidadeAdd(D.extras[0])} cutoff={cutoff} lockedReason={pendingPayment?LOCK_REASON_PENDING:undefined}/>
       :<div style={{background:W[100],border:`1px solid ${W[200]}`,borderRadius:radii.lg,padding:"24px 20px",textAlign:"center",marginBottom:16}}>
         <div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.5,marginBottom:8}}>Conhece o resto da nossa padaria?</div>
         <button onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0}}>→ Ver tudo no Cardápio</button>
@@ -542,7 +929,7 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
     <div onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,textAlign:"center",padding:"8px 0",cursor:"pointer"}}>→ Ver tudo no Cardápio</div>
 
     {/* Drawer */}
-    {drawerOpen&&<EditarCarrinhoDrawer
+    {drawerOpen&&<EditarCestaDrawer
       onClose={()=>setDrawerOpen(false)}
       currentWeeklyOrder={currentWeeklyOrder}
       currentExtras={currentExtras}
@@ -552,6 +939,7 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
       onSetCestaSemana={onSetCestaSemana}
       updateComposition={updateComposition}
       removeExtraFromCart={removeExtraFromCart}
+      addExtraToCart={addExtraToCart}
       confirmCurrentOrder={confirmCurrentOrder}
       cutoff={cutoff}
       pendingPayment={pendingPayment}
@@ -560,17 +948,7 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
       onConfirmedToast={()=>showToast(`Cesta confirmada. Entrega ${deliveryLabelShort}.`)}
     />}
 
-    {modal&&<Modal product={modal} onClose={()=>setModal(null)}
-      onAction={async()=>{await addExtraToCart(modal);}}
-      onComplete={()=>{
-        const verb=modal.genero==="f"?"adicionada":"adicionado";
-        showToast(`${modal.nome} ${verb} à cesta. Confirme antes de terça, 12h.`);
-        setModal(null);
-      }}
-      actionLabel="Adicionar à cesta"
-      cutoff={cutoff}
-    />}
-    <Toast msg={toastMsg} vis={toast}/>
+    <ToastStack toasts={toasts}/>
   </div>;
 };
 
@@ -694,56 +1072,71 @@ const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,assinaturaBaseline,onS
 };
 
 // ═══ CARDÁPIO ═══
-// Refactor Frente C item 1 (briefing 8):
-//  - Click no ProductCard → abre Modal (sem QtyBtn embutido no card)
-//  - "✓ Nx na sua cesta" substitui o CTA "Pedir" quando o produto já está no carrinho
-//  - Sem banner "confirmado" no topo; sem toast "Item removido"
-const Cardapio=({currentExtras,addExtraToCart,cutoff,pendingPayment})=>{
-  const[modal,setModal]=useState(null);
-  const[toast,setToast]=useState(false);
-  const[toastMsg,setToastMsg]=useState("");
-  const showToast=(msg)=>{setToastMsg(msg);setToast(true);setTimeout(()=>setToast(false),5000);};
+// Refactor Frente C item 3 (wireframe v2):
+//  - Linha micro-tipográfica "Extras entram na sua próxima fatura."
+//  - NovidadeCard Hero (D.extras[0]) antes da lista
+//  - Lista unificada de 6 produtos na ordem do wireframe (Original → Integral →
+//    Focaccia → Multigrãos → Brioche → Ciabatta), buscando primeiro em D.pães,
+//    fallback em D.rotativos pra cobrir os 4 do catálogo rotativo
+//  - ProductCard expande inline (sem modal sobreposto)
+//  - Click no botão "Adicionar à cesta" dispara POST + toast (stack até 3)
+const CARDAPIO_PRODUCT_ORDER=["original","integral","focaccia","multigraos","brioche","ciabatta"];
+const Cardapio=({addExtraToCart,cutoff,pendingPayment})=>{
+  const{toasts,push:pushToast}=useToastStack();
   const lockedReason=pendingPayment?LOCK_REASON_PENDING:undefined;
-  const qtyOf=(id)=>currentExtras.find(e=>e.id===id)?.qty||0;
+
+  // Lista unificada na ordem curada do wireframe. Resolve cada id contra
+  // D.pães e D.rotativos (Pão Original/Integral em pães; demais em rotativos).
+  const cardapioProducts=CARDAPIO_PRODUCT_ORDER
+    .map(id=>D.pães.find(p=>p.id===id)||D.rotativos.find(p=>p.id===id))
+    .filter(Boolean);
+
+  const handleAdd=async(product)=>{
+    try{await addExtraToCart(product);}
+    catch(err){
+      console.error("[Cardapio] addExtraToCart failed",err);
+      return;
+    }
+    const verb=(product.genero||"m")==="f"?"adicionada":"adicionado";
+    pushToast(`${product.nome} ${verb} à cesta.`);
+  };
+
+  const novidade=D.extras[0];
 
   return<div style={{padding:"24px 16px 16px"}}>
     <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[500],margin:"0 0 4px"}}>Cardápio</h2>
     <div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:12}}>Peça itens extras para esta semana</div>
     <DeadlineWarning/>
 
-    {D.extras.length>0
-      ?D.extras.map((ex,i)=><NovidadeCard key={i} extra={ex} onCardClick={()=>setModal(ex)} cutoff={cutoff} lockedReason={lockedReason}/>)
+    {/* Aviso de cobrança — micro-tipográfico, abaixo do cutoff (briefing 3.2). */}
+    <div style={{display:"inline-flex",alignItems:"center",gap:6,fontFamily:fb,fontSize:13,color:W[500],marginBottom:16}}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={W[500]} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <rect x="3" y="6" width="18" height="13" rx="2"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      Extras entram na sua próxima fatura.
+    </div>
+
+    {/* Novidade Hero — apenas o primeiro extra, em destaque visual */}
+    {novidade
+      ?<NovidadeCard extra={novidade} onAdd={()=>handleAdd(novidade)} cutoff={cutoff} lockedReason={lockedReason}/>
       :<EmptyState title="Novidade da semana" body="Nenhuma novidade esta semana."/>
     }
 
-    <div style={{height:1,background:W[200],margin:"4px 0 20px"}}/>
-    <div style={{fontFamily:fd,fontSize:16,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",marginBottom:12}}>Nossos pães</div>
-
-    {D.pães.map((p,i)=>{
-      const q=qtyOf(p.id);
-      return<ProductCard key={i}
+    {/* Lista unificada: flui direto do Hero, sem header categórico (briefing
+        wireframe v2 tela 3 — "Nossos pães" cria categorização falsa porque a
+        lista mistura pães fixos e extras rotativos). */}
+    {cardapioProducts.map(p=>(
+      <ProductCard key={p.id}
         product={{...p,preco:`${p.preco}/un`}}
-        qty={0}
-        ctaLabel="Pedir"
+        ctaLabel="Adicionar à cesta"
         cutoff={cutoff}
         lockedReason={lockedReason}
-        onCardClick={()=>setModal(p)}
-        onAdd={()=>setModal(p)}
-        inBasketLabel={q>0?`✓ ${q}× na sua cesta`:undefined}
-      />;
-    })}
+        onAdd={()=>handleAdd(p)}
+      />
+    ))}
 
-    {modal&&<Modal product={modal} onClose={()=>setModal(null)}
-      onAction={async()=>{await addExtraToCart(modal);}}
-      onComplete={()=>{
-        const verb=modal.genero==="f"?"adicionada":"adicionado";
-        showToast(`${modal.nome} ${verb} à cesta. Confirme antes de terça, 12h.`);
-        setModal(null);
-      }}
-      actionLabel="Adicionar à cesta"
-      cutoff={cutoff}
-    />}
-    <Toast msg={toastMsg} vis={toast}/>
+    <ToastStack toasts={toasts}/>
   </div>;
 };
 
@@ -1016,7 +1409,16 @@ export default function CoraPortal(){
     if (!currentWeeklyOrder?.id) return;
     try {
       const saved = await confirmWeeklyOrder(currentWeeklyOrder.id);
-      setWeeklyOrders(prev => prev.map(o => (o.id === saved.id ? saved : o)));
+      setWeeklyOrders(prev => {
+        // Defensivo: se saved.id não bate com nenhum order local (cenário
+        // inesperado de stale state ou race), substitui pelo saved direto
+        // pra garantir que o estado reflita a confirmação.
+        if (!prev.some(o => o.id === saved.id)) {
+          console.warn("[App] confirmCurrentOrder: saved.id sem match local — forçando substituição por delivery_date", { savedId: saved.id, prevIds: prev.map(o => o.id) });
+          return mergeOrder(prev, saved);
+        }
+        return prev.map(o => (o.id === saved.id ? saved : o));
+      });
     } catch (err) {
       console.error("[App] confirmCurrentOrder failed", err);
     }
@@ -1136,14 +1538,17 @@ const params = new URLSearchParams(window.location.search);
       <div key={scr} className="tab-content">
         {scr==="home"&&<Home onNav={handleNav} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaAtual={cestaAtual} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} pendingPayment={pendingPayment} currentWeeklyOrder={currentWeeklyOrder} currentExtras={currentExtras} addExtraToCart={addExtraToCart} removeExtraFromCart={removeExtraFromCart} updateComposition={updateComposition} confirmCurrentOrder={confirmCurrentOrder}/>}
         {scr==="assinatura"&&<Assinatura onNav={handleNav} hasPending={false} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} onSalvar={handleSalvarAssinatura}/>}
-        {scr==="cardapio"&&<Cardapio currentExtras={currentExtras} addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment}/>}
+        {scr==="cardapio"&&<Cardapio addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment}/>}
         {scr==="perfil"&&<Perfil confirmed={confirmedLegacy} hasPending={false} assinaturaQtds={assinaturaQtds} historicoCicloAtual={historicoCicloAtual} historicoCiclosPassados={historicoCiclosPassados}/>}
       </div>
     </main>
     {/* Footers fixos (OrderFooter/ConfirmedFooter) removidos no PR 2 Fase 1.
         Confirmação do pedido vai pro botão "Confirmar pedido" no card da Home
         e no EditarCarrinhoDrawer (Fase 2). */}
-    <Nav active={scr} onNav={handleNav} badge={0}/>
+    <Nav active={scr} onNav={handleNav} inicioBadge={
+      currentWeeklyOrder?.status==="rascunho" &&
+      ((currentWeeklyOrder?.extras?.length||0)>0 || currentWeeklyOrder?.composition!=null)
+    }/>
     <style>{`
       *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
       body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior:none}
@@ -1152,6 +1557,11 @@ const params = new URLSearchParams(window.location.search);
       @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
       @keyframes fadeIn{from{opacity:0}to{opacity:1}}
       @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+      /* Toast: fadeUp dedicado (280ms ease-out) — translateY 8px → 0 + fade */
+      @keyframes toastFadeUp{from{opacity:0;transform:translateY(8px) scale(1)}to{opacity:1;transform:translateY(0) scale(1)}}
+      /* Remoção de linha do Card de Cesta + Drawer: slide-out horizontal + fade + colapso vertical (450ms ease-out — abaixo disso o user não acompanha a transição). */
+      @keyframes slideOutFade{to{opacity:0;transform:translateX(40px);max-height:0;padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0;border-bottom-width:0}}
+      .cesta-row-removing{animation:slideOutFade 450ms ease-out forwards;overflow:hidden}
       .bp:hover{background:${B[600]}!important}
       .bw:hover{background:#1FAF54!important}
       .bl:hover{background:${W[100]}!important}
