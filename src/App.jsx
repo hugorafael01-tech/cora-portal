@@ -638,30 +638,32 @@ const EditarCestaDrawer=({
             aria-expanded={effectiveOpen}
             aria-controls="assinatura-body"
             style={{
-              display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,
+              display:"flex",flexDirection:"column",alignItems:"stretch",gap:6,
               width:"100%",padding:"4px 0",
               background:"transparent",border:"none",
               cursor:isLockedOrConfirmado?"default":"pointer",
               textAlign:"left",
             }}>
-            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",flex:1,minWidth:0}}>
-              <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],lineHeight:1}}>Sua assinatura</span>
-              {hasAlteration&&<span style={{
-                display:"inline-flex",alignItems:"center",gap:4,
-                padding:"3px 8px",borderRadius:radii.xs,
-                background:ST.warning.bg,border:`1px solid ${ST.warning.b}`,color:ST.warning.t,
-                fontFamily:fd,fontSize:10,letterSpacing:"0.06em",textTransform:"uppercase",lineHeight:1,
-              }}>
-                <span style={{fontSize:6}}>●</span>Trocado só esta semana
-              </span>}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,width:"100%"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",flex:1,minWidth:0}}>
+                <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],lineHeight:1}}>Sua assinatura</span>
+                {hasAlteration&&<span style={{
+                  display:"inline-flex",alignItems:"center",gap:4,
+                  padding:"3px 8px",borderRadius:radii.xs,
+                  background:ST.warning.bg,border:`1px solid ${ST.warning.b}`,color:ST.warning.t,
+                  fontFamily:fd,fontSize:10,letterSpacing:"0.06em",textTransform:"uppercase",lineHeight:1,
+                }}>
+                  <span style={{fontSize:6}}>●</span>Trocado só esta semana
+                </span>}
+              </div>
+              {!isLockedOrConfirmado&&<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={W[500]} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{flexShrink:0,transform:effectiveOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 200ms ease"}}>
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>}
             </div>
-            {!isLockedOrConfirmado&&<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={W[500]} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{flexShrink:0,transform:effectiveOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 200ms ease"}}>
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>}
+            <div style={{fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.3}}>
+              {renderCompactComposition()}
+            </div>
           </button>
-          <div style={{fontFamily:fb,fontSize:14,color:W[700],margin:"6px 0 0",lineHeight:1.3}}>
-            {renderCompactComposition()}
-          </div>
           <div id="assinatura-body" style={{
             maxHeight:effectiveOpen?1000:0,
             overflow:"hidden",
@@ -715,7 +717,7 @@ const EditarCestaDrawer=({
               fontFamily:fb,fontSize:12,color:ST.warning.t,
               margin:"6px 0 0",lineHeight:1.4,
             }}>
-              Sua cesta precisa de {totalPaes} {totalPaes===1?"pão":"pães"}. {faltam>1?`Faltam ${faltam}.`:`Falta ${faltam}.`}
+              Sua cesta é composta por {totalPaes} {totalPaes===1?"pão":"pães"}, {faltam>1?`faltam ${faltam}`:`falta ${faltam}`}.
             </div>}
             {hasAlteration&&!isLockedOrConfirmado&&<button onClick={revertToBaseline} style={{
               display:"inline-flex",alignItems:"center",gap:6,
@@ -748,8 +750,11 @@ const EditarCestaDrawer=({
           </div>
         </div>
 
+        {/* Divisor visual entre seções (briefing v2 §4) */}
+        <div aria-hidden="true" style={{height:1,background:W[200],margin:"18px 0 0"}}/>
+
         {/* Seção: Extras desta semana */}
-        <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"18px 0 8px"}}>Extras desta semana</div>
+        <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"14px 0 8px"}}>Extras desta semana</div>
         {hasExtras
           ?currentExtras.map((e,idx)=>{
               const isRemoving=removing.has(e.id);
