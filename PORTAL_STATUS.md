@@ -107,6 +107,40 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 ## Última sessão de trabalho
 
+- **Data:** 2026-05-16 (sábado)
+- **Tema:** Refactor da seção SUA ASSINATURA do Drawer "Editar cesta" — QtyStepper + colapso + polish v2
+- **Saída:**
+  - Branch `feat/drawer-assinatura-qtystepper` mergeada em main (commit `9e3cb9a`, squash de 3 commits internos).
+  - **Origem:** durante validação visual da Frente C item 3 (15/05), descobriu-se confusão conceitual no Drawer com clientes de 2-3 pães: trocar tipos entre slots posicionais marcava como alteração mesmo quando a composição final era idêntica ao baseline. UI era posicional ("Pão 1", "Pão 2"), operação era de composição (quantos de cada).
+  - **Decisão de produto:** substituir slots radio por **QtyStepper por tipo de pão** (mesma metáfora dos extras), com **swap atômico** quando capacity full (resolve deadlock no plano 1 pão).
+  - **Wireframes consolidados via Claude Design:** `docs/Assinatura no Drawer _standalone_.html` (v1, swap atômico + capacity hint) → `docs/Assinatura_no_Drawer v2__standalone_.html` (v2, reorganização do Drawer: colapsável + empty state). Decisão de manter ordem original "Sua Assinatura → Extras" reforçada após CD propor inversão.
+  - **11 mudanças incrementais aplicadas** (documentadas em `docs/CORA_Briefing_Drawer_v2_Reorganizacao_e_Polish.md`):
+    - Seção Sua Assinatura colapsável (default colapsada quando `composition == baseline`)
+    - Auto-expand handler-side (sem useEffect, evita lint `react-hooks/set-state-in-effect`) quando user faz alteração
+    - Composição compacta dinâmica no header (linha clicável): "1× Original + 1× Integral", "2× Original", etc
+    - Pill "Trocado só esta semana" no header colapsado (visível sem precisar expandir)
+    - Empty state quando cesta sem extras: "Nada adicionado pra esta semana. / Confira nossos pães no cardápio. Em breve teremos novidades." + CTA "Ver cardápio →"
+    - Total card de extras oculto quando empty (sem R$ 0,00 mudo)
+    - Footer label dinâmico: "Sem alterações" disabled quando empty AND sem alteração
+    - **Bug crítico:** Confirmar pedido disabled em composição inválida (`sumAll !== totalPaes`) + microcopy "Sua cesta é composta por {N} pães, falta(m) {M}." Bloqueio do `-` da última row em qty=1 só aplica quando `totalPaes === 1` (planos 2+ permitem inválido temporário)
+    - Capacity card sem "— cheio"; warning bg só em composição inválida
+    - `+` brand-500 vívido em row esmaecida (opacity 0.55 só no name container, stepper íntegro)
+    - Divisor visual entre seções
+  - **QtyStepper estendido:** novos props opcionais `incrementDisabled` e `decrementDisabled` (granulares por botão). Retro-compat preservada via fallback pro `disabled` global. Decisão coerente com o requisito de UX do swap atômico (`+` enabled em capacity full quando outra row tem qty>0).
+  - **Smoke test em Preview deployment** com 9 cenários cobertos por Hugo (16/05/2026): normal com extras, expand manual, swap atômico plano 2 pães, composição inválida, revert preserva estado aberto, remove extra → empty state, CTA "Ver cardápio" navega, pós-confirmado disabled, e o **caso crítico do plano 1 pão** (swap atômico em 1 click resolve o deadlock que motivou o refactor — testado modificando temporariamente Beatriz pra plano 1 pão via SQL).
+  - **3 ajustes pós-validação aplicados antes do merge:**
+    - Divisor visual entre seções (mais explícito)
+    - Toda a linha do header (label + composição compacta) clicável pro toggle (não só o label)
+    - Copy do erro de composição inválida: "Sua cesta é composta por X pães, falta(m) N." (mais natural que "precisa de")
+  - **Validações técnicas pós-merge:** `npm run build` 276.79 kB / 82.12 kB gzip ✓; lint baseline preservado (18/17/1); test:cutoff 6/6 ✓.
+- **3 tasks ClickUp criadas durante a validação** (não entram no PR atual, são pendências futuras):
+  - [86e1dwcgk — UX: Linhas do Card de Cesta da Home clicáveis (abre Drawer)](https://app.clickup.com/t/86e1dwcgk) (priority normal). Padrão "card inteiro clicável", melhoria de affordance.
+  - [86e1dwdqe — UX: Aplicar QtyStepper + swap atômico na edição da assinatura permanente (tela Assinatura)](https://app.clickup.com/t/86e1dwdqe) (priority high, antes do Alpha). Consistência entre edição semanal e permanente.
+  - [86e1dwk1v — UX: Recibo detalhado pós-confirmação da cesta](https://app.clickup.com/t/86e1dwk1v) (priority high, antes do Alpha). Momento ideal pro recibo é justamente no click "Confirmar pedido" — caminhos a discutir: modal pós-confirmação, e-mail transacional, seção "Próxima entrega" em Perfil, ou combinação.
+- **Pendência operacional:** check manual semanal de carrinhos abandonados toda terça 8h BRT continua.
+- **Próximo:** sessão dedicada de copy dos produtos com Mariane (task 86e1d14zr); discussão estratégica do Drawer com Mariane antes do Alpha (task 86e1c2yh3); Frente C itens 2, 4, 5 (telas internas restantes) ou Frente D (whitelist de cobertura).
+
+## Sessões anteriores
 - **Data:** 2026-05-15 (sexta)
 - **Tema:** Frente C item 3 — Refactor do Cardápio, Home e Drawer
 - **Saída:**
@@ -122,15 +156,14 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
   - **Sources of truth adicionados:** `docs/CORA_FrenteC_Item3_Cardapio_Decisoes.md` (v3, final), `docs/CORA_Briefing_FrenteC_Item3_Cardapio.md` (briefing técnico), `docs/Cardapio Wireframe v2 _standalone_.html` (referência visual fonte primária), `docs/seed_test_assinante.sql` (SQL de seed reutilizável pra Preview deployments).
   - **Resíduos endereçados da task 86e1c2bnj (PR 2 anterior):** itens 1 (copy de cobrança), 3 (touch-target do `×` sublimite — `×` removido), 7 (branch `qty>0` inerte no Modal — Modal removido), 9 (peso/tamanho inconsistente nos extras no Drawer).
   - **Validações técnicas:** `npm run build` 271.76 kB / 81.04 kB gzip ✓; lint 18 problems (baseline mantido) ✓; `npm run test:cutoff` 6/6 ✓.
-  - **Validação manual em Preview deployment:** 12 cenários do smoke test rodados pelos 3 commits da branch (Fase 1, Fase 2, Fase 3, mais 2 commits de fix do badge + polish do Hero). Validados: hero da Focaccia, expand inline, stack de toasts, animação 450ms de remoção, Card de Cesta com [- N +], badge no Nav aparece/some conforme estado, botão "Confirmar pedido", drawer "Editar cesta" com slots Incluso + pill Trocado + 2 botões + estado "Confirmado ✓".
+  - **Validação manual em Preview deployment:** 12 cenários do smoke test rodados pelos 3 commits da branch (Fase 1, Fase 2, Fase 3, mais 2 commits de fix do badge + polish do Hero).
 - **Tasks ClickUp criadas/atualizadas:**
   - [86e1d14zr](https://app.clickup.com/t/86e1d14zr) — Revisar copy dos produtos do catálogo (priority normal). Pendente Mariane.
-  - [86e1d777a](https://app.clickup.com/t/86e1d777a) — UX: Repensar edição multi-slot da assinatura no Drawer (priority high). Caminho escolhido: QtyStepper por tipo (substitui slots posicionais). Wireframe pelo Claude Design em andamento. PR separado após validação.
-  - [86e1c2bnj](https://app.clickup.com/t/86e1c2bnj) — Items 1, 3, 7, 9 fechados pelo PR; item 10 (bug do badge) fechado; itens 2, 4, 5, 6, 8 (resíduos) + 11 (INP issue button.press-scale 215ms) continuam pendentes.
+  - [86e1d777a](https://app.clickup.com/t/86e1d777a) — UX: Repensar edição multi-slot da assinatura no Drawer (priority high). Caminho escolhido: QtyStepper por tipo. Resolvida pelo PR de 16/05.
+  - [86e1c2bnj](https://app.clickup.com/t/86e1c2bnj) — Items 1, 3, 7, 9 fechados pelo PR; item 10 (bug do badge) fechado; itens 2, 4, 5, 6, 8 (resíduos) + 11 (INP issue) continuam pendentes.
   - [86e1c2yh3](https://app.clickup.com/t/86e1c2yh3) — Item 1 (confusão "assinatura" vs "esta semana") parcialmente endereçado pelo "Incluso"; itens 2 e 3 continuam pra sessão dedicada com Mariane antes do Alpha (junho/2026).
-- **Próximo:** Frente C itens 2, 4, 5 (telas internas restantes); Frente D (whitelist de cobertura) pendente; PR separado pra refactor da edição multi-slot do Drawer após wireframe v3 do Claude Design (task 86e1d777a).
+  - **Refactor multi-slot da Assinatura no Drawer (não previsto na Frente C original) ✅ Concluído em 16/05/2026.** Decisão emergente durante validação da Frente C item 3: substituir slots posicionais por QtyStepper + swap atômico na seção SUA ASSINATURA do Drawer. Iteração v2 com colapsável e empty state. Detalhes na sessão de 16/05 acima em "Última sessão de trabalho". Tasks resolvidas: [86e1d777a](https://app.clickup.com/t/86e1d777a). Tasks pendentes correlatas: [86e1dwcgk](https://app.clickup.com/t/86e1dwcgk), [86e1dwdqe](https://app.clickup.com/t/86e1dwdqe), [86e1dwk1v](https://app.clickup.com/t/86e1dwk1v).
 
-## Sessões anteriores
 - **Data:** 2026-05-13 (quarta)
 - **Tema:** Frente C item 1 — Hierarquia da Home, PR 2 (Frontend)
 - **Saída:**
