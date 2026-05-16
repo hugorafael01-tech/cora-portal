@@ -121,23 +121,24 @@ const Btn=({children,primary,disabled,onClick,style:es,full,ariaLabel})=>{const[
 // (variant brand sobre fundo brand-50) e no Drawer (Fase 3, variant neutro).
 // SVG inline pros sinais − e + (mantém peso visual consistente, sem confusão
 // com fontes do sistema). Borda muda conforme variant.
-const QtyStepper=({qty,onIncrement,onDecrement,name,disabled=false,variant="brand"})=>{
+const QtyStepper=({qty,onIncrement,onDecrement,name,disabled=false,variant="brand",incrementDisabled,decrementDisabled})=>{
   const bColor=variant==="brand"?B[100]:W[300];
-  const iconColor=disabled?W[300]:B[500];
-  const btnStyle={
+  const decDis=decrementDisabled!==undefined?decrementDisabled:disabled;
+  const incDis=incrementDisabled!==undefined?incrementDisabled:disabled;
+  const mkBtn=(dis)=>({
     width:32,height:32,padding:0,
     background:"transparent",border:"none",
-    cursor:disabled?"not-allowed":"pointer",
-    color:iconColor,
+    cursor:dis?"not-allowed":"pointer",
+    color:dis?W[300]:B[500],
     display:"flex",alignItems:"center",justifyContent:"center",
-  };
+  });
   return (
     <div onClick={e=>e.stopPropagation()} style={{
       display:"inline-flex",alignItems:"center",
       border:`1px solid ${bColor}`,borderRadius:radii.md,
       background:"#FFF",overflow:"hidden",flexShrink:0,
     }}>
-      <button type="button" onClick={onDecrement} disabled={disabled} aria-label={`Diminuir ${name}`} style={btnStyle}>
+      <button type="button" onClick={onDecrement} disabled={decDis} aria-label={`Diminuir ${name}`} style={mkBtn(decDis)}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
@@ -148,7 +149,7 @@ const QtyStepper=({qty,onIncrement,onDecrement,name,disabled=false,variant="bran
         borderLeft:`1px solid ${bColor}`,borderRight:`1px solid ${bColor}`,
         fontVariantNumeric:"tabular-nums",
       }}>{qty}</span>
-      <button type="button" onClick={onIncrement} disabled={disabled} aria-label={`Aumentar ${name}`} style={btnStyle}>
+      <button type="button" onClick={onIncrement} disabled={incDis} aria-label={`Aumentar ${name}`} style={mkBtn(incDis)}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <line x1="12" y1="5" x2="12" y2="19"/>
           <line x1="5" y1="12" x2="19" y2="12"/>
@@ -452,11 +453,6 @@ const AnimatedNumber=({value,duration=400,format=fmt})=>{
 };
 
 // ═══ HOME ═══
-// Helpers para montar slots e converter entre qtdsMap <-> slots array
-// slots: array de ids na ordem fixa (derivada da Assinatura). Ex: ["original","original","integral"] para 2 Originais + 1 Integral.
-const qtdsToSlots=(qtds)=>{const s=[];Object.entries(qtds).forEach(([id,q])=>{for(let i=0;i<q;i++)s.push(id);});return s;};
-const slotsToQtds=(slots)=>slots.reduce((a,id)=>{a[id]=(a[id]||0)+1;return a;},{});
-
 // `WeekTimeline`, `diasAteEntrega`, `formatarDataHero` (e seus arrays
 // auxiliares MESES_CURTOS_PT / DIAS_SEMANA_PT) foram removidos no PR 2 Fase 2.
 // O novo card da Cesta (briefing 5.2) não usa timeline visual nem "em X dias";
@@ -482,18 +478,22 @@ const EditarCestaDrawer=({
   cutoff,
   pendingPayment,
   deliveryLabelFull,
+  deliveryLabelShort,
   onNav,
   onConfirmedToast,
 })=>{
   const dialogRef=useRef(null);
   useModalA11y(dialogRef,true,onClose);
   const baselineQtds=assinaturaBaseline||assinaturaQtds;
-  // Slots locais — radio selection sincroniza com updateComposition via debounce
-  const[slots,setSlots]=useState(()=>qtdsToSlots(cestaAtual||baselineQtds));
+  const normalizeComp=(src)=>{const r={};D.pães.forEach(p=>{r[p.id]=(src&&src[p.id])||0;});return r;};
+  const baselineNorm=normalizeComp(baselineQtds);
+  const totalPaes=Object.values(baselineNorm).reduce((s,q)=>s+q,0);
+  const[comp,setComp]=useState(()=>normalizeComp(cestaAtual||baselineQtds));
   const compDebounceRef=useRef(null);
 
   const isLocked=cutoff||pendingPayment;
   const isConfirmado=currentWeeklyOrder?.status==="confirmado";
+  const isLockedOrConfirmado=isLocked||isConfirmado;
 
   // Animação de remoção idêntica à Home (reusa keyframe slideOutFade 450ms).
   const[removing,setRemoving]=useState(()=>new Set());
@@ -514,29 +514,82 @@ const EditarCestaDrawer=({
     },450);
   };
 
-  const triggerCompositionSave=(nextSlots)=>{
+  const triggerCompositionSave=(nextComp)=>{
     if(compDebounceRef.current) clearTimeout(compDebounceRef.current);
     compDebounceRef.current=setTimeout(()=>{
-      const novoQtds=slotsToQtds(nextSlots);
-      D.pães.forEach(p=>{if(novoQtds[p.id]===undefined) novoQtds[p.id]=0;});
-      const igual=JSON.stringify(novoQtds)===JSON.stringify(baselineQtds);
-      // Atualiza cestaSemana local (legacy compat) + POSTa composition
-      onSetCestaSemana(igual?null:novoQtds);
-      updateComposition(igual?null:novoQtds);
+      const igual=D.pães.every(p=>(nextComp[p.id]||0)===(baselineNorm[p.id]||0));
+      onSetCestaSemana(igual?null:nextComp);
+      updateComposition(igual?null:nextComp);
     },300);
   };
 
-  const setSlot=(idx,novoId)=>{
-    if(isLocked) return;
-    setSlots(prev=>{
-      const next=[...prev]; next[idx]=novoId;
-      triggerCompositionSave(next);
-      return next;
-    });
+  const applyComp=(nextComp)=>{
+    setComp(nextComp);
+    triggerCompositionSave(nextComp);
+    // Auto-expand quando composição diverge do baseline (briefing v2 §C).
+    // Disparo unidirecional: só abre, nunca fecha — preserva expansão após user reverter.
+    if(!isLockedOrConfirmado){
+      const nextAlt=D.pães.some(p=>(nextComp[p.id]||0)!==(baselineNorm[p.id]||0));
+      if(nextAlt) setIsAssinaturaOpen(true);
+    }
   };
 
+  // Swap atômico: capacity full + clique em + na row B com row A > 0 → A--, B++.
+  // Evita deadlock no plano 1 pão e dá UX de 1 clique pra trocar tipos.
+  const handleIncrement=(id)=>{
+    if(isLockedOrConfirmado) return;
+    const sumAll=D.pães.reduce((s,p)=>s+(comp[p.id]||0),0);
+    if(sumAll<totalPaes){applyComp({...comp,[id]:(comp[id]||0)+1});return;}
+    const otherId=D.pães.find(p=>p.id!==id)?.id;
+    if(otherId&&(comp[otherId]||0)>0){
+      applyComp({...comp,[id]:(comp[id]||0)+1,[otherId]:comp[otherId]-1});
+    }
+  };
+
+  const handleDecrement=(id)=>{
+    if(isLockedOrConfirmado) return;
+    if((comp[id]||0)<=0) return;
+    const sumAll=D.pães.reduce((s,p)=>s+(comp[p.id]||0),0);
+    // Plano 1 pão: bloqueio do 0 total (cesta sem pão). Planos 2+: permite estado
+    // inválido temporário (Confirmar fica disabled via isCompositionInvalid).
+    if(totalPaes===1&&sumAll<=1) return;
+    applyComp({...comp,[id]:comp[id]-1});
+  };
+
+  const revertToBaseline=()=>{
+    if(isLockedOrConfirmado) return;
+    applyComp({...baselineNorm});
+  };
+
+  // Sem "Pão " prefixo: "1× Original + 1× Integral"
+  const renderBaselineComposition=()=>D.pães
+    .filter(p=>(baselineNorm[p.id]||0)>0)
+    .map(p=>`${baselineNorm[p.id]}× ${p.nome.replace(/^Pão\s+/,"")}`)
+    .join(" + ");
+
+  const renderCompactComposition=()=>{
+    const parts=D.pães.filter(p=>(comp[p.id]||0)>0).map(p=>`${comp[p.id]}× ${p.nome.replace(/^Pão\s+/,"")}`);
+    return parts.length===0?"Cesta vazia":parts.join(" + ");
+  };
+
+  const sumAll=D.pães.reduce((s,p)=>s+(comp[p.id]||0),0);
+  const hasAlteration=D.pães.some(p=>(comp[p.id]||0)!==(baselineNorm[p.id]||0));
+  const isCompositionInvalid=sumAll!==totalPaes;
+  const faltam=Math.max(0,totalPaes-sumAll);
+
+  // Lazy initializer: abre no mount se composição inicial já diverge do baseline
+  // (cesta customizada persistida) e não está locked. Mudanças subsequentes
+  // disparam via applyComp. Estado locked é tratado em render via effectiveOpen.
+  const[isAssinaturaOpen,setIsAssinaturaOpen]=useState(()=>{
+    if(isLockedOrConfirmado) return false;
+    const initial=normalizeComp(cestaAtual||baselineQtds);
+    return D.pães.some(p=>(initial[p.id]||0)!==(baselineNorm[p.id]||0));
+  });
+  const effectiveOpen=!isLockedOrConfirmado&&isAssinaturaOpen;
+
   const totalExtras=currentExtras.reduce((s,e)=>s+e.qty*Number(e.preco_unit),0);
-  const assinaturaSlotsBase=qtdsToSlots(baselineQtds);
+  const hasExtras=currentExtras.length>0;
+  const isEmpty=!hasExtras&&!hasAlteration;
 
   // Sub-header copy (1 linha): contexto da entrega + cutoff.
   const headerSub=pendingPayment
@@ -575,51 +628,135 @@ const EditarCestaDrawer=({
       {/* BODY — scrollável */}
       <div style={{padding:"14px 18px",overflowY:"auto",flex:1}}>
 
-        {/* Seção: Sua assinatura */}
-        <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"0 0 8px"}}>Sua assinatura</div>
-        {assinaturaSlotsBase.map((produtoPadraoId,idx)=>{
-          const produtoAtualId=slots[idx]||produtoPadraoId;
-          return<div key={idx} style={{marginBottom:8}}>
-            {assinaturaSlotsBase.length>1&&<div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],marginBottom:6}}>Pão {idx+1}</div>}
-            {D.pães.map(p=>{
-              const sel=produtoAtualId===p.id;
-              const isSwapped=sel&&p.id!==produtoPadraoId;
-              return<button key={p.id} onClick={()=>setSlot(idx,p.id)} disabled={isLocked} style={{
-                display:"flex",alignItems:"center",gap:10,width:"100%",
-                padding:"12px 14px",marginBottom:8,
-                borderRadius:radii.md,
-                border:`1.5px solid ${sel?B[500]:W[200]}`,
-                background:sel?B[50]:"#FFF",
-                cursor:isLocked?"default":"pointer",textAlign:"left",
-                opacity:isLocked?0.55:1,
-                transition:"border-color 150ms ease, background 150ms ease",
-              }}>
-                <div style={{width:18,height:18,borderRadius:radii.full,border:`1.5px solid ${sel?B[500]:W[300]}`,position:"relative",flexShrink:0}}>
-                  {sel&&<div style={{position:"absolute",inset:3,background:B[500],borderRadius:radii.full}}/>}
-                </div>
-                <div style={{flex:1,fontFamily:fb,fontSize:14,fontWeight:500,color:sel?B[700]:W[800]}}>
-                  {p.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>· {p.peso}</span>
-                  {isSwapped&&<span style={{
-                    display:"inline-block",marginLeft:6,fontFamily:fd,fontSize:11,
-                    textTransform:"uppercase",letterSpacing:"0.06em",color:B[600],
-                    background:"#FFF",border:`1px solid ${B[100]}`,
-                    padding:"1px 5px",borderRadius:radii.xs,verticalAlign:"1px",fontWeight:500,
-                  }}>Trocado</span>}
-                </div>
-                <div style={{fontFamily:fb,fontSize:12,color:W[500],flexShrink:0}}>Incluso</div>
-              </button>;
-            })}
-          </div>;
-        })}
+        {/* Seção: Sua assinatura — colapsável. Default fechada; auto-expand quando alterado.
+            Pós-cutoff/confirmado: força fechada e remove affordance do chevron. */}
+        <div style={{opacity:isLockedOrConfirmado?0.55:1}}>
+          <button
+            type="button"
+            onClick={()=>setIsAssinaturaOpen(prev=>!prev)}
+            disabled={isLockedOrConfirmado}
+            aria-expanded={effectiveOpen}
+            aria-controls="assinatura-body"
+            style={{
+              display:"flex",flexDirection:"column",alignItems:"stretch",gap:6,
+              width:"100%",padding:"4px 0",
+              background:"transparent",border:"none",
+              cursor:isLockedOrConfirmado?"default":"pointer",
+              textAlign:"left",
+            }}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,width:"100%"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",flex:1,minWidth:0}}>
+                <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],lineHeight:1}}>Sua assinatura</span>
+                {hasAlteration&&<span style={{
+                  display:"inline-flex",alignItems:"center",gap:4,
+                  padding:"3px 8px",borderRadius:radii.xs,
+                  background:ST.warning.bg,border:`1px solid ${ST.warning.b}`,color:ST.warning.t,
+                  fontFamily:fd,fontSize:10,letterSpacing:"0.06em",textTransform:"uppercase",lineHeight:1,
+                }}>
+                  <span style={{fontSize:6}}>●</span>Trocado só esta semana
+                </span>}
+              </div>
+              {!isLockedOrConfirmado&&<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={W[500]} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{flexShrink:0,transform:effectiveOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 200ms ease"}}>
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>}
+            </div>
+            <div style={{fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.3}}>
+              {renderCompactComposition()}
+            </div>
+          </button>
+          <div id="assinatura-body" style={{
+            maxHeight:effectiveOpen?1000:0,
+            overflow:"hidden",
+            transition:"max-height 250ms ease-out",
+          }}>
+            <div style={{fontFamily:fb,fontSize:12,color:W[500],margin:"10px 0 10px"}}>
+              {totalPaes} {totalPaes===1?"pão":"pães"} por semana · ajuste só esta semana
+            </div>
+            <div>
+              {D.pães.map((p,i)=>{
+                const qty=comp[p.id]||0;
+                const otherId=D.pães.find(x=>x.id!==p.id)?.id;
+                const isZero=qty===0;
+                const decDis=isLockedOrConfirmado||qty===0||(totalPaes===1&&sumAll<=1);
+                const incDis=isLockedOrConfirmado||(sumAll>=totalPaes&&(comp[otherId]||0)===0);
+                return <div key={p.id} style={{
+                  display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
+                  padding:"12px 0",
+                  borderBottom:i<D.pães.length-1?`1px solid ${W[200]}`:"none",
+                }}>
+                  {/* opacity SÓ no name container: stepper íntegro permite que o `+` brand
+                      em row esmaecida fique visualmente claro (signal do swap atômico). */}
+                  <div style={{flex:1,minWidth:0,fontFamily:fb,fontSize:14,fontWeight:500,color:isZero?W[500]:W[800],opacity:isLockedOrConfirmado?1:(isZero?0.55:1)}}>
+                    {p.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>· {p.peso}</span>
+                  </div>
+                  <QtyStepper
+                    qty={qty}
+                    name={p.nome}
+                    variant="neutral"
+                    incrementDisabled={incDis}
+                    decrementDisabled={decDis}
+                    onIncrement={()=>handleIncrement(p.id)}
+                    onDecrement={()=>handleDecrement(p.id)}
+                  />
+                </div>;
+              })}
+            </div>
+            <div style={{
+              marginTop:10,padding:"10px 14px",borderRadius:radii.md,
+              background:isCompositionInvalid?ST.warning.bg:W[100],
+              color:isCompositionInvalid?ST.warning.t:W[700],
+              display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,
+              fontFamily:fb,fontSize:13,
+            }}>
+              <span>Total da semana</span>
+              <span style={{fontVariantNumeric:"tabular-nums"}}>
+                <span style={{fontWeight:600}}>{sumAll}</span> de {totalPaes} {totalPaes===1?"pão":"pães"}
+              </span>
+            </div>
+            {isCompositionInvalid&&<div style={{
+              fontFamily:fb,fontSize:12,color:ST.warning.t,
+              margin:"6px 0 0",lineHeight:1.4,
+            }}>
+              Sua cesta é composta por {totalPaes} {totalPaes===1?"pão":"pães"}, {faltam>1?`faltam ${faltam}`:`falta ${faltam}`}.
+            </div>}
+            {hasAlteration&&!isLockedOrConfirmado&&<button onClick={revertToBaseline} style={{
+              display:"inline-flex",alignItems:"center",gap:6,
+              marginTop:10,padding:"6px 0",
+              background:"transparent",border:"none",cursor:"pointer",
+              fontFamily:fd,fontSize:11,letterSpacing:"0.05em",textTransform:"uppercase",
+              color:B[500],
+            }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+              </svg>
+              Voltar pro padrão ({renderBaselineComposition()})
+            </button>}
+            {hasAlteration&&!isLockedOrConfirmado&&<div style={{
+              display:"flex",alignItems:"flex-start",gap:6,
+              marginTop:10,padding:"8px 0",
+              fontFamily:fb,fontSize:12,color:W[500],lineHeight:1.4,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={W[400]} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}} aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              <span>
+                Vale só pra entrega de {deliveryLabelShort}. Pra mudar sua assinatura permanente,{" "}
+                <button onClick={()=>{onClose();onNav&&onNav("assinatura");}} className="lk" style={{background:"none",border:"none",padding:0,fontFamily:fb,fontSize:12,color:B[500],textDecoration:"underline",cursor:"pointer"}}>vá em Assinatura</button>.
+              </span>
+            </div>}
+          </div>
+        </div>
+
+        {/* Divisor visual entre seções (briefing v2 §4) */}
+        <div aria-hidden="true" style={{height:1,background:W[200],margin:"18px 0 0"}}/>
 
         {/* Seção: Extras desta semana */}
-        <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"18px 0 8px"}}>Extras desta semana</div>
-        {currentExtras.length===0
-          ?<div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6,marginBottom:10}}>
-              Você ainda não adicionou extras.<br/>
-              <button onClick={()=>{onClose();onNav&&onNav("cardapio");}} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0,marginTop:6}}>→ Ver tudo no Cardápio</button>
-            </div>
-          :currentExtras.map((e,idx)=>{
+        <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"14px 0 8px"}}>Extras desta semana</div>
+        {hasExtras
+          ?currentExtras.map((e,idx)=>{
               const isRemoving=removing.has(e.id);
               const isLastExtra=idx===currentExtras.length-1;
               return (
@@ -643,17 +780,41 @@ const EditarCestaDrawer=({
                 </div>
               );
             })
+          :<div style={{
+              display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,
+              padding:"14px",background:W[100],borderRadius:radii.md,marginBottom:4,
+            }}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[700],lineHeight:1.3}}>Nada adicionado pra esta semana.</div>
+                <div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:4,lineHeight:1.4}}>Confira nossos pães no cardápio. Em breve teremos novidades.</div>
+              </div>
+              <button
+                type="button"
+                onClick={()=>{onClose();onNav&&onNav("cardapio");}}
+                style={{
+                  display:"inline-flex",alignItems:"center",gap:4,flexShrink:0,
+                  padding:"8px 12px",borderRadius:radii.md,
+                  background:"transparent",border:`1px solid ${B[100]}`,
+                  fontFamily:fb,fontSize:13,fontWeight:500,color:B[500],
+                  cursor:"pointer",
+                }}>
+                Ver cardápio
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+            </div>
         }
 
-        {/* Total — card warm-100 destacado */}
-        <div style={{
+        {/* Total — só renderiza com extras presentes (briefing v2 §F) */}
+        {hasExtras&&<div style={{
           display:"flex",justifyContent:"space-between",alignItems:"baseline",
           marginTop:10,padding:"12px 14px",
           background:W[100],borderRadius:radii.md,
         }}>
           <span style={{fontFamily:fb,fontSize:13,color:W[700]}}>Total de extras desta semana</span>
           <span style={{fontFamily:fb,fontSize:18,fontWeight:700,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(totalExtras)}</span>
-        </div>
+        </div>}
 
         {/* Microcopy rodapé: lembrete de cobrança + cutoff (briefing 3.6) */}
         <div style={{
@@ -692,8 +853,12 @@ const EditarCestaDrawer=({
             </button>
           )
           :(
+            // Disabled quando bloqueado, composição inválida (sumAll≠totalPaes) ou empty
+            // (sem extras E sem alteração na assinatura). Label vira "Sem alterações"
+            // só no empty — composição inválida mantém "Confirmar pedido" pra preservar
+            // o reconhecimento da ação, microcopy invalid já comunica o porquê.
             <ActionBtn primary
-              disabled={isLocked}
+              disabled={isLocked||isCompositionInvalid||isEmpty}
               loadingText="Confirmando…"
               successText="Confirmado ✓"
               onAction={async()=>{
@@ -706,8 +871,8 @@ const EditarCestaDrawer=({
                 onClose();
               }}
               style={{flex:2}}
-              ariaLabel="Confirmar pedido"
-            >Confirmar pedido</ActionBtn>
+              ariaLabel={isEmpty?"Sem alterações":"Confirmar pedido"}
+            >{isEmpty?"Sem alterações":"Confirmar pedido"}</ActionBtn>
           )
         }
       </div>
@@ -944,6 +1109,7 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
       cutoff={cutoff}
       pendingPayment={pendingPayment}
       deliveryLabelFull={deliveryLabelFull}
+      deliveryLabelShort={deliveryLabelShort}
       onNav={onNav}
       onConfirmedToast={()=>showToast(`Cesta confirmada. Entrega ${deliveryLabelShort}.`)}
     />}
