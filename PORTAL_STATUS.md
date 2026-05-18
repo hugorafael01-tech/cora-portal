@@ -1,11 +1,11 @@
 # Portal do Assinante — Status Atual
 
-_Auto-gerado em 2026-05-16 por Claude Code. Não editar manualmente acima da seção "Pendências não-código"._
+_Auto-gerado em 2026-05-18 por Claude Code. Não editar manualmente acima da seção "Pendências não-código"._
 
 ## Versão
 - **App:** v0.0.0 (produto v3.2.7)
 - **Branch:** main
-- **Último commit:** `9e3cb9a` — 2026-05-16 — feat(drawer): refactor da seção Sua Assinatura — QtyStepper + colapso + polish v2 (#5)
+- **Último commit:** `e48bf33` — 2026-05-18 — feat(catalogo): copy aprovado dos 6 produtos + fix empty state do Hero (#6)
 
 ## Rotas / páginas
 - src/pages/PreCadastro.jsx
@@ -40,6 +40,9 @@ _Auto-gerado em 2026-05-16 por Claude Code. Não editar manualmente acima da se�
 Nenhum encontrado
 
 ## Últimos 10 commits
+- `e48bf33` — 2026-05-18 — feat(catalogo): copy aprovado dos 6 produtos + fix empty state do Hero (#6)
+- `58f194d` — 2026-05-16 — docs: atualiza PORTAL_STATUS com refactor da Assinatura no Drawer mergeado
+- `9a66133` — 2026-05-16 — docs: atualiza cabeçalho auto-gerado do PORTAL_STATUS
 - `9e3cb9a` — 2026-05-16 — feat(drawer): refactor da seção Sua Assinatura — QtyStepper + colapso + polish v2 (#5)
 - `95f4dd1` — 2026-05-15 — docs: briefing + wireframe do refactor da assinatura no Drawer
 - `c85921a` — 2026-05-15 — docs: atualiza PORTAL_STATUS com Frente C item 3 mergeada
@@ -47,12 +50,9 @@ Nenhum encontrado
 - `d8544aa` — 2026-05-15 — feat: Frente C item 3 — refactor do Cardápio, Home e Drawer
 - `f5ee452` — 2026-05-14 — fix(precadastro): força fontWeight 400 nos h1 com League Gothic
 - `106a8f0` — 2026-05-14 — docs: decisoes + briefing + wireframe v2 da Frente C item 3
-- `76515f5` — 2026-05-14 — docs: decisões da Frente C item 3 — Cardápio
-- `01eb027` — 2026-05-13 — docs: atualiza PORTAL_STATUS com Frente C item 1 concluída (PR 1 + PR 2)
-- `b88f410` — 2026-05-13 — feat(home): Hierarquia da Home — carrinho persistido com confirmação (Frente C item 1, PR 2) (#3)
 
 ## Build / Deploy
-- **Último build local:** 2026-05-16
+- **Último build local:** 2026-05-18
 - **vercel.json:** presente _(rewrites refinados na Fase 7)_
 
 ---
