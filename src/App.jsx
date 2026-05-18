@@ -1082,13 +1082,12 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
       </button>
     </Card>
 
-    {/* Novidade hero — clique no CTA adiciona direto (sem modal de detalhes) */}
+    {/* Novidade hero — clique no CTA adiciona direto (sem modal de detalhes).
+        Empty state reusa <EmptyState> (mesmo card do Cardápio): sem CTA embutido
+        pra evitar duplicação com o link "→ Ver tudo no Cardápio" abaixo. */}
     {D.extras.length>0
       ?<NovidadeCard extra={D.extras[0]} onAdd={()=>handleNovidadeAdd(D.extras[0])} cutoff={cutoff} lockedReason={pendingPayment?LOCK_REASON_PENDING:undefined}/>
-      :<div style={{background:W[100],border:`1px solid ${W[200]}`,borderRadius:radii.lg,padding:"24px 20px",textAlign:"center",marginBottom:16}}>
-        <div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.5,marginBottom:8}}>Conhece o resto da nossa padaria?</div>
-        <button onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0}}>→ Ver tudo no Cardápio</button>
-      </div>
+      :<EmptyState title="Novidade da semana" body="Nenhuma novidade esta semana. Conhece o resto da nossa padaria?"/>
     }
 
     <div onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,textAlign:"center",padding:"8px 0",cursor:"pointer"}}>→ Ver tudo no Cardápio</div>
