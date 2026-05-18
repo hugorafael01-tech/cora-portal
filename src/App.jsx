@@ -1087,7 +1087,7 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
         pra evitar duplicação com o link "→ Ver tudo no Cardápio" abaixo. */}
     {D.extras.length>0
       ?<NovidadeCard extra={D.extras[0]} onAdd={()=>handleNovidadeAdd(D.extras[0])} cutoff={cutoff} lockedReason={pendingPayment?LOCK_REASON_PENDING:undefined}/>
-      :<EmptyState title="Novidade da semana" body="Nenhuma novidade esta semana. Conhece o resto da nossa padaria?"/>
+      :<EmptyState title="Novidade da semana" body="Nenhuma novidade esta semana."/>
     }
 
     <div onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,textAlign:"center",padding:"8px 0",cursor:"pointer"}}>→ Ver tudo no Cardápio</div>
