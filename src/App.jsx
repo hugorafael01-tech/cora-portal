@@ -6,7 +6,7 @@ const PreCadastro = lazy(() => import("./pages/PreCadastro"));
 const CapacityWaitlist = lazy(() => import("./pages/CapacityWaitlist"));
 import ProductCard from "./components/ProductCard";
 import PendingPaymentBanner from "./components/PendingPaymentBanner";
-import { isPastCutoff, nextEditableThursdayISO } from "./utils/cutoff";
+import { isPastCutoff, nextEditableThursdayISO, nextSubscriptionChangeThursdayISO } from "./utils/cutoff";
 import { haptic } from "./utils/haptic";
 import { plural } from "./utils/plural";
 import { loadSubscription, saveSubscription, clearSubscription, reconcileSubscription } from "./utils/subscription";
@@ -1148,15 +1148,17 @@ const pluralizarPao=(n,nome)=>n===1?nome:nome.replace(/\bPão\b/,"Pães").replac
 // (Cenário A — mês alinhado eliminou cobrança proporcional). MESES_PT segue usado pelo Perfil.
 const MESES_PT=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
 
-// Frente C item 2 (Fase 2) — wireframe v4. Tela idle reorganizada:
-// • Card "Plano atual" com breakdown Pães+Frete=Total + CTA "Alterar minha Assinatura"
-// • Card Convite Condomínio isolado (mais peso visual)
-// • Blocos read-only Endereço/Cobrança/Histórico (saem na Frente C item 4)
-// • Microcopy WhatsApp pra alterações ainda não suportadas no app
-// O modo de edição inline + modal de confirmação vem na Fase 3 (placeholder por ora).
+// Frente C item 2 (Fase 2 + 3) — wireframe v4.
+// • Fase 2: tela idle reorganizada (Plano atual + Convite + read-only blocks + microcopy WA)
+// • Fase 3: edição inline (card vira "Alterar plano" com QtyStepper + ev-block + footer)
+// O modal de confirmação + POST com AbortController vem na Fase 4.
 const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds})=>{
   const[editing,setEditing]=useState(false);
+  // Rascunho local durante a edição (composição em construção). Cancel descarta.
+  // Reset feito explicitamente nos handlers (abrir/cancelar) — evita useEffect+setState.
+  const[rascunho,setRascunho]=useState(()=>({...assinaturaQtds}));
 
+  // ===== Estado vigente (baseline) =====
   const total_paes=Object.values(assinaturaQtds||{}).reduce((s,q)=>s+q,0);
   const valor_paes=total_paes*99;
   const valor_frete=15;
@@ -1165,16 +1167,48 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds})=>{
   // "1× Pão Original + 1× Pão Integral" (sem peso, com × separador). Mantém nome completo.
   const planCompList=D.pães.filter(p=>(assinaturaQtds?.[p.id]||0)>0).map(p=>`${assinaturaQtds[p.id]}× ${p.nome}`).join(" + ")||"Sem pães";
 
-  // Endereço: subscription real (localStorage snapshot) com fallback pra placeholder do wireframe
+  // ===== Estado do rascunho (Fase 3) =====
+  const sumAll=D.pães.reduce((s,p)=>s+(rascunho?.[p.id]||0),0);
+  const rascunhoValorPaes=sumAll*99;
+  const rascunhoValorMensal=rascunhoValorPaes+valor_frete;
+  const hasAlteration=D.pães.some(p=>(rascunho?.[p.id]||0)!==(assinaturaQtds?.[p.id]||0));
+  const isCompositionInvalid=sumAll===0;
+  const canSave=hasAlteration&&!isCompositionInvalid;
+  // Cenário A: nova composição vale na quinta DEPOIS do próximo cutoff (+7d).
+  // Cobrança nova começa no primeiro dia do próximo mês (mês alinhado).
+  const fmtDdMm=(d)=>`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;
+  const proxDelivery=new Date(`${nextSubscriptionChangeThursdayISO()}T12:00:00Z`);
+  const proxDeliveryDdMm=fmtDdMm(proxDelivery);
+  const today=new Date();
+  const proximoDia1=new Date(today.getFullYear(),today.getMonth()+1,1);
+  const proximaFaturaDdMm=fmtDdMm(proximoDia1);
+  const ehSwap=hasAlteration&&!isCompositionInvalid&&sumAll===total_paes;
+  const ehMudancaTotal=hasAlteration&&!isCompositionInvalid&&sumAll!==total_paes;
+
+  // ===== Handlers do rascunho =====
+  // Sem swap atômico aqui (Drawer faz por causa do cap totalPaes; aqui o cap é
+  // 3 pães/semana — o plano maior — então cliente faz dois cliques pra trocar).
+  const handleIncrement=(id)=>{
+    if(sumAll>=3) return;
+    setRascunho(prev=>({...prev,[id]:(prev?.[id]||0)+1}));
+  };
+  const handleDecrement=(id)=>{
+    const qty=rascunho?.[id]||0;
+    if(qty<=0) return;
+    // Safety net pra plano 1 pão: não pode zerar (sem como recuperar via decrement).
+    if(total_paes===1&&sumAll<=1) return;
+    setRascunho(prev=>({...prev,[id]:prev[id]-1}));
+  };
+  const handleCancelEdit=()=>{setRascunho({...assinaturaQtds});setEditing(false);};
+  const handleSalvar=()=>{
+    // Fase 4: abre modal de confirmação. Por ora, placeholder.
+    console.log("[Assinatura] Salvar alterações:",rascunho);
+  };
+
+  // ===== Endereço (subscription real, fallback pro placeholder do wireframe) =====
   const end=subscription?.endereco;
   const enderecoLine1=end?`${end.rua}, ${end.numero}${end.complemento?", "+end.complemento:""}`:"Rua Otávio Carneiro, 123, apt 401";
   const enderecoLine2=end?`${end.bairro}, ${end.cidade} · ${end.estado} · ${end.cep}`:"Icaraí, Niterói · RJ · 24230-191";
-
-  // Próxima fatura: primeiro dia do próximo mês, DD/MM (Ajuste 3 do briefing v4).
-  const today=new Date();
-  const proximoDia1=new Date(today.getFullYear(),today.getMonth()+1,1);
-  const fmtDdMm=(d)=>`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;
-  const proximaFaturaDdMm=fmtDdMm(proximoDia1);
 
   return<div style={{padding:"18px 16px 12px",paddingBottom:hasPending?80:12}}>
     {/* Header título + badge */}
@@ -1183,53 +1217,161 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds})=>{
       <Badge label="Ativa"/>
     </div>
 
-    {/* Card "Plano atual" */}
-    <Card style={{marginBottom:12}}>
-      <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"0 0 10px"}}>Plano atual</div>
-      <div style={{fontFamily:fb,fontWeight:700,fontSize:20,color:W[800],lineHeight:1.2,margin:"0 0 4px"}}>
-        {total_paes} {total_paes===1?"pão":"pães"} por semana
-      </div>
-      {/* Ajuste 1 do briefing: .plan-delivery clonado do .plan-comp (sem ::before, mesma tipografia) */}
-      <div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.5,margin:0}}>{planCompList}</div>
-      <div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.5,margin:"0 0 14px"}}>Entregas toda quinta</div>
-
-      {/* Breakdown Pães + Frete = Total */}
-      <div style={{display:"flex",flexDirection:"column",gap:6,padding:"12px 0 0",borderTop:`1px solid ${W[200]}`,marginBottom:14}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-          <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Pães</span>
-          <span style={{fontFamily:fb,fontSize:14,color:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(valor_paes)}/mês</span>
+    {/* Card "Plano atual" — idle ou editing inline (Fase 3) */}
+    <Card style={{marginBottom:12,...(editing?{background:"#FFF",border:`1.5px solid ${B[500]}`}:{})}}>
+      {!editing&&<>
+        <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"0 0 10px"}}>Plano atual</div>
+        <div style={{fontFamily:fb,fontWeight:700,fontSize:20,color:W[800],lineHeight:1.2,margin:"0 0 4px"}}>
+          {total_paes} {total_paes===1?"pão":"pães"} por semana
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-          <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Frete</span>
-          <span style={{fontFamily:fb,fontSize:14,color:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(valor_frete)}/mês</span>
-        </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingTop:8,borderTop:`1px solid ${W[200]}`,marginTop:2}}>
-          <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[700]}}>Total</span>
-          <span style={{fontFamily:fb,fontWeight:700,fontSize:16,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(valor_mensal)}/mês</span>
-        </div>
-      </div>
+        {/* Ajuste 1 do briefing: .plan-delivery clonado do .plan-comp (sem ::before, mesma tipografia) */}
+        <div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.5,margin:0}}>{planCompList}</div>
+        <div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.5,margin:"0 0 14px"}}>Entregas toda quinta</div>
 
-      {!editing&&<button type="button" onClick={()=>setEditing(true)} disabled={cutoff} style={{
-        width:"100%",padding:13,minHeight:44,
-        background:"transparent",
-        color:cutoff?W[400]:B[500],
-        border:`1.5px solid ${cutoff?W[200]:B[500]}`,
-        borderRadius:radii.md,
-        cursor:cutoff?"not-allowed":"pointer",
-        fontFamily:fb,fontSize:14,fontWeight:600,
-        display:"flex",alignItems:"center",justifyContent:"center",gap:8,
-        transition:"background 150ms ease",
-      }} onMouseEnter={e=>{if(!cutoff) e.currentTarget.style.background=B[50];}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}>
-        <I d={ic.edit} size={16} color={cutoff?W[400]:B[500]}/>
-        Alterar minha Assinatura
-      </button>}
-      {cutoff&&!editing&&<CutoffMsg/>}
+        {/* Breakdown Pães + Frete = Total */}
+        <div style={{display:"flex",flexDirection:"column",gap:6,padding:"12px 0 0",borderTop:`1px solid ${W[200]}`,marginBottom:14}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+            <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Pães</span>
+            <span style={{fontFamily:fb,fontSize:14,color:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(valor_paes)}/mês</span>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+            <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Frete</span>
+            <span style={{fontFamily:fb,fontSize:14,color:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(valor_frete)}/mês</span>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingTop:8,borderTop:`1px solid ${W[200]}`,marginTop:2}}>
+            <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[700]}}>Total</span>
+            <span style={{fontFamily:fb,fontWeight:700,fontSize:16,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(valor_mensal)}/mês</span>
+          </div>
+        </div>
 
-      {/* Fase 2: placeholder de edição. A UI inline real entra na Fase 3. */}
-      {editing&&<div style={{marginTop:12,padding:14,background:W[100],borderRadius:radii.md,fontFamily:fb,fontSize:13,color:W[600],lineHeight:1.5}}>
-        Edição da Assinatura em construção (Fase 3).
-        <button onClick={()=>setEditing(false)} style={{display:"block",marginTop:8,background:"none",border:"none",color:B[500],fontFamily:fb,fontSize:13,fontWeight:500,cursor:"pointer",padding:0}}>← Voltar</button>
-      </div>}
+        <button type="button" onClick={()=>{setRascunho({...assinaturaQtds});setEditing(true);}} disabled={cutoff} style={{
+          width:"100%",padding:13,minHeight:44,
+          background:"transparent",
+          color:cutoff?W[400]:B[500],
+          border:`1.5px solid ${cutoff?W[200]:B[500]}`,
+          borderRadius:radii.md,
+          cursor:cutoff?"not-allowed":"pointer",
+          fontFamily:fb,fontSize:14,fontWeight:600,
+          display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+          transition:"background 150ms ease",
+        }} onMouseEnter={e=>{if(!cutoff) e.currentTarget.style.background=B[50];}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}>
+          <I d={ic.edit} size={16} color={cutoff?W[400]:B[500]}/>
+          Alterar minha Assinatura
+        </button>
+        {cutoff&&<CutoffMsg/>}
+      </>}
+
+      {editing&&<>
+        <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:B[500],margin:"0 0 10px"}}>Alterar plano</div>
+        <div style={{fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.45,margin:"0 0 10px"}}>Quantos pães por semana?</div>
+
+        {/* asn-list: 1 row por tipo de pão. QtyStepper reusado do Drawer. */}
+        <div style={{display:"flex",flexDirection:"column",marginBottom:10}}>
+          {D.pães.map((p,i)=>{
+            const qty=rascunho?.[p.id]||0;
+            const isZero=qty===0;
+            const isRowAltered=qty!==(assinaturaQtds?.[p.id]||0);
+            const incDis=sumAll>=3;
+            const decDis=qty===0||(total_paes===1&&sumAll<=1);
+            return <div key={p.id} style={{
+              display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
+              padding:"12px 0",
+              borderBottom:i<D.pães.length-1?`1px solid ${W[200]}`:"none",
+              opacity:isZero?0.55:1,
+            }}>
+              <div style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                <span style={{fontFamily:fb,fontWeight:600,fontSize:15,color:W[800],lineHeight:1.3}}>
+                  {p.nome} <span style={{fontWeight:400,fontSize:13,color:W[500]}}>· {p.peso}</span>
+                </span>
+                {isRowAltered&&<span style={{
+                  display:"inline-flex",alignItems:"center",gap:4,
+                  padding:"2px 6px",borderRadius:radii.xs,lineHeight:1.4,
+                  background:W[100],color:ST.warning.t,
+                  fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",
+                }}>
+                  <span style={{fontSize:6}}>●</span>Alterado
+                </span>}
+              </div>
+              <QtyStepper
+                qty={qty}
+                name={p.nome}
+                variant="neutral"
+                incrementDisabled={incDis}
+                decrementDisabled={decDis}
+                onIncrement={()=>handleIncrement(p.id)}
+                onDecrement={()=>handleDecrement(p.id)}
+              />
+            </div>;
+          })}
+        </div>
+
+        {/* total-week */}
+        <div style={{
+          display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,
+          padding:"10px 12px",marginBottom:12,
+          background:W[100],borderRadius:radii.md,
+          fontFamily:fb,fontSize:13,color:W[700],
+        }}>
+          <span style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Total da semana</span>
+          <span style={{fontFamily:fb,fontWeight:600,color:W[800]}}>
+            <span style={{fontSize:15,fontVariantNumeric:"tabular-nums"}}>{sumAll}</span> {sumAll===1?"pão":"pães"}
+          </span>
+        </div>
+
+        {/* ev-block: 3 colunas (label | Atual | Após). Total "Após" em warm-700 se igual ao Atual; brand-500 se diferente. */}
+        <div style={{
+          display:"grid",gridTemplateColumns:"auto 1fr 1fr",gap:"6px 10px",
+          padding:12,marginBottom:10,
+          background:W[50],border:`1px solid ${W[200]}`,borderRadius:radii.md,
+          fontFamily:fb,
+        }}>
+          <span/>
+          <span style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],textAlign:"right"}}>Atual</span>
+          <span style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:B[500],textAlign:"right"}}>Após mudança</span>
+          <span style={{fontSize:13,color:W[600],alignSelf:"center"}}>Pães</span>
+          <span style={{fontSize:13,color:W[700],textAlign:"right",fontVariantNumeric:"tabular-nums",alignSelf:"center"}}>{fmt(valor_paes)}</span>
+          <span style={{fontSize:13,color:W[700],textAlign:"right",fontVariantNumeric:"tabular-nums",alignSelf:"center"}}>{fmt(rascunhoValorPaes)}</span>
+          <span style={{fontSize:13,color:W[600],alignSelf:"center"}}>Frete</span>
+          <span style={{fontSize:13,color:W[700],textAlign:"right",fontVariantNumeric:"tabular-nums",alignSelf:"center"}}>{fmt(valor_frete)}</span>
+          <span style={{fontSize:13,color:W[700],textAlign:"right",fontVariantNumeric:"tabular-nums",alignSelf:"center"}}>{fmt(valor_frete)}</span>
+          <span style={{gridColumn:"1 / -1",height:1,background:W[200],margin:"4px 0 2px"}}/>
+          <span style={{fontSize:14,fontWeight:600,color:W[700],alignSelf:"center"}}>Total</span>
+          <span style={{fontSize:15,fontWeight:700,color:W[700],textAlign:"right",fontVariantNumeric:"tabular-nums",alignSelf:"center"}}>{fmt(valor_mensal)}/mês</span>
+          <span style={{fontSize:15,fontWeight:700,color:rascunhoValorMensal===valor_mensal?W[700]:B[500],textAlign:"right",fontVariantNumeric:"tabular-nums",alignSelf:"center"}}>{fmt(rascunhoValorMensal)}/mês</span>
+        </div>
+
+        {/* micro-context: copy dependente do tipo da alteração */}
+        {(ehSwap||ehMudancaTotal)&&<div style={{
+          display:"flex",alignItems:"flex-start",gap:8,
+          marginBottom:14,padding:"0 2px",
+          fontFamily:fb,fontSize:12,color:W[600],lineHeight:1.5,
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={W[500]} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:2}} aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span>
+            Vale a partir da entrega de {proxDeliveryDdMm}.{" "}
+            {ehSwap?"O valor mensal continua o mesmo.":`A cobrança nova começa em ${proximaFaturaDdMm}.`}
+          </span>
+        </div>}
+
+        {/* erro sumAll===0 */}
+        {isCompositionInvalid&&<div style={{
+          fontFamily:fb,fontSize:12,color:ST.warning.t,
+          margin:"-4px 0 12px",padding:"0 2px",lineHeight:1.4,
+        }}>
+          Sua Assinatura precisa de pelo menos 1 pão por semana.
+        </div>}
+
+        {/* edit-foot: Cancelar (ghost) + Salvar alterações (primary, label preservado quando disabled) */}
+        <div style={{display:"flex",gap:10}}>
+          <Btn ghost onClick={handleCancelEdit} style={{flex:1}}>Cancelar</Btn>
+          <Btn primary disabled={!canSave} onClick={handleSalvar} style={{flex:1}}>Salvar alterações</Btn>
+        </div>
+      </>}
     </Card>
 
     {/* Card Convite Condomínio (isolado, mais peso) */}

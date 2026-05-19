@@ -52,3 +52,14 @@ export function nextEditableThursdayISO(now = new Date()) {
   }
   return thursday.toISOString().slice(0, 10);
 }
+
+// Data em que uma alteração de assinatura (Frente C item 2) entra em vigor:
+// uma semana DEPOIS da próxima quinta editável. Cenário A do briefing —
+// a próxima entrega já foi fechada via cutoff, então a mudança vale na
+// quinta seguinte. Ex: hoje seg 19/05, nextEditable=22/05 → retorna 29/05.
+export function nextSubscriptionChangeThursdayISO(now = new Date()) {
+  const next = nextEditableThursdayISO(now);
+  const d = new Date(`${next}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 7);
+  return d.toISOString().slice(0, 10);
+}
