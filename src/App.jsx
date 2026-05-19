@@ -1186,10 +1186,19 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds})=>{
   const ehMudancaTotal=hasAlteration&&!isCompositionInvalid&&sumAll!==total_paes;
 
   // ===== Handlers do rascunho =====
-  // Sem swap atômico aqui (Drawer faz por causa do cap totalPaes; aqui o cap é
-  // 3 pães/semana — o plano maior — então cliente faz dois cliques pra trocar).
+  // Swap atômico (alinhado com o Drawer): em capacity full (sumAll===3 OR
+  // sumAll===total_paes baseline), clique em + faz swap com a outra row se ela
+  // tem qty>0. Senão increment direto (até cap absoluto 3). Permite trocar tipos
+  // sem mudar plano em 1 clique, e ainda aumentar plano quando other===0.
   const handleIncrement=(id)=>{
-    if(sumAll>=3) return;
+    const otherId=D.pães.find(p=>p.id!==id)?.id;
+    const otherQty=rascunho?.[otherId]||0;
+    const inCapacityFull=sumAll===3||sumAll===total_paes;
+    if(inCapacityFull&&otherQty>0){
+      setRascunho(prev=>({...prev,[id]:(prev?.[id]||0)+1,[otherId]:prev[otherId]-1}));
+      return;
+    }
+    if(sumAll>=3) return; // cap absoluto sem swap possível
     setRascunho(prev=>({...prev,[id]:(prev?.[id]||0)+1}));
   };
   const handleDecrement=(id)=>{
@@ -1211,13 +1220,9 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds})=>{
   const enderecoLine2=end?`${end.bairro}, ${end.cidade} · ${end.estado} · ${end.cep}`:"Icaraí, Niterói · RJ · 24230-191";
 
   return<div style={{padding:"18px 16px 12px",paddingBottom:hasPending?80:12}}>
-    {/* Header título + badge */}
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-      <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",lineHeight:1.05,margin:0}}>Sua Assinatura</h2>
-      <Badge label="Ativa"/>
-    </div>
-
-    {/* Card "Plano atual" — idle ou editing inline (Fase 3) */}
+    {/* Card "Plano atual" — idle ou editing inline (Fase 3). Wireframe v4 removeu
+        o state-title "Sua Assinatura + Ativa": Nav já marca a seção, o card "Plano
+        atual" já comunica o estado. */}
     <Card style={{marginBottom:12,...(editing?{background:"#FFF",border:`1.5px solid ${B[500]}`}:{})}}>
       {!editing&&<>
         <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"0 0 10px"}}>Plano atual</div>
@@ -1269,18 +1274,22 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds})=>{
         <div style={{display:"flex",flexDirection:"column",marginBottom:10}}>
           {D.pães.map((p,i)=>{
             const qty=rascunho?.[p.id]||0;
+            const otherId=D.pães.find(x=>x.id!==p.id)?.id;
+            const otherQty=rascunho?.[otherId]||0;
             const isZero=qty===0;
             const isRowAltered=qty!==(assinaturaQtds?.[p.id]||0);
-            const incDis=sumAll>=3;
+            // + disabled só quando nem swap nem increment é possível (cap absoluto + outra row em 0).
+            const incDis=sumAll>=3&&otherQty===0;
             const decDis=qty===0||(total_paes===1&&sumAll<=1);
             return <div key={p.id} style={{
               display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
               padding:"12px 0",
               borderBottom:i<D.pães.length-1?`1px solid ${W[200]}`:"none",
-              opacity:isZero?0.55:1,
             }}>
-              <div style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                <span style={{fontFamily:fb,fontWeight:600,fontSize:15,color:W[800],lineHeight:1.3}}>
+              {/* Opacity SÓ no name container (stepper íntegro mantém + brand-500 vívido
+                  quando swap atômico está habilitado em row esmaecida). */}
+              <div style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",opacity:isZero?0.55:1}}>
+                <span style={{fontFamily:fb,fontWeight:600,fontSize:15,color:isZero?W[500]:W[800],lineHeight:1.3}}>
                   {p.nome} <span style={{fontWeight:400,fontSize:13,color:W[500]}}>· {p.peso}</span>
                 </span>
                 {isRowAltered&&<span style={{
