@@ -1,0 +1,1770 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Wireframe v4 · Tela Sua Assinatura — ajustes finais</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+  /* ───── stage / chrome ───── */
+  html,body{margin:0;background:#E8E6E1;min-height:100vh;color:var(--warm-700);font-family:var(--font-body)}
+
+  .doc-head{
+    position:sticky;top:0;z-index:50;
+    background:#1A1612;color:#F0EAE0;
+    padding:14px 28px 0;border-bottom:1px solid #2A2723;
+  }
+  .doc-head .row1{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+  .doc-head h1{font-family:var(--font-display);text-transform:uppercase;color:#F5F4F0;font-size:22px;letter-spacing:.02em;margin:0}
+  .doc-head .sub{font-family:var(--font-body);font-size:12px;color:#A8A49C;letter-spacing:.04em}
+  .doc-head .meta{margin-left:auto;font-size:11px;color:#7A766E;font-family:var(--font-body);letter-spacing:.04em;text-transform:uppercase}
+  .doc-head nav{display:flex;gap:0;flex-wrap:wrap}
+  .doc-head nav a{
+    font-family:var(--font-display);text-transform:uppercase;letter-spacing:.04em;font-size:12px;
+    color:#A8A49C;padding:10px 14px;border-bottom:2px solid transparent;cursor:pointer;text-decoration:none;
+  }
+  .doc-head nav a.active,
+  .doc-head nav a:hover{color:#F5F4F0;border-bottom-color:var(--brand-400);text-decoration:none}
+  .doc-head nav a .n{
+    display:inline-block;width:18px;height:18px;border-radius:var(--radius-xs);
+    background:#2A2723;color:#A8A49C;text-align:center;line-height:18px;
+    font-size:10px;font-family:var(--font-body);margin-right:6px;
+  }
+  .doc-head nav a.active .n{background:var(--brand-500);color:#fff}
+  .doc-head .lede{
+    font-family:var(--font-body);font-size:13px;color:#C9C4BA;
+    line-height:1.6;max-width:920px;margin:6px 0 14px;padding-bottom:4px;
+  }
+  .doc-head .lede strong{color:#F5F4F0;font-weight:600}
+  .doc-head .lede code{font-size:12px;background:#2A2723;padding:1px 5px;border-radius:3px;color:#E8DFC9}
+
+  main{padding:36px 28px 80px}
+
+  .screen-block{margin-bottom:48px;scroll-margin-top:180px}
+  .screen-block h2{
+    font-family:var(--font-display);text-transform:uppercase;font-size:18px;color:var(--warm-800);
+    letter-spacing:.04em;margin:0 0 4px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+  }
+  .screen-block h2 .n{
+    display:inline-block;width:24px;height:24px;border-radius:var(--radius-xs);
+    background:var(--warm-800);color:#fff;font-family:var(--font-body);font-size:12px;
+    text-align:center;line-height:24px;letter-spacing:0;
+  }
+  .screen-block h2 .tag{
+    font-family:var(--font-display);font-size:11px;letter-spacing:.06em;
+    background:var(--warm-100);color:var(--warm-700);
+    padding:3px 8px;border-radius:var(--radius-xs);border:1px solid var(--warm-200);
+  }
+  .screen-block h2 .tag.alt{background:var(--warning-bg);color:var(--warning-text);border-color:var(--warning-border)}
+  .screen-block h2 .tag.ok{background:var(--success-bg);color:var(--success-text);border-color:var(--success-border)}
+  .screen-block h2 .tag.modal{background:var(--brand-50);color:var(--brand-700);border-color:var(--brand-100)}
+  .screen-block h2 .tag.err{background:var(--danger-bg);color:var(--danger-text);border-color:var(--danger-border)}
+  .screen-block .desc{
+    font-family:var(--font-body);font-size:13px;color:var(--warm-600);
+    line-height:1.6;max-width:680px;margin:0 0 18px;
+  }
+
+  .layout{display:grid;grid-template-columns:380px 1fr;gap:36px;align-items:start}
+  @media (max-width: 900px){.layout{grid-template-columns:1fr}}
+
+  /* ───── phone ───── */
+  .phone{
+    width:380px;
+    background:var(--warm-50);
+    border-radius:24px;overflow:hidden;
+    border:1px solid var(--warm-200);
+    box-shadow:0 6px 24px rgba(26,24,21,.10);
+    position:relative;display:flex;flex-direction:column;
+  }
+  .phone.tall{height:1080px}
+  .phone.std{height:820px}
+
+  .notes{font-family:var(--font-body);font-size:13px;line-height:1.65;color:var(--warm-700);padding-top:8px}
+  .notes h3{font-family:var(--font-display);font-size:13px;text-transform:uppercase;color:var(--warm-800);letter-spacing:.06em;margin:18px 0 6px}
+  .notes h3:first-child{margin-top:0}
+  .notes ul{margin:0 0 10px;padding-left:18px}
+  .notes li{margin-bottom:4px}
+  .notes code{font-size:12px;background:var(--warm-100);padding:1px 5px;border-radius:3px;color:var(--warm-800)}
+  .notes .pill{
+    display:inline-block;padding:2px 8px;font-size:11px;
+    font-family:var(--font-display);text-transform:uppercase;letter-spacing:.06em;
+    background:var(--warm-100);color:var(--warm-700);border-radius:var(--radius-xs);
+    border:1px solid var(--warm-200);
+  }
+  .notes .pill.kill{background:#FEE2E2;color:#991B1B;border-color:#FCA5A5;text-decoration:line-through}
+  .notes .pill.add{background:var(--success-bg);color:var(--success-text);border-color:var(--success-border)}
+  .notes .pill.keep{background:var(--brand-50);color:var(--brand-700);border-color:var(--brand-100)}
+  .notes .pill.warn{background:var(--warning-bg);color:var(--warning-text);border-color:var(--warning-border)}
+  .legend{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+  .notes .compare{
+    display:grid;grid-template-columns:1fr 1fr;gap:0;
+    border:1px solid var(--warm-200);border-radius:var(--radius-md);
+    overflow:hidden;margin:8px 0 10px;background:#fff;
+  }
+  .notes .compare > div{padding:10px 12px;font-size:12px;line-height:1.5}
+  .notes .compare > div:first-child{border-right:1px solid var(--warm-200);background:var(--warm-50);color:var(--warm-600)}
+  .notes .compare .lbl{
+    font-family:var(--font-display);text-transform:uppercase;font-size:10px;letter-spacing:.06em;
+    color:var(--warm-500);margin-bottom:4px;display:block;
+  }
+  .notes .compare > div:last-child .lbl{color:var(--brand-500)}
+
+  /* ───── portal topbar ───── */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 18px 12px;background:var(--warm-50);
+    border-bottom:1px solid var(--warm-200);flex-shrink:0;
+  }
+  .topbar img{height:28px;display:block}
+  .icon-btn{width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;color:var(--warm-500);padding:0}
+
+  .page{flex:1;overflow:hidden;background:var(--warm-50);display:flex;flex-direction:column;position:relative}
+  .page-scroll{padding:18px 16px 12px;overflow-y:auto;flex:1}
+  .page-title{
+    font-family:var(--font-display);text-transform:uppercase;letter-spacing:.02em;
+    font-size:26px;color:var(--brand-500);line-height:1.05;margin:4px 0 14px;
+  }
+
+  /* ───── card base ───── */
+  .card{
+    background:var(--warm-100);
+    border-radius:var(--radius-lg);
+    padding:16px;margin-bottom:12px;
+  }
+  .card-label{
+    font-family:var(--font-display);text-transform:uppercase;font-size:11px;
+    letter-spacing:.06em;color:var(--warm-500);margin:0 0 10px;
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+  }
+
+  /* ───── Plano atual — idle ───── */
+  .plan-name{
+    font-family:var(--font-body);font-weight:700;font-size:20px;
+    color:var(--warm-800);line-height:1.2;margin:0 0 4px;
+  }
+  .plan-comp{
+    font-family:var(--font-body);font-size:14px;color:var(--warm-600);
+    line-height:1.5;margin:0 0 14px;
+  }
+
+  /* breakdown idle: 2-col Pães/Frete + divider + Total */
+  .breakdown{
+    display:flex;flex-direction:column;gap:6px;
+    padding:12px 0 0;border-top:1px solid var(--warm-200);
+    margin-bottom:14px;
+  }
+  .bk-row{
+    display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+    font-family:var(--font-body);font-size:14px;color:var(--warm-700);
+  }
+  .bk-row .k{
+    font-family:var(--font-display);text-transform:uppercase;font-size:11px;
+    letter-spacing:.06em;color:var(--warm-500);
+  }
+  .bk-row .v{font-variant-numeric:tabular-nums}
+  .bk-row.total{padding-top:8px;border-top:1px solid var(--warm-200);margin-top:2px}
+  .bk-row.total .k{color:var(--warm-700)}
+  .bk-row.total .v{
+    font-family:var(--font-body);font-weight:700;font-size:16px;
+    color:var(--brand-500);
+  }
+
+  .plan-cta{
+    width:100%;padding:13px;min-height:44px;
+    background:transparent;color:var(--brand-500);border:1.5px solid var(--brand-500);
+    border-radius:var(--radius-md);cursor:pointer;
+    font-family:var(--font-body);font-size:14px;font-weight:600;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .plan-cta:hover{background:var(--brand-50)}
+
+  /* ───── Plano atual — editing ───── */
+  .card.editing{background:#fff;border:1.5px solid var(--brand-500)}
+  .card.editing .card-label{color:var(--brand-500)}
+  .edit-intro{
+    font-family:var(--font-body);font-size:14px;color:var(--warm-700);
+    line-height:1.45;margin:0 0 10px;
+  }
+
+  /* row de assinatura — sem descrição, mais compacta */
+  .asn-list{display:flex;flex-direction:column;margin-bottom:10px}
+  .asn-row{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:12px 0;border-bottom:1px solid var(--warm-200);
+  }
+  .asn-row:last-child{border-bottom:0}
+  .asn-row.is-zero{opacity:.55}
+  .asn-row .left{flex:1;min-width:0}
+  .asn-row .name{
+    font-family:var(--font-body);font-weight:600;color:var(--warm-800);
+    font-size:15px;line-height:1.3;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  }
+  .asn-row .name .name-meta{
+    font-family:var(--font-body);font-weight:400;color:var(--warm-500);
+    font-size:13px;
+  }
+
+  /* pill única "Alterado" */
+  .diff-pill{
+    display:inline-flex;align-items:center;gap:4px;
+    font-family:var(--font-display);text-transform:uppercase;font-size:10px;letter-spacing:.06em;
+    padding:2px 6px;border-radius:var(--radius-xs);
+    background:var(--warm-100);color:var(--warning-text);line-height:1.4;
+  }
+  .diff-pill svg{flex-shrink:0}
+
+  /* qty stepper */
+  .qty{
+    display:inline-flex;align-items:center;
+    border:1px solid var(--warm-300);border-radius:var(--radius-md);
+    background:#fff;overflow:hidden;flex-shrink:0;
+  }
+  .qty button{
+    width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+    background:transparent;border:none;cursor:pointer;color:var(--brand-500);padding:0;
+    transition:background var(--dur-fast) var(--ease-out),color var(--dur-fast) var(--ease-out);
+  }
+  .qty button:hover:not(:disabled){background:var(--brand-50)}
+  .qty button:disabled{color:var(--warm-300);cursor:not-allowed}
+  .qty .n{
+    min-width:34px;text-align:center;font-family:var(--font-body);
+    font-weight:600;font-size:15px;color:var(--warm-800);
+    border-left:1px solid var(--warm-200);border-right:1px solid var(--warm-200);
+    line-height:36px;font-variant-numeric:tabular-nums;
+  }
+  .asn-row.is-zero .qty .n{color:var(--warm-500)}
+
+  /* total semanal */
+  .total-week{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:10px 12px;margin-bottom:12px;
+    background:var(--warm-100);border-radius:var(--radius-md);
+    font-family:var(--font-body);font-size:13px;color:var(--warm-700);
+  }
+  .total-week .lbl{font-family:var(--font-display);text-transform:uppercase;font-size:10px;letter-spacing:.06em;color:var(--warm-500)}
+  .total-week .v{font-family:var(--font-body);font-weight:600;color:var(--warm-800)}
+  .total-week .v .num{font-variant-numeric:tabular-nums;font-size:15px}
+  .total-week .v .ghost{color:var(--warm-500);font-weight:400;font-size:12px;margin-left:4px}
+
+  /* edit value-block — 3 colunas (label | Atual | Após) */
+  .ev-block{
+    display:grid;grid-template-columns:auto 1fr 1fr;
+    gap:6px 10px;
+    padding:12px;margin-bottom:10px;
+    background:var(--warm-50);border:1px solid var(--warm-200);
+    border-radius:var(--radius-md);
+    font-family:var(--font-body);
+  }
+  .ev-block .h{
+    font-family:var(--font-display);text-transform:uppercase;font-size:10px;letter-spacing:.06em;
+    color:var(--warm-500);padding-bottom:2px;
+  }
+  .ev-block .h.right{text-align:right}
+  .ev-block .h.after{color:var(--brand-500)}
+  .ev-block .k{
+    font-family:var(--font-body);font-size:13px;color:var(--warm-600);
+    align-self:center;
+  }
+  .ev-block .v{
+    font-family:var(--font-body);font-size:13px;color:var(--warm-700);
+    text-align:right;font-variant-numeric:tabular-nums;align-self:center;
+  }
+  .ev-block .div-row{
+    grid-column:1/-1;height:1px;background:var(--warm-200);margin:4px 0 2px;
+  }
+  .ev-block .k.total{font-family:var(--font-body);font-weight:600;color:var(--warm-700);font-size:14px}
+  .ev-block .v.total{
+    font-family:var(--font-body);font-weight:700;font-size:15px;color:var(--warm-700);
+  }
+  .ev-block .v.total.brand{color:var(--brand-500)}
+
+  /* micro contextual */
+  .micro-context{
+    display:flex;align-items:flex-start;gap:8px;
+    margin-bottom:14px;padding:0 2px;
+    font-family:var(--font-body);font-size:12px;color:var(--warm-600);line-height:1.5;
+  }
+  .micro-context svg{flex-shrink:0;margin-top:2px;color:var(--warm-500)}
+
+  /* edit foot */
+  .edit-foot{display:flex;gap:10px}
+  .btn-ghost,.btn-primary{
+    flex:1;padding:13px;min-height:44px;
+    font-family:var(--font-body);font-size:14px;font-weight:600;
+    border-radius:var(--radius-md);cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .btn-ghost{background:transparent;color:var(--warm-600);border:none;font-weight:500}
+  .btn-ghost:hover{background:var(--warm-100);color:var(--warm-700)}
+  .btn-ghost:disabled{color:var(--warm-400);cursor:not-allowed;background:transparent}
+  .btn-primary{background:var(--brand-500);color:#fff;border:none}
+  .btn-primary:hover{background:var(--brand-600)}
+  .btn-primary:disabled{background:var(--warm-300);cursor:not-allowed;color:#fff}
+  .btn-primary.loading{background:var(--brand-500);opacity:.7;cursor:wait}
+
+  /* spinner */
+  .spinner{
+    width:14px;height:14px;border-radius:50%;flex-shrink:0;
+    border:2px solid rgba(255,255,255,.35);
+    border-top-color:#fff;
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ───── Entrega (sem Frete) ───── */
+  .info-row{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:10px 0;
+  }
+  .info-row .k{
+    font-family:var(--font-body);font-size:13px;color:var(--warm-600);
+    display:flex;align-items:center;gap:8px;
+  }
+  .info-row .k svg{color:var(--warm-500);flex-shrink:0}
+  .info-row .v{
+    font-family:var(--font-body);font-weight:600;color:var(--warm-800);font-size:14px;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .invite-card{
+    margin-top:6px;padding:14px;
+    background:var(--brand-50);border:1px solid var(--brand-100);
+    border-radius:var(--radius-md);
+  }
+  .invite-card .tt{font-family:var(--font-body);font-weight:700;color:var(--brand-700);font-size:14px;line-height:1.35;margin:0 0 4px}
+  .invite-card .bd{font-family:var(--font-body);font-size:12px;color:var(--brand-800);line-height:1.5;margin:0 0 10px}
+  .invite-card .cta{
+    display:inline-flex;align-items:center;gap:5px;
+    background:transparent;border:none;cursor:pointer;padding:0;
+    font-family:var(--font-display);text-transform:uppercase;
+    font-size:11px;letter-spacing:.06em;color:var(--brand-500);
+  }
+  .invite-card .cta:hover{text-decoration:underline;text-underline-offset:3px}
+
+  /* ───── Read-only blocks (Endereço/Cobrança/Histórico) ───── */
+  .card.readonly{
+    background:var(--warm-100);
+    padding:12px 14px;
+    margin-bottom:10px;
+  }
+  .card.readonly .card-label{
+    font-size:10px;color:var(--warm-500);margin:0 0 6px;
+  }
+  .card.readonly .ro-value{
+    font-family:var(--font-body);font-weight:500;color:var(--warm-700);
+    font-size:13px;line-height:1.5;
+  }
+  .card.readonly .ro-row{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:6px 0;font-family:var(--font-body);font-size:13px;color:var(--warm-700);
+  }
+  .card.readonly .ro-row + .ro-row{border-top:1px solid var(--warm-200)}
+  .card.readonly .ro-row .k{color:var(--warm-500);font-size:12px}
+  .card.readonly .ro-row .v{font-weight:500;color:var(--warm-700);font-variant-numeric:tabular-nums}
+  .card.readonly .ro-row .status{
+    font-family:var(--font-display);text-transform:uppercase;font-size:10px;letter-spacing:.06em;
+    padding:2px 6px;border-radius:var(--radius-xs);
+    background:var(--success-bg);color:var(--success-text);border:1px solid var(--success-border);
+  }
+
+  /* WhatsApp microcopy */
+  .wa-note{
+    margin:14px 4px 16px;padding:14px;
+    border-top:1px dashed var(--warm-300);
+    font-family:var(--font-body);font-size:12px;color:var(--warm-500);
+    line-height:1.55;
+  }
+  .wa-note strong{color:var(--warm-700);font-weight:600}
+  .wa-note a{
+    color:var(--brand-500);text-decoration:none;font-weight:600;
+    display:inline-flex;align-items:center;gap:4px;
+  }
+  .wa-note a:hover{text-decoration:underline;text-underline-offset:3px}
+
+  /* ───── bottom nav ───── */
+  .nav-bottom{
+    display:flex;align-items:stretch;justify-content:space-around;
+    background:#fff;border-top:1px solid var(--warm-200);
+    flex-shrink:0;padding-bottom:4px;
+  }
+  .nav-item{
+    flex:1;padding:8px 4px 6px;
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+    background:transparent;border:none;cursor:pointer;color:var(--warm-500);
+    font-family:var(--font-display);text-transform:uppercase;font-size:10px;
+    letter-spacing:.06em;
+  }
+  .nav-item.active{color:var(--brand-500)}
+  .nav-item svg{display:block}
+
+  /* ───── modal ───── */
+  .modal-overlay{
+    position:absolute;inset:0;
+    background:rgba(26,24,21,.5);
+    display:flex;align-items:flex-end;justify-content:center;
+    padding:0;z-index:40;
+  }
+  .modal{
+    background:#fff;width:100%;
+    border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+    box-shadow:0 -4px 24px rgba(26,24,21,.12);
+    padding:0 0 18px;display:flex;flex-direction:column;
+  }
+  .modal .grab{
+    width:36px;height:4px;background:var(--warm-300);
+    border-radius:var(--radius-full);margin:8px auto 8px;flex-shrink:0;
+  }
+  .modal h3{
+    font-family:var(--font-display);text-transform:uppercase;font-size:20px;
+    color:var(--brand-500);letter-spacing:.02em;margin:6px 18px 4px;line-height:1.1;
+  }
+  .modal .body{padding:0 18px;font-family:var(--font-body);font-size:14px;color:var(--warm-700);line-height:1.55}
+  .modal .body p{margin:0 0 10px}
+  .modal .summary{
+    margin:10px 0 12px;padding:12px;
+    background:var(--warm-50);border:1px solid var(--warm-200);
+    border-radius:var(--radius-md);
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .modal .summary .row{
+    display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+    font-family:var(--font-body);font-size:13px;color:var(--warm-700);
+  }
+  .modal .summary .row .lbl{
+    font-family:var(--font-display);text-transform:uppercase;font-size:10px;
+    letter-spacing:.06em;color:var(--warm-500);
+  }
+  .modal .summary .row .v{font-weight:600;color:var(--warm-800);font-variant-numeric:tabular-nums;text-align:right}
+  .modal .summary .row .v.brand{color:var(--brand-500)}
+  .modal .summary .row .v .sub{
+    display:block;font-family:var(--font-body);font-weight:400;font-size:11px;
+    color:var(--warm-500);margin-top:2px;letter-spacing:0;
+  }
+  .modal .summary .divider{height:1px;background:var(--warm-200);margin:2px 0}
+  .modal .foot{display:flex;gap:10px;padding:14px 18px 0}
+
+  /* ───── toast ───── */
+  .toast{
+    position:absolute;left:16px;right:16px;top:80px;
+    padding:12px 14px;
+    border-radius:var(--radius-md);
+    font-family:var(--font-body);font-size:13px;line-height:1.45;
+    display:flex;align-items:flex-start;gap:10px;
+    z-index:60;
+    box-shadow:0 4px 16px rgba(26,24,21,.12);
+  }
+  .toast svg{flex-shrink:0;margin-top:1px}
+  .toast.error{background:var(--warning-bg);border:1px solid var(--warning-border);color:var(--warning-text)}
+  .toast.success{background:var(--success-bg);border:1px solid var(--success-border);color:var(--success-text)}
+
+  /* page behind modal */
+  .page.behind > *{filter:blur(.5px) saturate(.92);opacity:.85}
+
+  /* state-title — classe preservada caso volte a ser usada, mas NÃO renderiza no v4 (telas 1 e 9) */
+  .state-title{
+    font-family:var(--font-body);font-weight:500;font-size:14px;
+    color:var(--warm-600);line-height:1.4;margin:2px 0 14px;
+    letter-spacing:0;
+  }
+  .state-title strong{font-weight:600;color:var(--warm-800)}
+
+  /* v4 · meta-info "Entregas toda quinta" no card Plano atual */
+  .plan-delivery{
+    font-family:var(--font-body);font-size:12px;
+    color:var(--warm-500);
+    margin:4px 0 12px;line-height:1.4;
+  }
+  .plan-delivery::before{
+    content:'·';margin-right:4px;color:var(--warm-400);
+  }
+
+  /* v4 · card Convite Condomínio isolado — mais peso visual */
+  .invite-card.standalone{
+    margin-top:0;padding:18px;
+  }
+  .invite-card.standalone .tt{font-size:15px;margin-bottom:6px}
+  .invite-card.standalone .bd{font-size:13px;margin-bottom:12px}
+
+  /* v4 · microcopy "Vale a partir de 28/05" abaixo do Total (apenas tela 9) */
+  .plan-effective-from{
+    font-family:var(--font-body);font-size:11px;
+    color:var(--warm-500);
+    margin:4px 0 0;padding-top:4px;
+    border-top:1px dashed var(--warm-200);
+    text-align:right;letter-spacing:0;
+  }
+
+  /* Cobrança — linha futura (state derivado: há plano agendado)
+     v4: .k "↳ A partir de 1º/07" + .v "R$ 312,00" (padrão k/v consistente) */
+  .ro-row.future{
+    padding-top:2px;border-top:0 !important;
+    color:var(--warm-500);
+  }
+  .ro-row.future .k{
+    font-family:var(--font-body);font-size:12px;color:var(--warm-500);
+    font-weight:400;
+  }
+  .ro-row.future .v{
+    font-family:var(--font-body);font-size:12px;color:var(--warm-500);
+    font-weight:400;font-variant-numeric:tabular-nums;
+  }
+</style>
+</head>
+<body>
+
+<div class="doc-head">
+  <div class="row1">
+    <h1>Wireframe v4 · Tela Sua Assinatura</h1>
+    <span class="sub">5 ajustes cirúrgicos sobre v3: sem state-title, Entrega vira Convite Condomínio, linha futura k/v, microcopy "Vale a partir de" no Total, toast "Mudança confirmada"</span>
+    <span class="meta">v4 · 19 mai 2026</span>
+  </div>
+  <p class="lede">
+    Cinco mudanças cirúrgicas sobre o v3, última rodada antes de virar prompt técnico: (1) <strong>remove <code>state-title</code></strong> nas telas idle e sucesso (Plano atual já comunica), (2) <strong>"Entregas toda quinta" entra no card Plano atual</strong> como meta-info, e o card Entrega vira <strong>Card Convite Condomínio</strong> isolado com mais peso visual, (3) <strong>linha futura do bloco Cobrança</strong> em <code>.k</code> + <code>.v</code> separados (padrão consistente, alinhamento tabular), (4) <strong>microcopy "Vale a partir de 28/05"</strong> abaixo do Total no card Plano atual pós-mudança (state derivado), (5) <strong>toast "Mudança confirmada"</strong> em vez de "Plano atualizado" — comunica corretamente que está agendada. Todo o resto do v3 permanece.
+  </p>
+  <nav id="topnav">
+    <a href="#s1" data-target="s1"><span class="n">1</span>Idle</a>
+    <a href="#s2" data-target="s2"><span class="n">2</span>Edit · baseline</a>
+    <a href="#s3" data-target="s3"><span class="n">3</span>Edit · swap</a>
+    <a href="#s4" data-target="s4"><span class="n">4</span>Edit · 3→2</a>
+    <a href="#s5" data-target="s5"><span class="n">5</span>Edit · 2→3</a>
+    <a href="#s6" data-target="s6"><span class="n">6</span>Modal</a>
+    <a href="#s7" data-target="s7"><span class="n">7</span>Modal · loading</a>
+    <a href="#s8" data-target="s8"><span class="n">8</span>Erro</a>
+    <a href="#s9" data-target="s9"><span class="n">9</span>Sucesso</a>
+  </nav>
+</div>
+
+<main>
+
+<!-- ════════════════ SCREEN 1: IDLE ════════════════ -->
+<section id="s1" class="screen-block">
+  <h2><span class="n">1</span>Idle · tela completa com blocos read-only <span class="tag ok">estado padrão</span></h2>
+  <p class="desc">Tela como aparece pelo Nav inferior. Card "Plano atual" com decomposição Pães+Frete=Total dentro, mais a linha sutil <em>"Entregas toda quinta"</em> como meta-info. O antigo card Entrega virou <strong>Card Convite Condomínio</strong> isolado, com mais peso visual. Logo abaixo, blocos <strong>read-only</strong> de Endereço, Cobrança e Histórico (vão pro Perfil em PR futuro). Microcopy WhatsApp no fim sinaliza a janela de transição.</p>
+
+  <div class="layout">
+    <div class="phone tall">
+      <div class="topbar">
+        <img src="assets/cora_logo_com_tag.svg" alt="Cora">
+        <button class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      </div>
+
+      <div class="page">
+        <div class="page-scroll">
+          <!-- Plano atual -->
+          <div class="card">
+            <div class="card-label"><span>Plano atual</span></div>
+            <p class="plan-name">2 pães por semana</p>
+            <p class="plan-comp">1× Pão Original + 1× Pão Integral</p>
+            <p class="plan-delivery">Entregas toda quinta</p>
+
+            <div class="breakdown">
+              <div class="bk-row"><span class="k">Pães</span><span class="v">R$ 198,00/mês</span></div>
+              <div class="bk-row"><span class="k">Frete</span><span class="v">R$ 15,00/mês</span></div>
+              <div class="bk-row total"><span class="k">Total</span><span class="v">R$ 213,00/mês</span></div>
+            </div>
+
+            <button class="plan-cta" type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
+              Alterar minha Assinatura
+            </button>
+          </div>
+
+          <!-- Convite Condomínio (isolado, sem card wrapper) -->
+          <div class="invite-card standalone">
+            <p class="tt">Mora num condomínio?</p>
+            <p class="bd">Se 5 ou mais moradores assinam, o frete fica por nossa conta.</p>
+            <button class="cta" type="button">Saiba como funciona
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+
+          <!-- Endereço read-only -->
+          <div class="card readonly">
+            <div class="card-label"><span>Endereço</span></div>
+            <div class="ro-value">Rua Otávio Carneiro, 123, apt 401<br>Icaraí, Niterói · RJ · 24230-191</div>
+          </div>
+
+          <!-- Cobrança read-only -->
+          <div class="card readonly">
+            <div class="card-label"><span>Cobrança</span></div>
+            <div class="ro-row"><span class="k">Cartão</span><span class="v">Visa ●●●● 4287</span></div>
+            <div class="ro-row"><span class="k">Próxima fatura</span><span class="v">R$ 213,00 · 1º/06</span></div>
+          </div>
+
+          <!-- Histórico read-only -->
+          <div class="card readonly">
+            <div class="card-label"><span>Histórico</span></div>
+            <div class="ro-row">
+              <span class="k">14/05 · 2 pães</span>
+              <span class="status">Entregue</span>
+            </div>
+            <div class="ro-row">
+              <span class="k">07/05 · 2 pães</span>
+              <span class="status">Entregue</span>
+            </div>
+            <div class="ro-row">
+              <span class="k">30/04 · 2 pães</span>
+              <span class="status">Entregue</span>
+            </div>
+          </div>
+
+          <!-- WhatsApp microcopy -->
+          <p class="wa-note">
+            Pra mudar endereço, cartão ou pausar a assinatura, fale com a gente pelo
+            <a href="#">WhatsApp
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></a>.
+          </p>
+        </div>
+
+        <div class="nav-bottom">
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Início</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18l-2 12H5z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>Cardápio</button>
+          <button class="nav-item active" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L8 6h8z"/><path d="M5 8h14l-1.5 12h-11z"/></svg>Assinatura</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Perfil</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <h3>Decomposição Pães + Frete = Total</h3>
+      <div class="compare">
+        <div>
+          <span class="lbl">V1</span>
+          "Valor mensal: R$ 213,00/mês"<br>
+          + card Entrega "Frete: R$ 15/mês"<br>
+          <em>Ambiguo: cliente pode somar = R$ 228</em>
+        </div>
+        <div>
+          <span class="lbl">V2</span>
+          Pães R$ 198,00<br>
+          Frete R$ 15,00<br>
+          ────<br>
+          Total R$ 213,00/mês
+        </div>
+      </div>
+      <ul>
+        <li>Decomposição vive <strong>dentro</strong> do card Plano atual. Frete saiu do card Entrega — não há repetição.</li>
+        <li>Total em peso 700 brand-500 16px. Pães/Frete em warm-700 14px tabular-nums.</li>
+        <li>Labels "PÃES" e "FRETE" em League Gothic 11px warm-500 — segue o padrão de meta-label do design system.</li>
+      </ul>
+
+      <h3>Card Convite Condomínio (isolado) <span class="pill add" style="font-family:var(--font-display);font-size:10px;letter-spacing:.06em">v4</span></h3>
+      <div class="compare">
+        <div>
+          <span class="lbl">V3</span>
+          Card Entrega:<br>
+          • info-row "Entregas: Toda quinta"<br>
+          • invite-card embedded
+        </div>
+        <div>
+          <span class="lbl">V4</span>
+          "Toda quinta" sobe pro Plano atual<br>
+          como meta-info abaixo do plan-comp.<br>
+          Convite vira card isolado, com mais peso<br>
+          (padding 18, título 15px).
+        </div>
+      </div>
+      <ul>
+        <li><strong>Por quê:</strong> o card menos informativo (Entrega) tinha o mesmo peso visual que o mais importante (Plano atual). E o convite condomínio — alavanca real de redução de frete + viralização — ficava escondido dentro de um card chamado "Entrega".</li>
+        <li><strong>Meta-info:</strong> <code>.plan-delivery</code> (12px warm-500, prefixo <code>·</code>) entre o plan-comp e a breakdown.</li>
+        <li><strong>"Entregas" no plural</strong> antecipa expansão futura (clientes vão querer múltiplos dias: "Entregas toda 2ª e 5ª"). Decisão de design intencional pra evitar refactor depois.</li>
+        <li><strong>Convite isolado:</strong> mesmo invite-card do v3, sem wrapper. Padding 18 (era 14), título 15px (era 14). Hierarquia visual permite ele ser percebido como o que é.</li>
+      </ul>
+
+      <h3>Blocos read-only (transição até Perfil)</h3>
+      <div class="legend">
+        <span class="pill warn">Endereço</span>
+        <span class="pill warn">Cobrança</span>
+        <span class="pill warn">Histórico</span>
+      </div>
+      <ul>
+        <li><strong>Visual mais discreto:</strong> card-label 10px (vs 11px), padding 12/14 (vs 16), valores em warm-700 weight 500 (vs warm-800 weight 600).</li>
+        <li><strong>Sem ações:</strong> nenhum botão "Editar", nenhum link "Atualizar". Tudo display-only.</li>
+        <li><strong>Próxima fatura</strong> mora aqui (não no Plano atual). Sai junto quando esses cards forem removidos.</li>
+        <li>Quando a tela Perfil sair (Frente C item 4), esses 3 cards somem dessa tela.</li>
+      </ul>
+
+      <h3>Microcopy WhatsApp <span class="pill add" style="font-family:var(--font-display);font-size:10px;letter-spacing:.06em">v3</span></h3>
+      <div class="compare">
+        <div>
+          <span class="lbl">V2</span>
+          "Em breve, todas essas alterações serão feitas pela tela Perfil. Por enquanto, fale com a gente pelo WhatsApp se precisar mudar algo."
+        </div>
+        <div>
+          <span class="lbl">V3</span>
+          "Pra mudar endereço, cartão ou pausar a assinatura, fale com a gente pelo WhatsApp."
+        </div>
+      </div>
+      <ul>
+        <li><strong>"Em breve" e "Por enquanto" saíram</strong> — comunicavam imaturidade da operação.</li>
+        <li><strong>"Todas essas alterações" → lista explícita</strong>: endereço, cartão, pausar.</li>
+        <li>Visual igual: linha pontilhada warm-300, texto 12px warm-500, link WhatsApp brand-500 com chevron.</li>
+      </ul>
+
+      <h3>Sem <code>state-title</code> <span class="pill add" style="font-family:var(--font-display);font-size:10px;letter-spacing:.06em">v4</span></h3>
+      <div class="compare">
+        <div>
+          <span class="lbl">V3</span>
+          <code>&lt;p class="state-title"&gt;Plano · <strong>2 pães por semana</strong>&lt;/p&gt;</code><br>
+          no topo das telas idle e sucesso.
+        </div>
+        <div>
+          <span class="lbl">V4</span>
+          Removido. O card "Plano atual" logo abaixo<br>
+          já comunica o estado<br>
+          (plan-name + plan-comp + breakdown).
+        </div>
+      </div>
+      <ul>
+        <li><strong>Por quê:</strong> state-title duplicava informação sem agregar. O Nav inferior já marca "Assinatura" ativo, o card Plano atual já mostra "2 pães por semana".</li>
+        <li>CSS da classe <code>.state-title</code> permanece declarada (caso volte a ser usada), só não renderiza nas telas 1 e 9.</li>
+      </ul>
+
+      <h3>"Próxima cobrança" saiu do Plano atual</h3>
+      <ul>
+        <li>V1 mostrava "Próxima cobrança: 1º de junho" no canto direito do card. Saiu.</li>
+        <li>Essa informação vive agora em "Cobrança · Próxima fatura · R$ 213,00 · 1º/06" (bloco read-only).</li>
+        <li>Quando Cobrança virar Perfil, vai junto.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ SCREEN 2: EDIT BASELINE ════════════════ -->
+<section id="s2" class="screen-block">
+  <h2><span class="n">2</span>Edit · sem mudanças <span class="tag">composição == baseline</span></h2>
+  <p class="desc">User tocou "Alterar minha Assinatura". Card expande inline em modo edição. Sem pill, sem microcopy de help, sem descrições de produto nas rows — só Nome + 700g + stepper. Bloco "Atual vs Após mudança" mostra valores iguais (R$ 213 em ambos), Total "Após" em warm-700 (mesma cor do Atual, comunica "não mudou"). Botão <strong>"Salvar alterações" permanece com esse label</strong>, apenas em estado disabled visual.</p>
+
+  <div class="layout">
+    <div class="phone std">
+      <div class="topbar">
+        <img src="assets/cora_logo_com_tag.svg" alt="Cora">
+        <button class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      </div>
+
+      <div class="page">
+        <div class="page-scroll">
+          <div class="card editing">
+            <div class="card-label"><span>Alterar plano</span></div>
+            <p class="edit-intro">Quantos pães por semana?</p>
+
+            <div class="asn-list">
+              <div class="asn-row">
+                <div class="left">
+                  <div class="name">Pão Original <span class="name-meta">· 700g</span></div>
+                </div>
+                <div class="qty">
+                  <button data-step="-1" aria-label="Diminuir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                  <span class="n">1</span>
+                  <button data-step="1" aria-label="Aumentar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                </div>
+              </div>
+              <div class="asn-row">
+                <div class="left">
+                  <div class="name">Pão Integral <span class="name-meta">· 700g</span></div>
+                </div>
+                <div class="qty">
+                  <button data-step="-1" aria-label="Diminuir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                  <span class="n">1</span>
+                  <button data-step="1" aria-label="Aumentar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="total-week">
+              <span class="lbl">Total da semana</span>
+              <span class="v"><span class="num">2</span> pães</span>
+            </div>
+
+            <div class="ev-block">
+              <span class="h"></span>
+              <span class="h right">Atual</span>
+              <span class="h right after">Após mudança</span>
+              <span class="k">Pães</span><span class="v">R$ 198,00</span><span class="v">R$ 198,00</span>
+              <span class="k">Frete</span><span class="v">R$ 15,00</span><span class="v">R$ 15,00</span>
+              <div class="div-row"></div>
+              <span class="k total">Total</span>
+              <span class="v total">R$ 213,00/mês</span>
+              <span class="v total">R$ 213,00/mês</span>
+            </div>
+
+            <div class="edit-foot">
+              <button class="btn-ghost" type="button">Cancelar</button>
+              <button class="btn-primary" type="button" disabled>Salvar alterações</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-label"><span>Entrega</span></div>
+            <div class="info-row"><span class="k">Entregas</span><span class="v">Toda quinta</span></div>
+          </div>
+        </div>
+
+        <div class="nav-bottom">
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Início</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18l-2 12H5z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>Cardápio</button>
+          <button class="nav-item active" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L8 6h8z"/><path d="M5 8h14l-1.5 12h-11z"/></svg>Assinatura</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Perfil</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <h3>O que saiu desde a v1</h3>
+      <div class="legend">
+        <span class="pill kill">"Levain de 12 anos..."</span>
+        <span class="pill kill">"100% trigo integral..."</span>
+        <span class="pill kill">Microcopy help "1-3 pães..."</span>
+        <span class="pill kill">"Sem mudanças" label</span>
+      </div>
+      <ul>
+        <li><strong>Descrições do produto saíram</strong> — durante o ajuste de quantidades, são ruído. Continuam vivendo no Cardápio.</li>
+        <li><strong>Help microcopy saiu</strong> do baseline. Stepper já comunica os limites visualmente (botões disabled quando aplicável).</li>
+        <li><strong>Label do botão preservado</strong>: "Salvar alterações" sempre. Apenas estado visual muda (warm-300 bg + #fff text quando disabled).</li>
+      </ul>
+
+      <h3>Bloco "Atual vs Após mudança" (3 colunas)</h3>
+      <div class="compare">
+        <div>
+          <span class="lbl">V1 (2 linhas verticais)</span>
+          Atual: R$ 213,00/mês<br>
+          Após mudança: R$ 213,00/mês
+        </div>
+        <div>
+          <span class="lbl">V2 (3 colunas Pães/Frete/Total)</span>
+          [empty] Atual · Após mudança<br>
+          Pães · 198 · 198<br>
+          Frete · 15 · 15<br>
+          Total · 213 · 213
+        </div>
+      </div>
+      <ul>
+        <li><strong>Grid 3 colunas</strong>: <code>auto 1fr 1fr</code>. Header "Atual" / "Após mudança" em League Gothic 10px, com "Após mudança" em brand-500.</li>
+        <li><strong>Frete sempre nas duas colunas</strong> — fica claro que frete não muda com o plano (mesmo R$ 15,00). É a base do convite condomínio: pra zerar o frete, precisa juntar moradores.</li>
+        <li><strong>Total "Após" em warm-700</strong> quando = Atual. <strong>Em brand-500</strong> quando diferente. Sem delta, sem cor de "subida/descida".</li>
+      </ul>
+
+      <h3>Salvar disabled — label preservado</h3>
+      <ul>
+        <li><em>Antes (v1):</em> label virava "Sem mudanças". Cliente lia como pressão pra mudar algo.</li>
+        <li><em>Agora:</em> label fixo "Salvar alterações". Estado visual cinza comunica "não é o momento", sem ditar.</li>
+        <li>Mesma estética do <code>btn-primary:disabled</code> no resto do sistema.</li>
+      </ul>
+
+      <h3>Rows mais limpas</h3>
+      <ul>
+        <li>Nome + "· 700g" + (pill quando aplicável) + stepper. Pronto.</li>
+        <li>Sem descrição. Sem subtítulo. <em>"Pão Integral · 700g"</em> é o único texto da row.</li>
+      </ul>
+
+      <h3>Botão "Cancelar" sem borda <span class="pill add" style="font-family:var(--font-display);font-size:10px;letter-spacing:.06em">v3</span></h3>
+      <div class="compare">
+        <div>
+          <span class="lbl">V2</span>
+          background transparent<br>
+          color brand-500<br>
+          border 1.5px solid brand-500<br>
+          font-weight 600
+        </div>
+        <div>
+          <span class="lbl">V3</span>
+          background transparent<br>
+          color warm-600<br>
+          <strong>border none</strong><br>
+          font-weight 500 (menos peso que o primary)
+        </div>
+      </div>
+      <ul>
+        <li><strong>Por quê:</strong> ghost com borda brand-500 + primary brand-500 competiam pela atenção. Padrão SaaS (Linear, Vercel, Stripe) reserva brand color só pra ações primárias.</li>
+        <li><strong>Hover:</strong> bg warm-100, color warm-700. Disabled: warm-400.</li>
+        <li><strong>Propagação automática:</strong> mesma <code>.btn-ghost</code> usada no Drawer "Editar cesta" do app. Mudança no design system, não por tela.</li>
+        <li>Aparece aqui (edit-foot) e no modal-foot (telas 6, 7, 8). Em todos os lugares: mesmo visual discreto.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ SCREEN 3: EDIT SWAP ════════════════ -->
+<section id="s3" class="screen-block">
+  <h2><span class="n">3</span>Edit · swap (2 Original + 0 Integral) <span class="tag alt">total e valor iguais</span></h2>
+  <p class="desc">User chegou em <strong>2× Pão Original + 0× Pão Integral</strong> partindo de 1+1. Total continua 2 pães/semana. Pill <strong>"Alterado"</strong> (única, warning-text sobre warm-100) nas duas rows que mudaram. Bloco de valor: Pães/Frete/Total iguais em ambas colunas. Total "Após" em <strong>warm-700</strong> (mesma cor do Atual) — comunica "valor não muda". Microcopy contextual: vale a partir de 28/05, valor continua o mesmo.</p>
+
+  <div class="layout">
+    <div class="phone std">
+      <div class="topbar">
+        <img src="assets/cora_logo_com_tag.svg" alt="Cora">
+        <button class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      </div>
+
+      <div class="page">
+        <div class="page-scroll">
+          <div class="card editing">
+            <div class="card-label"><span>Alterar plano</span></div>
+            <p class="edit-intro">Quantos pães por semana?</p>
+
+            <div class="asn-list">
+              <div class="asn-row">
+                <div class="left">
+                  <div class="name">Pão Original <span class="name-meta">· 700g</span>
+                    <span class="diff-pill"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>Alterado</span>
+                  </div>
+                </div>
+                <div class="qty">
+                  <button data-step="-1" aria-label="Diminuir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                  <span class="n">2</span>
+                  <button data-step="1" aria-label="Aumentar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                </div>
+              </div>
+              <div class="asn-row is-zero">
+                <div class="left">
+                  <div class="name">Pão Integral <span class="name-meta">· 700g</span>
+                    <span class="diff-pill"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>Alterado</span>
+                  </div>
+                </div>
+                <div class="qty">
+                  <button data-step="-1" disabled aria-label="Diminuir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                  <span class="n">0</span>
+                  <button data-step="1" aria-label="Aumentar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="total-week">
+              <span class="lbl">Total da semana</span>
+              <span class="v"><span class="num">2</span> pães</span>
+            </div>
+
+            <div class="ev-block">
+              <span class="h"></span>
+              <span class="h right">Atual</span>
+              <span class="h right after">Após mudança</span>
+              <span class="k">Pães</span><span class="v">R$ 198,00</span><span class="v">R$ 198,00</span>
+              <span class="k">Frete</span><span class="v">R$ 15,00</span><span class="v">R$ 15,00</span>
+              <div class="div-row"></div>
+              <span class="k total">Total</span>
+              <span class="v total">R$ 213,00/mês</span>
+              <span class="v total">R$ 213,00/mês</span>
+            </div>
+
+            <div class="micro-context">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Vale a partir da entrega de 28/05. O valor mensal continua o mesmo.</span>
+            </div>
+
+            <div class="edit-foot">
+              <button class="btn-ghost" type="button">Cancelar</button>
+              <button class="btn-primary" type="button">Salvar alterações</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-label"><span>Entrega</span></div>
+            <div class="info-row"><span class="k">Entregas</span><span class="v">Toda quinta</span></div>
+          </div>
+        </div>
+
+        <div class="nav-bottom">
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Início</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18l-2 12H5z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>Cardápio</button>
+          <button class="nav-item active" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L8 6h8z"/><path d="M5 8h14l-1.5 12h-11z"/></svg>Assinatura</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Perfil</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <h3>Pill única "Alterado"</h3>
+      <div class="legend">
+        <span class="pill" style="background:var(--warm-100);color:var(--warning-text);border:none">● Alterado</span>
+      </div>
+      <ul>
+        <li>League Gothic 10px uppercase. Bg <code>warm-100</code>. Cor <code>warning-text</code> (#92400E). Bullet 9×9 antes do texto.</li>
+        <li>Aparece em <strong>toda row cuja qty difere do baseline</strong> — swap, aumento, diminuição. Mesmo visual sempre.</li>
+        <li>O QtyStepper mostra o número atual. A pill marca "essa row mudou". Cliente cruza com o card "Plano atual" pra ver o original se quiser.</li>
+      </ul>
+
+      <h3>Row Integral em opacity .55</h3>
+      <ul>
+        <li>Quando qty=0, row inteira fica em <code>opacity: .55</code>. Comunica "fora da cesta" sem precisar de label extra.</li>
+        <li>Botão <code>−</code> disabled (já em 0). Botão <code>+</code> habilitado — user pode voltar a Integral=1 sem perder o lugar visual.</li>
+      </ul>
+
+      <h3>Bloco de valor — todas as linhas iguais</h3>
+      <ul>
+        <li>Pães · 198 = 198. Frete · 15 = 15. Total · 213 = 213.</li>
+        <li><strong>Total "Após" em warm-700</strong> (não brand-500) — sinal visual de "valor não muda".</li>
+        <li>O fato de tudo bater apesar das rows terem mudado é o <strong>insight</strong> do swap: composição diferente, valor igual.</li>
+      </ul>
+
+      <h3>Microcopy contextual</h3>
+      <ul>
+        <li><em>"Vale a partir da entrega de 28/05. O valor mensal continua o mesmo."</em></li>
+        <li>Quando swap puro: segunda frase = <em>"O valor mensal continua o mesmo."</em></li>
+        <li>Quando total muda: segunda frase = <em>"A cobrança nova começa em 1º/06."</em> (telas 4 e 5).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ SCREEN 4: EDIT 3→2 ════════════════ -->
+<section id="s4" class="screen-block">
+  <h2><span class="n">4</span>Edit · diminuir 3 → 2 pães <span class="tag alt">total cai, valor cai</span></h2>
+  <p class="desc">Baseline = 2× Original + 1× Integral (3 pães, R$ 312/mês). User clicou <code>−</code> no Original → 1+1=2. Pill "Alterado" só na row Original. Bloco de valor mostra Pães caindo de R$ 297 → R$ 198, frete fixo, Total caindo de R$ 312 → R$ 213. <strong>Total "Após" em brand-500</strong> (mudou). Sem delta numérico, sem cor verde/laranja — só dois números lado a lado.</p>
+
+  <div class="layout">
+    <div class="phone std">
+      <div class="topbar">
+        <img src="assets/cora_logo_com_tag.svg" alt="Cora">
+        <button class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      </div>
+
+      <div class="page">
+        <div class="page-scroll">
+          <div class="card editing">
+            <div class="card-label"><span>Alterar plano</span></div>
+            <p class="edit-intro">Quantos pães por semana?</p>
+
+            <div class="asn-list">
+              <div class="asn-row">
+                <div class="left">
+                  <div class="name">Pão Original <span class="name-meta">· 700g</span>
+                    <span class="diff-pill"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>Alterado</span>
+                  </div>
+                </div>
+                <div class="qty">
+                  <button data-step="-1" aria-label="Diminuir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                  <span class="n">1</span>
+                  <button data-step="1" aria-label="Aumentar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                </div>
+              </div>
+              <div class="asn-row">
+                <div class="left">
+                  <div class="name">Pão Integral <span class="name-meta">· 700g</span></div>
+                </div>
+                <div class="qty">
+                  <button data-step="-1" aria-label="Diminuir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                  <span class="n">1</span>
+                  <button data-step="1" aria-label="Aumentar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="total-week">
+              <span class="lbl">Total da semana</span>
+              <span class="v"><span class="num">2</span> pães<span class="ghost">· era 3</span></span>
+            </div>
+
+            <div class="ev-block">
+              <span class="h"></span>
+              <span class="h right">Atual</span>
+              <span class="h right after">Após mudança</span>
+              <span class="k">Pães</span><span class="v">R$ 297,00</span><span class="v">R$ 198,00</span>
+              <span class="k">Frete</span><span class="v">R$ 15,00</span><span class="v">R$ 15,00</span>
+              <div class="div-row"></div>
+              <span class="k total">Total</span>
+              <span class="v total">R$ 312,00/mês</span>
+              <span class="v total brand">R$ 213,00/mês</span>
+            </div>
+
+            <div class="micro-context">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Vale a partir da entrega de 28/05. A cobrança nova começa em 1º/06.</span>
+            </div>
+
+            <div class="edit-foot">
+              <button class="btn-ghost" type="button">Cancelar</button>
+              <button class="btn-primary" type="button">Salvar alterações</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-label"><span>Entrega</span></div>
+            <div class="info-row"><span class="k">Entregas</span><span class="v">Toda quinta</span></div>
+          </div>
+        </div>
+
+        <div class="nav-bottom">
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Início</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18l-2 12H5z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>Cardápio</button>
+          <button class="nav-item active" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L8 6h8z"/><path d="M5 8h14l-1.5 12h-11z"/></svg>Assinatura</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Perfil</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <h3>Sem delta · sem cor de subida/descida</h3>
+      <div class="compare">
+        <div>
+          <span class="lbl">V1</span>
+          R$ 213,00/mês <em style="color:#92400E">−R$ 99,00</em><br>
+          Cor warning (laranja) pra cobrança ↓<br>
+          <em>"verde maior, laranja menor"</em><br>
+          <em>(escolhido pela perspectiva da Cora)</em>
+        </div>
+        <div>
+          <span class="lbl">V2</span>
+          R$ 312,00/mês &nbsp; R$ 213,00/mês<br>
+          Total "Após" em brand-500<br>
+          Sem delta, sem cor semântica<br>
+          <em>Os dois números lado a lado bastam.</em>
+        </div>
+      </div>
+      <ul>
+        <li><strong>Problema do delta:</strong> matemática ambígua ("213 menos 99 = 114?"). E cor de "valor maior é bom" depende da perspectiva, gerando contradição.</li>
+        <li><strong>Solução:</strong> elimina o delta. As 2 colunas lado a lado comunicam o valor antes e depois — não precisa subtração visual.</li>
+        <li>"Após" em brand-500 quando muda. Warm-700 quando igual. Sem warning nem success.</li>
+      </ul>
+
+      <h3>Caption do Total da semana</h3>
+      <ul>
+        <li><em>"2 pães · era 3"</em> — só isso. O "máximo" da v1 saiu (redundante com botão <code>+</code> disabled).</li>
+        <li>Caption warm-500 12px regular.</li>
+      </ul>
+
+      <h3>Microcopy contextual</h3>
+      <ul>
+        <li>Quando total muda: <em>"Vale a partir da entrega de 28/05. A cobrança nova começa em 1º/06."</em></li>
+        <li>Pattern do escopo. Duas frases, duas regras.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ SCREEN 5: EDIT 2→3 ════════════════ -->
+<section id="s5" class="screen-block">
+  <h2><span class="n">5</span>Edit · aumentar 2 → 3 pães <span class="tag alt">total sobe, valor sobe</span></h2>
+  <p class="desc">Baseline = 1+1 (2 pães, R$ 213/mês). User clicou <code>+</code> no Original → 2+1=3. Pill "Alterado" só na row Original. Total semanal sobe pra 3 pães (cap). Botões <code>+</code> disabled em ambas rows (cap atingido). Bloco de valor: Pães R$ 198 → R$ 297, Total R$ 213 → R$ 312 em brand-500. Mesma pill warning unica do swap/diminuição.</p>
+
+  <div class="layout">
+    <div class="phone std">
+      <div class="topbar">
+        <img src="assets/cora_logo_com_tag.svg" alt="Cora">
+        <button class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      </div>
+
+      <div class="page">
+        <div class="page-scroll">
+          <div class="card editing">
+            <div class="card-label"><span>Alterar plano</span></div>
+            <p class="edit-intro">Quantos pães por semana?</p>
+
+            <div class="asn-list">
+              <div class="asn-row">
+                <div class="left">
+                  <div class="name">Pão Original <span class="name-meta">· 700g</span>
+                    <span class="diff-pill"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>Alterado</span>
+                  </div>
+                </div>
+                <div class="qty">
+                  <button data-step="-1" aria-label="Diminuir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                  <span class="n">2</span>
+                  <button data-step="1" disabled aria-label="Aumentar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                </div>
+              </div>
+              <div class="asn-row">
+                <div class="left">
+                  <div class="name">Pão Integral <span class="name-meta">· 700g</span></div>
+                </div>
+                <div class="qty">
+                  <button data-step="-1" aria-label="Diminuir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                  <span class="n">1</span>
+                  <button data-step="1" disabled aria-label="Aumentar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="total-week">
+              <span class="lbl">Total da semana</span>
+              <span class="v"><span class="num">3</span> pães<span class="ghost">· era 2</span></span>
+            </div>
+
+            <div class="ev-block">
+              <span class="h"></span>
+              <span class="h right">Atual</span>
+              <span class="h right after">Após mudança</span>
+              <span class="k">Pães</span><span class="v">R$ 198,00</span><span class="v">R$ 297,00</span>
+              <span class="k">Frete</span><span class="v">R$ 15,00</span><span class="v">R$ 15,00</span>
+              <div class="div-row"></div>
+              <span class="k total">Total</span>
+              <span class="v total">R$ 213,00/mês</span>
+              <span class="v total brand">R$ 312,00/mês</span>
+            </div>
+
+            <div class="micro-context">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Vale a partir da entrega de 28/05. A cobrança nova começa em 1º/06.</span>
+            </div>
+
+            <div class="edit-foot">
+              <button class="btn-ghost" type="button">Cancelar</button>
+              <button class="btn-primary" type="button">Salvar alterações</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-label"><span>Entrega</span></div>
+            <div class="info-row"><span class="k">Entregas</span><span class="v">Toda quinta</span></div>
+          </div>
+        </div>
+
+        <div class="nav-bottom">
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Início</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18l-2 12H5z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>Cardápio</button>
+          <button class="nav-item active" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L8 6h8z"/><path d="M5 8h14l-1.5 12h-11z"/></svg>Assinatura</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Perfil</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <h3>Cap em 3 pães</h3>
+      <ul>
+        <li>Total = 3 → botões <code>+</code> disabled nas duas rows. Comunica o limite visualmente.</li>
+        <li>Caption do total: <em>"3 pães · era 2"</em>. Sem "máximo".</li>
+        <li><strong>Pra trocar composição em sum=3</strong>: clica <code>−</code> em uma row (libera capacity), depois <code>+</code> na outra. Visual: pill "Alterado" em ambas rows.</li>
+      </ul>
+
+      <h3>Bloco de valor — Total "Após" em brand-500</h3>
+      <ul>
+        <li>R$ 213 (Atual) → <strong>R$ 312/mês</strong> (Após, em brand-500).</li>
+        <li>Sem <code>+R$ 99</code>, sem ícone, sem semântica de "subida".</li>
+        <li><strong>Frete fixo nas duas colunas</strong>: deixa explícito que o frete não cresce com o plano. (Só cai pra R$ 0 com convite 5 moradores.)</li>
+      </ul>
+
+      <h3>Pill "Alterado" — uma só, sem direção</h3>
+      <div class="legend">
+        <span class="pill" style="background:var(--warm-100);color:var(--warning-text);border:none">● Alterado</span>
+      </div>
+      <ul>
+        <li>Mesma pill da tela 3 e 4. Direção (↑ ou ↓) é irrelevante — o cliente lê o número novo no stepper.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ SCREEN 6: MODAL DE CONFIRMAÇÃO ════════════════ -->
+<section id="s6" class="screen-block">
+  <h2><span class="n">6</span>Modal de confirmação <span class="tag modal">sobre overlay</span></h2>
+  <p class="desc">User clicou "Salvar alterações" na tela 5. Overlay warm-800 50% sobre o conteúdo, modal bottom-sheet com resumo. Inclui decomposição do novo valor mensal em linha pequena: <em>R$ 297,00 (pães) + R$ 15,00 (frete)</em>. Dois botões: <strong>Cancelar</strong> (ghost) e <strong>Confirmar mudança</strong> (primary).</p>
+
+  <div class="layout">
+    <div class="phone std">
+      <div class="topbar">
+        <img src="assets/cora_logo_com_tag.svg" alt="Cora">
+        <button class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      </div>
+
+      <div class="page">
+        <div class="page-scroll behind">
+          <div class="card editing">
+            <div class="card-label"><span>Alterar plano</span></div>
+            <p class="edit-intro">Quantos pães por semana?</p>
+            <div class="asn-list">
+              <div class="asn-row">
+                <div class="left"><div class="name">Pão Original <span class="name-meta">· 700g</span><span class="diff-pill"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>Alterado</span></div></div>
+                <div class="qty"><button><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button><span class="n">2</span><button disabled><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div>
+              </div>
+              <div class="asn-row">
+                <div class="left"><div class="name">Pão Integral <span class="name-meta">· 700g</span></div></div>
+                <div class="qty"><button><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button><span class="n">1</span><button disabled><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div>
+              </div>
+            </div>
+            <div class="total-week"><span class="lbl">Total da semana</span><span class="v"><span class="num">3</span> pães<span class="ghost">· era 2</span></span></div>
+          </div>
+        </div>
+
+        <div class="modal-overlay">
+          <div class="modal">
+            <div class="grab"></div>
+            <h3>Confirmar nova assinatura</h3>
+            <div class="body">
+              <p>Você está mudando o seu plano. Confira antes de confirmar.</p>
+
+              <div class="summary">
+                <div class="row">
+                  <span class="lbl">Plano atual</span>
+                  <span class="v">2 pães · 1 Pão Original + 1 Pão Integral</span>
+                </div>
+                <div class="row">
+                  <span class="lbl">Plano novo</span>
+                  <span class="v brand">3 pães · 2 Pão Original + 1 Pão Integral</span>
+                </div>
+                <div class="divider"></div>
+                <div class="row">
+                  <span class="lbl">Vale a partir de</span>
+                  <span class="v">Entrega de 28/05</span>
+                </div>
+                <div class="row">
+                  <span class="lbl">Próxima cobrança</span>
+                  <span class="v brand">R$ 312,00/mês em 1º/06
+                    <span class="sub">R$ 297,00 (pães) + R$ 15,00 (frete)</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="foot">
+              <button class="btn-ghost" type="button">Cancelar</button>
+              <button class="btn-primary" type="button">Confirmar mudança</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-bottom" style="filter:blur(.5px) saturate(.92);opacity:.85">
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Início</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18l-2 12H5z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>Cardápio</button>
+          <button class="nav-item active" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L8 6h8z"/><path d="M5 8h14l-1.5 12h-11z"/></svg>Assinatura</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Perfil</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <h3>Resumo do modal</h3>
+      <ul>
+        <li>4 linhas + divider:
+          <ol>
+            <li><strong>Plano atual:</strong> "2 pães · 1 Pão Original + 1 Pão Integral"</li>
+            <li><strong>Plano novo:</strong> "3 pães · 2 Pão Original + 1 Pão Integral" (brand-500)</li>
+            <li>divider warm-200</li>
+            <li><strong>Vale a partir de:</strong> "Entrega de 28/05"</li>
+            <li><strong>Próxima cobrança:</strong> "R$ 312,00/mês em 1º/06" (brand-500) + sub "R$ 297,00 (pães) + R$ 15,00 (frete)" em warm-500 11px</li>
+          </ol>
+        </li>
+        <li>Decomposição na linha sub elimina dúvida ("R$ 312 inclui frete?"). Mesma lógica do card Plano atual.</li>
+      </ul>
+
+      <h3>Padronização Pão Original / Pão Integral</h3>
+      <ul>
+        <li>V1 do modal usava "Original" e "Integral" sem o "Pão". V2 escreve completo em toda a tela — modal, idle, edit, summary, microcopy.</li>
+        <li>Consistência > economia visual no modal.</li>
+      </ul>
+
+      <h3>Variantes do modal por cenário</h3>
+      <div class="compare">
+        <div>
+          <span class="lbl">Aumento (esta tela)</span>
+          Plano novo destaque brand<br>
+          Próxima cobrança destaque brand<br>
+          Sub com decomposição
+        </div>
+        <div>
+          <span class="lbl">Swap (sem mudança de valor)</span>
+          Plano novo destaque brand<br>
+          <em>Linha "Próxima cobrança" oculta</em><br>
+          Sai "O valor mensal continua o mesmo." como p
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ SCREEN 7: MODAL LOADING ════════════════ -->
+<section id="s7" class="screen-block">
+  <h2><span class="n">7</span>Modal · salvando <span class="tag modal">POST em curso</span></h2>
+  <p class="desc">User clicou "Confirmar mudança". Botão primary mostra <strong>spinner + "Salvando..."</strong> em opacity .7 com cursor wait. <strong>Botão ghost "Cancelar" permanece habilitado</strong> — click cancela o POST via <code>AbortController</code> e fecha o modal (volta pra tela edit com alterações preservadas). Spinner ganha <code>aria-label="Salvando alteração"</code>.</p>
+
+  <div class="layout">
+    <div class="phone std">
+      <div class="topbar">
+        <img src="assets/cora_logo_com_tag.svg" alt="Cora">
+        <button class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      </div>
+
+      <div class="page">
+        <div class="page-scroll behind">
+          <div class="card editing">
+            <div class="card-label"><span>Alterar plano</span></div>
+            <p class="edit-intro">Quantos pães por semana?</p>
+            <div class="asn-list">
+              <div class="asn-row">
+                <div class="left"><div class="name">Pão Original <span class="name-meta">· 700g</span><span class="diff-pill"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>Alterado</span></div></div>
+                <div class="qty"><button><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button><span class="n">2</span><button disabled><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div>
+              </div>
+              <div class="asn-row">
+                <div class="left"><div class="name">Pão Integral <span class="name-meta">· 700g</span></div></div>
+                <div class="qty"><button><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button><span class="n">1</span><button disabled><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-overlay">
+          <div class="modal">
+            <div class="grab"></div>
+            <h3>Confirmar nova assinatura</h3>
+            <div class="body">
+              <p>Você está mudando o seu plano. Confira antes de confirmar.</p>
+
+              <div class="summary">
+                <div class="row">
+                  <span class="lbl">Plano atual</span>
+                  <span class="v">2 pães · 1 Pão Original + 1 Pão Integral</span>
+                </div>
+                <div class="row">
+                  <span class="lbl">Plano novo</span>
+                  <span class="v brand">3 pães · 2 Pão Original + 1 Pão Integral</span>
+                </div>
+                <div class="divider"></div>
+                <div class="row">
+                  <span class="lbl">Vale a partir de</span>
+                  <span class="v">Entrega de 28/05</span>
+                </div>
+                <div class="row">
+                  <span class="lbl">Próxima cobrança</span>
+                  <span class="v brand">R$ 312,00/mês em 1º/06
+                    <span class="sub">R$ 297,00 (pães) + R$ 15,00 (frete)</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="foot">
+              <button class="btn-ghost" type="button">Cancelar</button>
+              <button class="btn-primary loading" type="button" aria-busy="true">
+                <span class="spinner" role="status" aria-label="Salvando alteração"></span>
+                Salvando...
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-bottom" style="filter:blur(.5px) saturate(.92);opacity:.85">
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Início</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18l-2 12H5z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>Cardápio</button>
+          <button class="nav-item active" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L8 6h8z"/><path d="M5 8h14l-1.5 12h-11z"/></svg>Assinatura</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Perfil</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <h3>Estados do botão Confirmar</h3>
+      <div class="compare">
+        <div>
+          <span class="lbl">Tela 6 (idle)</span>
+          "Confirmar mudança"<br>
+          bg brand-500, cursor pointer
+        </div>
+        <div>
+          <span class="lbl">Tela 7 (loading)</span>
+          spinner + "Salvando..."<br>
+          bg brand-500, opacity .7<br>
+          cursor wait, sem hover
+        </div>
+      </div>
+      <ul>
+        <li><strong>Spinner</strong>: 14×14, border 2px white/35%, top brand white, animation spin .8s linear infinite.</li>
+        <li><strong>aria-label="Salvando alteração"</strong> <span class="pill add" style="font-family:var(--font-display);font-size:10px;letter-spacing:.06em">v3</span> + <code>role="status"</code> no spinner + <code>aria-busy="true"</code> no botão. Leitores de tela anunciam o estado.</li>
+        <li><strong>Cancelar habilitado</strong> <span class="pill add" style="font-family:var(--font-display);font-size:10px;letter-spacing:.06em">v3</span>: warm-600 weight 500 (mesmo estilo do v3). Click chama <code>controller.abort()</code> no fetch em curso e fecha o modal. Volta pra tela 5 (edit) com as alterações intactas.</li>
+        <li><strong>Overlay não fecha</strong> com clique fora ou Esc durante loading — só o botão Cancelar reverte.</li>
+      </ul>
+
+      <h3>Por que Cancel ativo? <span class="pill add" style="font-family:var(--font-display);font-size:10px;letter-spacing:.06em">v3</span></h3>
+      <ul>
+        <li>Cancelar fetch em voo é trivial com <code>AbortController</code>. Desabilitar era fricção sem reciprocidade.</li>
+        <li>Cliente que apertou Confirmar e percebeu erro ("errei a quantidade!") não fica preso esperando — honra a ação dele.</li>
+        <li>Race: se o POST retornar 200 <strong>antes</strong> do abort, a tela trata como sucesso normal (ignora o cancel). O usuário vê o toast de sucesso — estado consistente com o backend.</li>
+      </ul>
+
+      <h3>Duração esperada</h3>
+      <ul>
+        <li>POST típico ~400-800ms. Spinner sempre visível pelo menos 300ms pra evitar piscar.</li>
+        <li>Acima de 3s sem resposta: timeout → erro de rede (tela 8).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ SCREEN 8: ERRO ════════════════ -->
+<section id="s8" class="screen-block">
+  <h2><span class="n">8</span>Erro de rede <span class="tag err">POST falhou</span></h2>
+  <p class="desc">POST falhou (timeout, 500, conexão caiu). <strong>Toast warning</strong> no topo: "Não conseguimos salvar agora. Tente de novo." Modal permanece aberto, botões voltam pro estado normal (Cancelar habilitado, Confirmar mudança habilitado). Card de edição preserva todas as alterações — cliente pode tentar de novo sem perder o que digitou.</p>
+
+  <div class="layout">
+    <div class="phone std">
+      <div class="topbar">
+        <img src="assets/cora_logo_com_tag.svg" alt="Cora">
+        <button class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      </div>
+
+      <div class="page">
+        <div class="page-scroll behind">
+          <div class="card editing">
+            <div class="card-label"><span>Alterar plano</span></div>
+            <p class="edit-intro">Quantos pães por semana?</p>
+            <div class="asn-list">
+              <div class="asn-row">
+                <div class="left"><div class="name">Pão Original <span class="name-meta">· 700g</span><span class="diff-pill"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>Alterado</span></div></div>
+                <div class="qty"><button><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button><span class="n">2</span><button disabled><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div>
+              </div>
+              <div class="asn-row">
+                <div class="left"><div class="name">Pão Integral <span class="name-meta">· 700g</span></div></div>
+                <div class="qty"><button><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button><span class="n">1</span><button disabled><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toast de erro acima do modal -->
+        <div class="toast error">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span><strong>Não conseguimos salvar agora.</strong> Tente de novo.</span>
+        </div>
+
+        <div class="modal-overlay">
+          <div class="modal">
+            <div class="grab"></div>
+            <h3>Confirmar nova assinatura</h3>
+            <div class="body">
+              <p>Você está mudando o seu plano. Confira antes de confirmar.</p>
+
+              <div class="summary">
+                <div class="row"><span class="lbl">Plano atual</span><span class="v">2 pães · 1 Pão Original + 1 Pão Integral</span></div>
+                <div class="row"><span class="lbl">Plano novo</span><span class="v brand">3 pães · 2 Pão Original + 1 Pão Integral</span></div>
+                <div class="divider"></div>
+                <div class="row"><span class="lbl">Vale a partir de</span><span class="v">Entrega de 28/05</span></div>
+                <div class="row"><span class="lbl">Próxima cobrança</span><span class="v brand">R$ 312,00/mês em 1º/06<span class="sub">R$ 297,00 (pães) + R$ 15,00 (frete)</span></span></div>
+              </div>
+            </div>
+
+            <div class="foot">
+              <button class="btn-ghost" type="button">Cancelar</button>
+              <button class="btn-primary" type="button">Confirmar mudança</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-bottom" style="filter:blur(.5px) saturate(.92);opacity:.85">
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Início</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18l-2 12H5z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>Cardápio</button>
+          <button class="nav-item active" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L8 6h8z"/><path d="M5 8h14l-1.5 12h-11z"/></svg>Assinatura</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Perfil</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <h3>Anatomia do toast de erro</h3>
+      <div class="legend">
+        <span class="pill warn">warning-bg · warning-border · warning-text</span>
+      </div>
+      <ul>
+        <li>Posição: absolute top:80px, left/right:16px. Acima do modal-overlay (z-index 60 vs 40).</li>
+        <li>Ícone <code>info</code> circular 18×18 stroke 1.8 + texto 13px.</li>
+        <li><strong>Copy:</strong> "<strong>Não conseguimos salvar agora.</strong> Tente de novo." — frase em negrito + orientação curta. Sem "Oops", sem emoji, sem "tente novamente em alguns instantes".</li>
+        <li>Auto-dismiss em 6s, ou clique pra fechar.</li>
+      </ul>
+
+      <h3>Estado dos botões pós-erro</h3>
+      <ul>
+        <li>Modal segue aberto. Botões voltam pro estado normal (Cancelar habilitado, Confirmar habilitado). Spinner some.</li>
+        <li>Card de edição na página de fundo <strong>preserva intactos</strong> os valores. Cliente pode fechar o modal, revisar e tentar de novo.</li>
+      </ul>
+
+      <h3>Tipos de erro que caem aqui</h3>
+      <ul>
+        <li>Timeout (sem resposta &gt; 3s)</li>
+        <li>HTTP 5xx (problema do servidor)</li>
+        <li>Conexão caiu / sem internet</li>
+        <li>Validação de backend (raro nessa tela — composição já é validada no front)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ SCREEN 9: SUCESSO ════════════════ -->
+<section id="s9" class="screen-block">
+  <h2><span class="n">9</span>Sucesso <span class="tag ok">POST OK · idle com novo plano</span></h2>
+  <p class="desc">POST OK. Modal fecha. Card de edição colapsa pro estado idle <strong>com a nova composição</strong> (3 pães · 2 Original + 1 Integral · R$ 312/mês) + microcopy <em>"Vale a partir de 28/05"</em> abaixo do Total. Toast verde no topo: <em>"Mudança confirmada. Vale a partir de 28/05."</em> Auto-dismiss em ~4s. Bloco Cobrança continua mostrando R$ 213 na próxima fatura (Asaas ainda não processou) + <strong>linha extra</strong> em k/v separados (<code>↳ A partir de 1º/07</code> | <code>R$ 312,00</code>) avisando o valor futuro.</p>
+
+  <div class="layout">
+    <div class="phone tall">
+      <div class="topbar">
+        <img src="assets/cora_logo_com_tag.svg" alt="Cora">
+        <button class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      </div>
+
+      <div class="page">
+        <div class="page-scroll">
+          <!-- Plano atual NOVO -->
+          <div class="card">
+            <div class="card-label"><span>Plano atual</span></div>
+            <p class="plan-name">3 pães por semana</p>
+            <p class="plan-comp">2× Pão Original + 1× Pão Integral</p>
+            <p class="plan-delivery">Entregas toda quinta</p>
+
+            <div class="breakdown">
+              <div class="bk-row"><span class="k">Pães</span><span class="v">R$ 297,00/mês</span></div>
+              <div class="bk-row"><span class="k">Frete</span><span class="v">R$ 15,00/mês</span></div>
+              <div class="bk-row total"><span class="k">Total</span><span class="v">R$ 312,00/mês</span></div>
+              <p class="plan-effective-from">Vale a partir de 28/05</p>
+            </div>
+
+            <button class="plan-cta" type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
+              Alterar minha Assinatura
+            </button>
+          </div>
+
+          <!-- Convite Condomínio (isolado) -->
+          <div class="invite-card standalone">
+            <p class="tt">Mora num condomínio?</p>
+            <p class="bd">Se 5 ou mais moradores assinam, o frete fica por nossa conta.</p>
+            <button class="cta" type="button">Saiba como funciona
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+
+          <div class="card readonly">
+            <div class="card-label"><span>Endereço</span></div>
+            <div class="ro-value">Rua Otávio Carneiro, 123, apt 401<br>Icaraí, Niterói · RJ · 24230-191</div>
+          </div>
+
+          <!-- Cobrança: valor antigo na próxima fatura + linha futura (mudança agendada) -->
+          <div class="card readonly">
+            <div class="card-label"><span>Cobrança</span></div>
+            <div class="ro-row"><span class="k">Cartão</span><span class="v">Visa ●●●● 4287</span></div>
+            <div class="ro-row"><span class="k">Próxima fatura</span><span class="v">R$ 213,00 · 1º/06</span></div>
+            <div class="ro-row future"><span class="k">↳ A partir de 1º/07</span><span class="v">R$ 312,00</span></div>
+          </div>
+
+          <div class="card readonly">
+            <div class="card-label"><span>Histórico</span></div>
+            <div class="ro-row"><span class="k">14/05 · 2 pães</span><span class="status">Entregue</span></div>
+            <div class="ro-row"><span class="k">07/05 · 2 pães</span><span class="status">Entregue</span></div>
+            <div class="ro-row"><span class="k">30/04 · 2 pães</span><span class="status">Entregue</span></div>
+          </div>
+
+          <p class="wa-note">
+            Pra mudar endereço, cartão ou pausar a assinatura, fale com a gente pelo
+            <a href="#">WhatsApp
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></a>.
+          </p>
+        </div>
+
+        <!-- Toast sucesso -->
+        <div class="toast success">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span><strong>Mudança confirmada.</strong> Vale a partir de 28/05.</span>
+        </div>
+
+        <div class="nav-bottom">
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Início</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18l-2 12H5z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>Cardápio</button>
+          <button class="nav-item active" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L8 6h8z"/><path d="M5 8h14l-1.5 12h-11z"/></svg>Assinatura</button>
+          <button class="nav-item" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Perfil</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <h3>Sequência de transição</h3>
+      <ol>
+        <li>POST 200 OK chega.</li>
+        <li>Modal fade-out ~200ms.</li>
+        <li>Card editing → colapsa pro card idle com a nova composição (fade-in suave ~250ms).</li>
+        <li>Toast success aparece no topo, fadeUp do design system.</li>
+        <li>Bloco read-only Cobrança ganha a linha extra <code>↳ A partir de 1º/07</code> | <code>R$ 312,00</code> (state derivado: future_value !== current_value).</li>
+        <li>Toast auto-dismiss em ~4s, ou clique fora pra fechar.</li>
+      </ol>
+
+      <h3>Toast de sucesso — "Mudança confirmada" <span class="pill add" style="font-family:var(--font-display);font-size:10px;letter-spacing:.06em">v4</span></h3>
+      <div class="compare">
+        <div>
+          <span class="lbl">V3</span>
+          ✓ Plano atualizado. Vale a partir de 28/05.
+        </div>
+        <div>
+          <span class="lbl">V4</span>
+          ✓ Mudança confirmada. Vale a partir de 28/05.
+        </div>
+      </div>
+      <ul>
+        <li>Ícone <code>check</code> 18×18 stroke 2.</li>
+        <li><strong>Por quê:</strong> "Atualizado" sugere ação concluída agora — cliente pode pensar que já vale. "Confirmada" comunica corretamente que a mudança está <strong>agendada</strong>, coerente com o fato de só passar a valer em 28/05.</li>
+        <li>Mesma posição do toast de erro (top:80px). Mesmo tamanho. Diferença só na cor semântica.</li>
+      </ul>
+
+      <h3>Microcopy "Vale a partir de 28/05" no Total <span class="pill add" style="font-family:var(--font-display);font-size:10px;letter-spacing:.06em">v4</span></h3>
+      <div class="compare">
+        <div>
+          <span class="lbl">V3 (só toast)</span>
+          Pães R$ 297<br>
+          Frete R$ 15<br>
+          ─────────<br>
+          Total R$ 312/mês
+        </div>
+        <div>
+          <span class="lbl">V4 (Total + microcopy)</span>
+          Pães R$ 297<br>
+          Frete R$ 15<br>
+          ─────────<br>
+          Total R$ 312/mês<br>
+          <em>Vale a partir de 28/05</em>
+        </div>
+      </div>
+      <ul>
+        <li><strong>Problema:</strong> cliente lê o novo Total (R$ 312) ao lado do bloco Cobrança que ainda mostra R$ 213 na próxima fatura. Pode confundir temporalmente ("Vou pagar R$ 312 ou R$ 213?").</li>
+        <li><strong>Solução:</strong> microcopy 11px warm-500, alinhada à direita, com border-top dashed warm-200. Reposiciona o valor na linha do tempo sem competir visualmente com o Total.</li>
+        <li><strong>State derivado:</strong> aparece apenas quando <code>current_value !== effective_value</code> (mudança agendada). No idle padrão (tela 1), não aparece.</li>
+      </ul>
+
+      <h3>Plano atual com novo valor</h3>
+      <ul>
+        <li>"3 pães por semana" / "2× Pão Original + 1× Pão Integral"</li>
+        <li>Pães R$ 297,00 + Frete R$ 15,00 = Total R$ 312,00/mês</li>
+      </ul>
+
+      <h3>Cobrança — linha futura em <code>.k</code> + <code>.v</code> <span class="pill add" style="font-family:var(--font-display);font-size:10px;letter-spacing:.06em">v4</span></h3>
+      <div class="compare">
+        <div>
+          <span class="lbl">V3</span>
+          <code>&lt;span class="k"&gt;R$ 312,00 a partir de 1º/07&lt;/span&gt;</code><br>
+          <code>&lt;span class="v"&gt;&lt;/span&gt;</code><br>
+          <em>Tudo no .k, .v vazio. Quebra o padrão.</em>
+        </div>
+        <div>
+          <span class="lbl">V4</span>
+          <code>&lt;span class="k"&gt;↳ A partir de 1º/07&lt;/span&gt;</code><br>
+          <code>&lt;span class="v"&gt;R$ 312,00&lt;/span&gt;</code><br>
+          <em>Padrão k/v consistente, tabular-nums alinha.</em>
+        </div>
+      </div>
+      <ul>
+        <li><strong>Honesto sobre o presente:</strong> a próxima fatura ainda é R$ 213 — Asaas só processa a mudança no ciclo seguinte.</li>
+        <li><strong>Informativo sobre o futuro:</strong> a linha extra (warm-500 12px) avisa o novo valor a partir de 1º/07.</li>
+        <li><strong>Padrão consistente:</strong> agora o valor à direita alinha tabular-nums com "Próxima fatura" R$ 213,00 acima. Visual mais legível.</li>
+        <li><strong>State derivado:</strong> a linha extra só aparece quando <code>current_value !== future_value</code> (plano agendado). Em swap puro, não aparece.</li>
+        <li>Evita chamado do tipo "ú, mudei o plano mas continua cobrando o valor antigo".</li>
+      </ul>
+
+      <h3>O que <em>não</em> está aqui</h3>
+      <ul>
+        <li>Sem confete, sem "🎉", sem "Pronta pra essa nova etapa?", sem "Estamos juntos nessa".</li>
+        <li>Sem CTA "Voltar pra Home" — cliente já está numa tela idle válida.</li>
+        <li>Sem comprovante / detalhamento adicional — o toast + a tela idle atualizada bastam.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+  const links = document.querySelectorAll('#topnav a[data-target]');
+  const sections = [...links].map(a => document.getElementById(a.dataset.target));
+  function setActive(){
+    const y = window.scrollY + 200;
+    let active = sections[0];
+    for (const s of sections){
+      if (s && s.offsetTop <= y) active = s;
+    }
+    links.forEach(a => a.classList.toggle('active', a.dataset.target === active.id));
+  }
+  window.addEventListener('scroll', setActive, {passive:true});
+  setActive();
+</script>
+</body>
+</html>
