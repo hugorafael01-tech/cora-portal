@@ -1186,15 +1186,14 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds})=>{
   const ehMudancaTotal=hasAlteration&&!isCompositionInvalid&&sumAll!==total_paes;
 
   // ===== Handlers do rascunho =====
-  // Swap atômico (alinhado com o Drawer): em capacity full (sumAll===3 OR
-  // sumAll===total_paes baseline), clique em + faz swap com a outra row se ela
-  // tem qty>0. Senão increment direto (até cap absoluto 3). Permite trocar tipos
-  // sem mudar plano em 1 clique, e ainda aumentar plano quando other===0.
+  // Swap atômico SÓ no cap absoluto (sumAll===3) — diferente do Drawer porque
+  // aqui total_paes é variável (cliente pode mudar de plano 1↔2↔3). Em estados
+  // intermediários (sumAll<3) o + incrementa direto pra permitir aumento natural
+  // de plano. Tradeoff: plano 1 → trocar tipo exige 2 cliques (+ outro, - antigo).
   const handleIncrement=(id)=>{
     const otherId=D.pães.find(p=>p.id!==id)?.id;
     const otherQty=rascunho?.[otherId]||0;
-    const inCapacityFull=sumAll===3||sumAll===total_paes;
-    if(inCapacityFull&&otherQty>0){
+    if(sumAll===3&&otherQty>0){
       setRascunho(prev=>({...prev,[id]:(prev?.[id]||0)+1,[otherId]:prev[otherId]-1}));
       return;
     }
