@@ -10,7 +10,7 @@ import { isPastCutoff, nextEditableThursdayISO, nextSubscriptionChangeThursdayIS
 import { haptic } from "./utils/haptic";
 import { plural } from "./utils/plural";
 import { loadSubscription, saveSubscription, clearSubscription, reconcileSubscription } from "./utils/subscription";
-import { getSettings, getWeeklyOrders, postWeeklyOrder, confirmWeeklyOrder } from "./utils/api";
+import { getSettings, getWeeklyOrders, postWeeklyOrder, confirmWeeklyOrder, patchSubscription } from "./utils/api";
 import { B, W, fd, fb, fmt, radii } from "./tokens";
 
 // `?reset=true`: limpa subscription persistida e remove o param da URL.
@@ -1251,35 +1251,25 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
   const handleCancelEdit=()=>{setRascunho({...assinaturaQtds});setEditing(false);};
   const handleSalvar=()=>setConfirmModal(true);
 
-  // Stub do POST PATCH /api/subscriptions/{id} (Fase 1 troca pelo endpoint real).
-  // Resolve após 800ms; rejeita imediato se signal abortar.
-  const postSubscriptionUpdateStub=(payload,signal)=>new Promise((resolve,reject)=>{
-    const t=setTimeout(()=>{
-      if(signal?.aborted){reject(new DOMException("aborted","AbortError"));return;}
-      // DEV: ?fail=1 força erro de rede pra validar o toast warning (remover na Fase 1).
-      if(new URLSearchParams(window.location.search).get("fail")==="1"){reject(new Error("Erro simulado"));return;}
-      const nextDate=`${proximoDia1.getFullYear()}-${String(proximoDia1.getMonth()+1).padStart(2,"0")}-${String(proximoDia1.getDate()).padStart(2,"0")}`;
-      resolve({
-        ...subscription,
-        itens:payload.itens,
-        total_paes:payload.total_paes,
-        valor_paes:payload.total_paes*99,
-        valor_mensal:payload.total_paes*99+15,
-        next_billing_change_date:nextDate,
-        next_billing_value:payload.total_paes*99+15,
-        // Snapshot client-side da data de entrega em vigor (microcopy estável —
-        // não recalcula ao vivo pra não "andar" após o cutoff). Não vai pro backend.
-        next_composition_delivery:nextSubscriptionChangeThursdayISO(),
-      });
-    },800);
-    signal?.addEventListener("abort",()=>{clearTimeout(t);reject(new DOMException("aborted","AbortError"));});
-  });
-
   const handleConfirmarMudanca=async()=>{
     setSaving(true);setSaveError(null);
     abortControllerRef.current=new AbortController();
     try{
-      const updated=await postSubscriptionUpdateStub({itens:{...rascunho},total_paes:sumAll},abortControllerRef.current.signal);
+      // PATCH real — backend recalcula valores e datas; só enviamos a composição.
+      const backendUpdated=await patchSubscription(
+        subscription.id,
+        {itens:{...rascunho},total_paes:sumAll},
+        abortControllerRef.current.signal,
+      );
+      // Merge: preserva o snapshot local (endereço, nome, cpf… que o backend não
+      // retorna), sobrescreve com os campos autoritativos do backend, e injeta o
+      // snapshot client-side da entrega em vigor (microcopy estável — não vem do
+      // backend, não recalcula ao vivo pra não "andar" após o cutoff).
+      const updated={
+        ...subscription,
+        ...backendUpdated,
+        next_composition_delivery:nextSubscriptionChangeThursdayISO(),
+      };
       setSaving(false);
       setConfirmModal(false);
       setEditing(false);
@@ -1288,7 +1278,7 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
     }catch(err){
       setSaving(false);
       if(err?.name==="AbortError"){
-        // Cancel durante POST: fecha modal, volta pro edit com rascunho preservado.
+        // Cancel durante PATCH: fecha modal, volta pro edit com rascunho preservado.
         setConfirmModal(false);
         return;
       }
