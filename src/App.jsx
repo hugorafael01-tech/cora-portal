@@ -1204,7 +1204,7 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
   const hasAlteration=D.pães.some(p=>(rascunho?.[p.id]||0)!==(assinaturaQtds?.[p.id]||0));
   const isCompositionInvalid=sumAll===0;
   const canSave=hasAlteration&&!isCompositionInvalid;
-  // Cenário A: nova composição vale na quinta DEPOIS do próximo cutoff (+7d).
+  // Cenário A: nova composição vale a partir da próxima entrega editável.
   // Cobrança nova começa no primeiro dia do próximo mês (mês alinhado).
   const fmtDdMm=(d)=>`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;
   const proxDelivery=new Date(`${nextSubscriptionChangeThursdayISO()}T12:00:00Z`);
@@ -1214,6 +1214,17 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
   const proximaFaturaDdMm=fmtDdMm(proximoDia1);
   const ehSwap=hasAlteration&&!isCompositionInvalid&&sumAll===total_paes;
   const ehMudancaTotal=hasAlteration&&!isCompositionInvalid&&sumAll!==total_paes;
+
+  // ===== State derivado pós-mudança (Fase 5) =====
+  // has_pending_change: há alteração agendada cuja cobrança nova ainda não entrou.
+  // Gate pela data de cobrança (next_billing_change_date > today). Quando a data
+  // passa (Hugo gera o link novo no Asaas e limpa os campos, ou só a data passa),
+  // a microcopy some sozinha.
+  const pendingChangeDeliveryISO=subscription?.next_composition_delivery;
+  const hasPendingChange=!!subscription?.next_billing_change_date
+    &&subscription?.next_billing_value!=null
+    &&new Date(`${subscription.next_billing_change_date}T00:00:00Z`)>today;
+  const pendingChangeDeliveryDdMm=pendingChangeDeliveryISO?fmtDdMm(new Date(`${pendingChangeDeliveryISO}T12:00:00Z`)):null;
 
   // ===== Handlers do rascunho =====
   // Swap atômico SÓ no cap absoluto (sumAll===3) — diferente do Drawer porque
@@ -1256,6 +1267,9 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
         valor_mensal:payload.total_paes*99+15,
         next_billing_change_date:nextDate,
         next_billing_value:payload.total_paes*99+15,
+        // Snapshot client-side da data de entrega em vigor (microcopy estável —
+        // não recalcula ao vivo pra não "andar" após o cutoff). Não vai pro backend.
+        next_composition_delivery:nextSubscriptionChangeThursdayISO(),
       });
     },800);
     signal?.addEventListener("abort",()=>{clearTimeout(t);reject(new DOMException("aborted","AbortError"));});
@@ -1320,6 +1334,15 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
             <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[700]}}>Total</span>
             <span style={{fontFamily:fb,fontWeight:700,fontSize:16,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(valor_mensal)}/mês</span>
           </div>
+          {/* State derivado: alteração agendada — vale a partir da entrega de DD/MM (some quando a data de cobrança passa) */}
+          {hasPendingChange&&pendingChangeDeliveryDdMm&&<div style={{
+            fontFamily:fb,fontSize:11,color:W[500],
+            margin:"4px 0 0",paddingTop:4,
+            borderTop:`1px dashed ${W[200]}`,
+            textAlign:"right",
+          }}>
+            Vale a partir da entrega de {pendingChangeDeliveryDdMm}
+          </div>}
         </div>
 
         <button type="button" onClick={()=>{setRascunho({...assinaturaQtds});setEditing(true);}} disabled={cutoff} style={{
