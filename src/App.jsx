@@ -1244,6 +1244,8 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
   const postSubscriptionUpdateStub=(payload,signal)=>new Promise((resolve,reject)=>{
     const t=setTimeout(()=>{
       if(signal?.aborted){reject(new DOMException("aborted","AbortError"));return;}
+      // DEV: ?fail=1 força erro de rede pra validar o toast warning (remover na Fase 1).
+      if(new URLSearchParams(window.location.search).get("fail")==="1"){reject(new Error("Erro simulado"));return;}
       const nextDate=`${proximoDia1.getFullYear()}-${String(proximoDia1.getMonth()+1).padStart(2,"0")}-${String(proximoDia1.getDate()).padStart(2,"0")}`;
       resolve({
         ...subscription,
