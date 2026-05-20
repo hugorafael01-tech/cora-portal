@@ -1189,10 +1189,11 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
   // "1× Pão Original + 1× Pão Integral" (sem peso, com × separador). Mantém nome completo.
   const planCompList=D.pães.filter(p=>(assinaturaQtds?.[p.id]||0)>0).map(p=>`${assinaturaQtds[p.id]}× ${p.nome}`).join(" + ")||"Sem pães";
 
-  // Formato do summary do modal: "2 pães · 1 Pão Original + 1 Pão Integral".
+  // Formato do summary do modal: "2 pães · 2× Pão Original + 1× Pão Integral".
+  // Padrão da marca: sempre N× antes do nome do produto.
   const fmtPlanFull=(qtds)=>{
     const t=D.pães.reduce((s,p)=>s+(qtds?.[p.id]||0),0);
-    const parts=D.pães.filter(p=>(qtds?.[p.id]||0)>0).map(p=>`${qtds[p.id]} ${p.nome}`);
+    const parts=D.pães.filter(p=>(qtds?.[p.id]||0)>0).map(p=>`${qtds[p.id]}× ${p.nome}`);
     return `${t} ${t===1?"pão":"pães"} · ${parts.join(" + ")}`;
   };
 
