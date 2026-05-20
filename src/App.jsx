@@ -1152,11 +1152,33 @@ const MESES_PT=["janeiro","fevereiro","março","abril","maio","junho","julho","a
 // • Fase 2: tela idle reorganizada (Plano atual + Convite + read-only blocks + microcopy WA)
 // • Fase 3: edição inline (card vira "Alterar plano" com QtyStepper + ev-block + footer)
 // O modal de confirmação + POST com AbortController vem na Fase 4.
-const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds})=>{
+const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
   const[editing,setEditing]=useState(false);
   // Rascunho local durante a edição (composição em construção). Cancel descarta.
   // Reset feito explicitamente nos handlers (abrir/cancelar) — evita useEffect+setState.
   const[rascunho,setRascunho]=useState(()=>({...assinaturaQtds}));
+
+  // Fase 4: modal de confirmação + POST com AbortController + toasts.
+  const[confirmModal,setConfirmModal]=useState(false);
+  const[saving,setSaving]=useState(false);
+  const[saveError,setSaveError]=useState(null);
+  const[successMsg,setSuccessMsg]=useState(null);
+  const abortControllerRef=useRef(null);
+  const confirmDialogRef=useRef(null);
+  useModalA11y(confirmDialogRef,confirmModal,()=>{if(!saving) setConfirmModal(false);});
+  // Cleanup: aborta POST pendente em unmount (evita setState após dismount).
+  useEffect(()=>()=>{abortControllerRef.current?.abort();},[]);
+  // Auto-dismiss dos toasts.
+  useEffect(()=>{
+    if(!successMsg) return;
+    const t=setTimeout(()=>setSuccessMsg(null),4000);
+    return()=>clearTimeout(t);
+  },[successMsg]);
+  useEffect(()=>{
+    if(!saveError) return;
+    const t=setTimeout(()=>setSaveError(null),4000);
+    return()=>clearTimeout(t);
+  },[saveError]);
 
   // ===== Estado vigente (baseline) =====
   const total_paes=Object.values(assinaturaQtds||{}).reduce((s,q)=>s+q,0);
@@ -1166,6 +1188,13 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds})=>{
 
   // "1× Pão Original + 1× Pão Integral" (sem peso, com × separador). Mantém nome completo.
   const planCompList=D.pães.filter(p=>(assinaturaQtds?.[p.id]||0)>0).map(p=>`${assinaturaQtds[p.id]}× ${p.nome}`).join(" + ")||"Sem pães";
+
+  // Formato do summary do modal: "2 pães · 1 Pão Original + 1 Pão Integral".
+  const fmtPlanFull=(qtds)=>{
+    const t=D.pães.reduce((s,p)=>s+(qtds?.[p.id]||0),0);
+    const parts=D.pães.filter(p=>(qtds?.[p.id]||0)>0).map(p=>`${qtds[p.id]} ${p.nome}`);
+    return `${t} ${t===1?"pão":"pães"} · ${parts.join(" + ")}`;
+  };
 
   // ===== Estado do rascunho (Fase 3) =====
   const sumAll=D.pães.reduce((s,p)=>s+(rascunho?.[p.id]||0),0);
@@ -1208,9 +1237,51 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds})=>{
     setRascunho(prev=>({...prev,[id]:prev[id]-1}));
   };
   const handleCancelEdit=()=>{setRascunho({...assinaturaQtds});setEditing(false);};
-  const handleSalvar=()=>{
-    // Fase 4: abre modal de confirmação. Por ora, placeholder.
-    console.log("[Assinatura] Salvar alterações:",rascunho);
+  const handleSalvar=()=>setConfirmModal(true);
+
+  // Stub do POST PATCH /api/subscriptions/{id} (Fase 1 troca pelo endpoint real).
+  // Resolve após 800ms; rejeita imediato se signal abortar.
+  const postSubscriptionUpdateStub=(payload,signal)=>new Promise((resolve,reject)=>{
+    const t=setTimeout(()=>{
+      if(signal?.aborted){reject(new DOMException("aborted","AbortError"));return;}
+      const nextDate=`${proximoDia1.getFullYear()}-${String(proximoDia1.getMonth()+1).padStart(2,"0")}-${String(proximoDia1.getDate()).padStart(2,"0")}`;
+      resolve({
+        ...subscription,
+        itens:payload.itens,
+        total_paes:payload.total_paes,
+        valor_paes:payload.total_paes*99,
+        valor_mensal:payload.total_paes*99+15,
+        next_billing_change_date:nextDate,
+        next_billing_value:payload.total_paes*99+15,
+      });
+    },800);
+    signal?.addEventListener("abort",()=>{clearTimeout(t);reject(new DOMException("aborted","AbortError"));});
+  });
+
+  const handleConfirmarMudanca=async()=>{
+    setSaving(true);setSaveError(null);
+    abortControllerRef.current=new AbortController();
+    try{
+      const updated=await postSubscriptionUpdateStub({itens:{...rascunho},total_paes:sumAll},abortControllerRef.current.signal);
+      setSaving(false);
+      setConfirmModal(false);
+      setEditing(false);
+      setSuccessMsg(`Mudança confirmada. Vale a partir da entrega de ${proxDeliveryDdMm}.`);
+      onAlterado?.(updated);
+    }catch(err){
+      setSaving(false);
+      if(err?.name==="AbortError"){
+        // Cancel durante POST: fecha modal, volta pro edit com rascunho preservado.
+        setConfirmModal(false);
+        return;
+      }
+      setSaveError("Não conseguimos salvar agora. Tente de novo.");
+    }
+  };
+
+  const handleCancelarModal=()=>{
+    if(saving){abortControllerRef.current?.abort();return;}
+    setConfirmModal(false);
   };
 
   // ===== Endereço (subscription real, fallback pro placeholder do wireframe) =====
@@ -1449,6 +1520,99 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds})=>{
         <I d={ic.chev} size={11} color={B[500]}/>
       </a>.
     </div>
+
+    {/* Toast de sucesso (topo, verde) — auto-dismiss 4s */}
+    {successMsg&&<div role="status" aria-live="polite" style={{
+      position:"fixed",top:16,left:16,right:16,maxWidth:358,margin:"0 auto",zIndex:60,
+      display:"flex",alignItems:"flex-start",gap:10,
+      padding:"12px 14px",borderRadius:radii.md,
+      background:ST.success.bg,border:`1px solid ${ST.success.b}`,color:ST.success.t,
+      fontFamily:fb,fontSize:13,lineHeight:1.45,
+      boxShadow:"0 4px 16px rgba(26,24,21,0.12)",animation:"fadeIn 200ms ease",
+    }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}} aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>{successMsg}</span>
+    </div>}
+
+    {/* Toast de erro (topo, warning) — auto-dismiss 4s */}
+    {saveError&&<div role="status" aria-live="polite" style={{
+      position:"fixed",top:16,left:16,right:16,maxWidth:358,margin:"0 auto",zIndex:60,
+      display:"flex",alignItems:"flex-start",gap:10,
+      padding:"12px 14px",borderRadius:radii.md,
+      background:ST.warning.bg,border:`1px solid ${ST.warning.b}`,color:ST.warning.t,
+      fontFamily:fb,fontSize:13,lineHeight:1.45,
+      boxShadow:"0 4px 16px rgba(26,24,21,0.12)",animation:"fadeIn 200ms ease",
+    }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}} aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>{saveError}</span>
+    </div>}
+
+    {/* Modal de confirmação (bottom-sheet) */}
+    {confirmModal&&<>
+      <div onClick={handleCancelarModal} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
+      <div ref={confirmDialogRef} role="dialog" aria-modal="true" aria-label="Confirmar nova assinatura" style={{
+        position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",
+        background:"#FFF",borderRadius:`${radii.xl} ${radii.xl} 0 0`,
+        zIndex:51,maxHeight:"90vh",overflowY:"auto",
+        boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",
+        padding:"0 0 18px",
+      }}>
+        <div aria-hidden="true" style={{width:36,height:4,background:W[300],borderRadius:radii.full,margin:"8px auto"}}/>
+        <h3 style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",margin:"6px 18px 4px",lineHeight:1.1}}>Confirmar nova assinatura</h3>
+        <div style={{padding:"0 18px",fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.55}}>
+          <p style={{margin:"0 0 10px"}}>Você está mudando o seu plano. Confira antes de confirmar.</p>
+
+          <div style={{margin:"10px 0 12px",padding:12,background:W[50],border:`1px solid ${W[200]}`,borderRadius:radii.md,display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10}}>
+              <span style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],flexShrink:0}}>Plano atual</span>
+              <span style={{fontWeight:600,color:W[800],textAlign:"right"}}>{fmtPlanFull(assinaturaQtds)}</span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10}}>
+              <span style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],flexShrink:0}}>Plano novo</span>
+              <span style={{fontWeight:600,color:B[500],textAlign:"right"}}>{fmtPlanFull(rascunho)}</span>
+            </div>
+            <div style={{height:1,background:W[200],margin:"2px 0"}}/>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10}}>
+              <span style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],flexShrink:0}}>Vale a partir de</span>
+              <span style={{fontWeight:600,color:W[800],textAlign:"right",fontVariantNumeric:"tabular-nums"}}>Entrega de {proxDeliveryDdMm}</span>
+            </div>
+            {ehSwap
+              ?<div style={{fontFamily:fb,fontSize:13,color:W[600],lineHeight:1.5}}>O valor mensal continua o mesmo.</div>
+              :<div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10}}>
+                <span style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],flexShrink:0}}>Próxima cobrança</span>
+                <span style={{fontWeight:600,color:B[500],textAlign:"right",fontVariantNumeric:"tabular-nums"}}>
+                  {fmt(rascunhoValorMensal)}/mês em {proximaFaturaDdMm}
+                  <span style={{display:"block",fontFamily:fb,fontWeight:400,fontSize:11,color:W[500],marginTop:2}}>{fmt(rascunhoValorPaes)} (pães) + {fmt(valor_frete)} (frete)</span>
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div style={{display:"flex",gap:10,padding:"14px 18px 0"}}>
+          <Btn ghost onClick={handleCancelarModal} style={{flex:1}}>Cancelar</Btn>
+          <button
+            type="button"
+            onClick={handleConfirmarMudanca}
+            disabled={saving}
+            aria-busy={saving}
+            style={{
+              flex:1,padding:13,minHeight:44,borderRadius:radii.md,border:"none",
+              background:B[500],color:"#FFF",
+              fontFamily:fb,fontSize:14,fontWeight:600,
+              cursor:saving?"wait":"pointer",opacity:saving?0.7:1,
+              display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,
+            }}>
+            {saving&&<span role="status" aria-label="Salvando alteração" style={{
+              width:14,height:14,borderRadius:"50%",flexShrink:0,
+              border:"2px solid rgba(255,255,255,0.35)",borderTopColor:"#FFF",
+              animation:"spin 0.8s linear infinite",
+            }}/>}
+            {saving?"Salvando…":"Confirmar mudança"}
+          </button>
+        </div>
+      </div>
+    </>}
   </div>;
 };
 
@@ -1865,28 +2029,18 @@ export default function CoraPortal(){
     setScr("home");
   };
 
-  // Salvar alteracao da Assinatura. meta traz o tipo ja classificado pelo componente
-  // contra o BASELINE (nao contra o estado anterior).
-  const handleSalvarAssinatura=(novosQtds,meta)=>{
+  // Aplica alteração da Assinatura (Frente C item 2, Cenário A — mês alinhado).
+  // `updated` vem do POST (ou stub) com a subscription completa atualizada
+  // (itens, total_paes, valor_paes, valor_mensal, next_billing_change_date,
+  // next_billing_value). Sync local: state + localStorage. Alteração permanente,
+  // baseline = nova composição (sem ciclo histórico).
+  const handleAlterarAssinatura=(updated)=>{
     haptic();
-    setAssinaturaQtds(novosQtds);
-    setCestaSemana(null); // volta a seguir a Assinatura
-    // Se voltou ao baseline, limpa historico do ciclo atual (vai e volta = nada aconteceu)
-    if(JSON.stringify(novosQtds)===JSON.stringify(assinaturaBaseline)){
-      setHistoricoCicloAtual(null);
-      return;
-    }
-    // Senao, grava/atualiza entrada UNICA do ciclo com diferenca liquida vs baseline
-    if(meta){
-      setHistoricoCicloAtual({
-        data:new Date().toISOString(),
-        tipo:meta.tipo, // "aumento" | "reducao" | "troca"
-        baseline:{...assinaturaBaseline},
-        atual:{...novosQtds},
-        valorProporcional:meta.valorProporcional||0,
-        proximoCicloValor:meta.proximoCicloValor||0,
-      });
-    }
+    setSubscription(updated);
+    setAssinaturaQtds(updated.itens);
+    setAssinaturaBaseline(updated.itens);
+    setCestaSemana(null);
+    saveSubscription(updated);
   };
 
 const params = new URLSearchParams(window.location.search);
@@ -1918,7 +2072,7 @@ const params = new URLSearchParams(window.location.search);
     <main ref={mainRef} id="main-content" style={{flex:1,overflowY:"auto"}}>
       <div key={scr} className="tab-content">
         {scr==="home"&&<Home onNav={handleNav} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaAtual={cestaAtual} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} pendingPayment={pendingPayment} currentWeeklyOrder={currentWeeklyOrder} currentExtras={currentExtras} addExtraToCart={addExtraToCart} removeExtraFromCart={removeExtraFromCart} updateComposition={updateComposition} confirmCurrentOrder={confirmCurrentOrder}/>}
-        {scr==="assinatura"&&<Assinatura onNav={handleNav} hasPending={false} cutoff={cutoff} subscription={subscription} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} onSalvar={handleSalvarAssinatura}/>}
+        {scr==="assinatura"&&<Assinatura hasPending={false} cutoff={cutoff} subscription={subscription} assinaturaQtds={assinaturaQtds} onAlterado={handleAlterarAssinatura}/>}
         {scr==="cardapio"&&<Cardapio addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment}/>}
         {scr==="perfil"&&<Perfil confirmed={confirmedLegacy} hasPending={false} assinaturaQtds={assinaturaQtds} historicoCicloAtual={historicoCicloAtual} historicoCiclosPassados={historicoCiclosPassados}/>}
       </div>
@@ -1938,6 +2092,7 @@ const params = new URLSearchParams(window.location.search);
       @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
       @keyframes fadeIn{from{opacity:0}to{opacity:1}}
       @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+      @keyframes spin{to{transform:rotate(360deg)}}
       /* Toast: fadeUp dedicado (280ms ease-out) — translateY 8px → 0 + fade */
       @keyframes toastFadeUp{from{opacity:0;transform:translateY(8px) scale(1)}to{opacity:1;transform:translateY(0) scale(1)}}
       /* Remoção de linha do Card de Cesta + Drawer: slide-out horizontal + fade + colapso vertical (450ms ease-out — abaixo disso o user não acompanha a transição). */
