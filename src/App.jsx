@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 // Code splitting: Onboarding e PreCadastro sao pesados e so acessados em fluxos
 // especificos. Lazy chunks separados reduzem o bundle inicial do Portal.
 const CoraOnboarding = lazy(() => import("./Onboarding"));
@@ -1692,15 +1692,15 @@ const Cardapio=({addExtraToCart,cutoff,pendingPayment})=>{
 // valor_paes/valor_frete + GET weekly-orders?history=true). O modal de recibo
 // entra na Fase 2 (as linhas do histórico já são botões prontos pra abrir).
 
-// DD/MM a partir de Date ou string ISO "YYYY-MM-DD". Date-only é parseada como
-// local (new Date("2026-05-21") seria UTC meia-noite e poderia voltar 1 dia).
-const ddmm=(v)=>{
-  let d;
-  if(v instanceof Date) d=v;
-  else if(typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v)){const[y,m,dia]=v.split("-").map(Number);d=new Date(y,m-1,dia);}
-  else d=new Date(v);
-  return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;
+// Parse de Date ou string ISO "YYYY-MM-DD" como data LOCAL (new Date("2026-05-21")
+// seria UTC meia-noite e poderia voltar 1 dia no fuso BRT).
+const parseISO=(v)=>{
+  if(v instanceof Date) return v;
+  if(typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v)){const[y,m,d]=v.split("-").map(Number);return new Date(y,m-1,d);}
+  return new Date(v);
 };
+// DD/MM a partir de Date ou string ISO.
+const ddmm=(v)=>{const d=parseISO(v);return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;};
 // Primeiro dia do próximo mês, formato "01/MM". A fatura recorrente alinha no
 // dia 01 (modelo Cenário A — migration 0014), então a próxima cobrança é sempre
 // o dia 1 do mês seguinte. Não há data genérica de cobrança no schema.
@@ -1717,12 +1717,95 @@ const composicaoLinhas=(comp)=>Object.entries(comp||{})
   .filter(([,q])=>Number(q)>0)
   .map(([id,q])=>`${q}× ${produtoInfo(id)?.nome||id}`);
 
+// ─── MODAL DE RECIBO (bottom-sheet) ───
+// Mesma anatomia do modal de confirmação da Sua Assinatura v4 (overlay +
+// sheet com grab handle + slideUp). useModalA11y: Esc fecha + focus-trap +
+// foco volta pra linha que abriu (onClose estável via useCallback no Perfil).
+// Aberto a partir de uma linha do Histórico → o pedido é sempre passado, mas
+// o footnote cobre as 3 variantes (C1 futura fica dormante aqui).
+const ReciboModal=({order,subscriptionItens,onClose})=>{
+  const dialogRef=useRef(null);
+  useModalA11y(dialogRef,true,onClose);
+
+  const comp=order.composition||subscriptionItens||{};
+  const assinaturaItens=Object.entries(comp)
+    .filter(([,q])=>Number(q)>0)
+    .map(([id,q])=>{const p=produtoInfo(id);return{nome:p?.nome||id,peso:p?.peso||"",qty:q};});
+  const extras=Array.isArray(order.extras)?order.extras:[];
+  const temExtras=extras.length>0;
+  const totalExtras=Number(order.total_extras||0);
+
+  // Footnote sem afirmar pagamento (sub-linha "Pago" omitida em toda a tela).
+  // Data da fatura = dia 01 do mês seguinte à entrega (modelo dia-01).
+  const hojeISO=new Date().toISOString().slice(0,10);
+  const futura=String(order.delivery_date)>=hojeISO;
+  const faturaDDMM=proximaFaturaDDMM(parseISO(order.delivery_date));
+  const footnote=temExtras
+    ?(futura?`Cobrança incluída na fatura de ${faturaDDMM}.`:`Cobrança da fatura de ${faturaDDMM}.`)
+    :"Sem extras nesta semana.";
+
+  const meta={fontFamily:fb,fontSize:11,fontWeight:400,color:W[500],marginLeft:6};
+  return<>
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={`Recibo da semana ${ddmm(order.delivery_date)}`} style={{
+      position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",
+      background:"#FFF",borderRadius:`${radii.xl} ${radii.xl} 0 0`,
+      zIndex:51,maxHeight:"90vh",overflowY:"auto",
+      boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",
+      padding:"0 0 18px",
+    }}>
+      <div aria-hidden="true" style={{width:36,height:4,background:W[300],borderRadius:radii.full,margin:"8px auto"}}/>
+      <h3 style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",margin:"6px 18px 4px",lineHeight:1.1}}>Recibo da semana {ddmm(order.delivery_date)}</h3>
+      <div style={{display:"flex",alignItems:"center",gap:6,padding:"0 18px 4px"}}>
+        <span aria-hidden="true" style={{width:16,height:16,borderRadius:radii.full,background:ST.success.bg,border:`1px solid ${ST.success.b}`,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={ST.success.t} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </span>
+        <span style={{fontFamily:fb,fontSize:13,color:W[600]}}>Entregue quinta-feira</span>
+      </div>
+
+      <div style={{padding:"10px 18px 0"}}>
+        {/* Seção Assinatura — gramatura como meta, sem preço, sem total */}
+        <div style={{padding:"10px 12px",background:W[50],border:`1px solid ${W[200]}`,borderRadius:radii.md}}>
+          <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],marginBottom:6}}>Assinatura</div>
+          <ul style={{margin:0,padding:0,listStyle:"none"}}>
+            {assinaturaItens.map((l,i)=><li key={i} style={{padding:"6px 0",borderTop:i>0?`1px solid ${W[200]}`:"none",fontFamily:fb,fontSize:14,color:W[800]}}>{l.qty}× {l.nome}{l.peso&&<span style={meta}>{l.peso}</span>}</li>)}
+          </ul>
+        </div>
+
+        {/* Seção Extras — condicional, com preço e total da seção */}
+        {temExtras&&<div style={{padding:"10px 12px",background:W[50],border:`1px solid ${W[200]}`,borderRadius:radii.md,marginTop:10}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:6}}>
+            <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Extras</span>
+            <span style={{fontFamily:fb,fontSize:15,fontWeight:700,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(totalExtras)}</span>
+          </div>
+          <ul style={{margin:0,padding:0,listStyle:"none"}}>
+            {extras.map((e,i)=>{const peso=produtoInfo(e.id)?.peso||"";return<li key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10,padding:"6px 0",borderTop:i>0?`1px solid ${W[200]}`:"none"}}>
+              <span style={{fontFamily:fb,fontSize:14,color:W[800],minWidth:0}}>{e.qty>1?`${e.qty}× `:""}{e.nome}{peso&&<span style={meta}>{peso}</span>}</span>
+              <span style={{fontFamily:fb,fontSize:14,color:W[700],fontVariantNumeric:"tabular-nums",flexShrink:0}}>{fmt(Number(e.preco_unit)*e.qty)}</span>
+            </li>;})}
+          </ul>
+        </div>}
+      </div>
+
+      <p style={{fontFamily:fb,fontSize:12,color:B[700],background:B[50],border:`1px solid ${B[100]}`,borderRadius:radii.md,padding:"10px 12px",margin:"12px 18px 0",lineHeight:1.5}}>{footnote}</p>
+
+      <div style={{padding:"14px 18px 0"}}>
+        <Btn ghost full onClick={onClose}>Fechar</Btn>
+      </div>
+    </div>
+  </>;
+};
+
 const Perfil=({subscription,weeklyOrders=[],pendingPayment=false})=>{
   const[cpfVisivel,setCpfVisivel]=useState(false);
   // billing = GET subscription (valor_paes/valor_frete/next_billing_*).
   // entregas: null = carregando, [] = sem entregas, [...] = histórico real.
   const[billing,setBilling]=useState(null);
   const[entregas,setEntregas]=useState(null);
+  // recibo = pedido que abriu o modal (null = fechado). onClose estável pra
+  // useModalA11y não re-capturar o foco e devolver certinho pra linha.
+  const[recibo,setRecibo]=useState(null);
+  const fecharRecibo=useCallback(()=>setRecibo(null),[]);
   const subId=subscription?.id;
   const endereco=subscription?.endereco||{};
   const subItens=subscription?.itens||{};
@@ -1808,7 +1891,7 @@ const Perfil=({subscription,weeklyOrders=[],pendingPayment=false})=>{
               const extraLabel=extras.length===1
                 ?`+ ${extras[0].nome} · ${fmt(Number(extras[0].preco_unit)*extras[0].qty)}`
                 :extras.length>1?`+ ${extras.length} extras · ${fmt(Number(o.total_extras||0))}`:null;
-              return<button key={o.id} type="button" onClick={()=>{/* Fase 2: abre ReciboModal(o) */}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",textAlign:"left",background:"none",border:"none",cursor:"pointer",padding:"12px 0",borderBottom:i<Math.min(arr.length,3)-1?`1px solid ${W[100]}`:"none"}}>
+              return<button key={o.id} type="button" onClick={()=>setRecibo(o)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",textAlign:"left",background:"none",border:"none",cursor:"pointer",padding:"12px 0",borderBottom:i<Math.min(arr.length,3)-1?`1px solid ${W[100]}`:"none"}}>
                 <span style={{fontFamily:fb,fontSize:12,color:W[500],fontVariantNumeric:"tabular-nums",flexShrink:0,minWidth:42}}>{ddmm(o.delivery_date)}</span>
                 <span style={{flex:1,minWidth:0}}>
                   {linhas.map((t,j)=><span key={j} style={{display:"block",fontFamily:fb,fontSize:13,fontWeight:500,color:W[800],lineHeight:1.4}}>{t}</span>)}
@@ -1869,6 +1952,8 @@ const Perfil=({subscription,weeklyOrders=[],pendingPayment=false})=>{
 
     {/* Microcopy final — sem <strong> */}
     <p style={{fontFamily:fb,fontSize:12,color:W[500],textAlign:"center",lineHeight:1.6,borderTop:`1px dashed ${W[300]}`,paddingTop:16,margin:"4px 4px 0"}}>Pra atualizar seus dados, mudar endereço, pausar ou cancelar, fale com a gente pelo WhatsApp.</p>
+
+    {recibo&&<ReciboModal order={recibo} subscriptionItens={subItens} onClose={fecharRecibo}/>}
   </div>;
 };
 
