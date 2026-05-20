@@ -52,3 +52,11 @@ export function nextEditableThursdayISO(now = new Date()) {
   }
   return thursday.toISOString().slice(0, 10);
 }
+
+// Data em que uma alteração de assinatura (Frente C item 2) entra em vigor:
+// a próxima entrega editável (Cenário A — a entrega após o próximo cutoff válido,
+// porque a entrega vigente já está locked).
+// Ex: terça 19/05 16h (pós-cutoff de hoje 12h), nextEditable=28/05 → retorna 28/05.
+// Ex: seg 18/05 (pré-cutoff de terça 19/05), nextEditable=21/05 → retorna 21/05.
+// Alias semântico de `nextEditableThursdayISO` pra clarear a intenção no callsite.
+export const nextSubscriptionChangeThursdayISO = nextEditableThursdayISO;

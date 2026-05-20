@@ -6,11 +6,11 @@ const PreCadastro = lazy(() => import("./pages/PreCadastro"));
 const CapacityWaitlist = lazy(() => import("./pages/CapacityWaitlist"));
 import ProductCard from "./components/ProductCard";
 import PendingPaymentBanner from "./components/PendingPaymentBanner";
-import { isPastCutoff, nextEditableThursdayISO } from "./utils/cutoff";
+import { isPastCutoff, nextEditableThursdayISO, nextSubscriptionChangeThursdayISO } from "./utils/cutoff";
 import { haptic } from "./utils/haptic";
 import { plural } from "./utils/plural";
 import { loadSubscription, saveSubscription, clearSubscription, reconcileSubscription } from "./utils/subscription";
-import { getSettings, getWeeklyOrders, postWeeklyOrder, confirmWeeklyOrder } from "./utils/api";
+import { getSettings, getWeeklyOrders, postWeeklyOrder, confirmWeeklyOrder, patchSubscription } from "./utils/api";
 import { B, W, fd, fb, fmt, radii } from "./tokens";
 
 // `?reset=true`: limpa subscription persistida e remove o param da URL.
@@ -116,7 +116,29 @@ const ProductThumb=({src,w=56,h=48,alt="",style:es})=><img src={src} alt={alt} l
 const Card=({children,style,onClick,ariaLabel})=>{const[h,setH]=useState(false);return<div role={onClick?"button":undefined} aria-label={ariaLabel} onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} style={{background:W[100],border:`1px solid ${h&&onClick?W[300]:W[200]}`,borderRadius:radii.lg,padding:16,transition:"border-color 150ms ease",...style}}>{children}</div>;};
 const SL=({t})=><div style={{fontFamily:fd,fontSize:15,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:8,lineHeight:1}}>{t}</div>;
 const Badge=({label,type="success"})=>{const s=ST[type]||ST.success;return<span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:12,fontWeight:500,fontFamily:fb,padding:"4px 10px",borderRadius:radii.xs,background:s.bg,color:s.t,border:`1px solid ${s.b}`}}><span style={{fontSize:8}}>●</span>{label}</span>;};
-const Btn=({children,primary,disabled,onClick,style:es,full,ariaLabel})=>{const[h,setH]=useState(false);return<button aria-label={ariaLabel} disabled={disabled} onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} className="press-scale" style={{padding:"12px 20px",borderRadius:radii.md,border:primary?"none":`1px solid ${h&&!disabled?B[600]:B[500]}`,background:primary?(disabled?W[200]:h?B[600]:B[500]):(h&&!disabled?B[50]:"none"),color:primary?(disabled?W[500]:"#FFF"):B[500],fontFamily:fb,fontSize:14,fontWeight:500,cursor:disabled?"default":"pointer",opacity:disabled?0.5:1,minHeight:44,width:full?"100%":"auto",transition:"all 150ms ease",...es}}>{children}</button>;};
+// `ghost`: button transparente (warm-600 → warm-100 on hover, sem border). Compartilhado por
+// Drawer "Editar cesta" Cancelar e Assinatura editável Cancelar (wireframe v4).
+const Btn=({children,primary,ghost,disabled,onClick,style:es,full,ariaLabel})=>{
+  const[h,setH]=useState(false);
+  const visual = ghost ? {
+    border:"none",
+    background:!disabled&&h?W[100]:"transparent",
+    color:disabled?W[400]:(!disabled&&h?W[700]:W[600]),
+  } : {
+    border:primary?"none":`1px solid ${h&&!disabled?B[600]:B[500]}`,
+    background:primary?(disabled?W[200]:h?B[600]:B[500]):(h&&!disabled?B[50]:"none"),
+    color:primary?(disabled?W[500]:"#FFF"):B[500],
+  };
+  return <button aria-label={ariaLabel} disabled={disabled} onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} className="press-scale" style={{
+    padding:"12px 20px",borderRadius:radii.md,
+    ...visual,
+    fontFamily:fb,fontSize:14,fontWeight:500,
+    cursor:disabled?(ghost?"not-allowed":"default"):"pointer",
+    opacity:disabled&&!ghost?0.5:1,
+    minHeight:44,width:full?"100%":"auto",
+    transition:"all 150ms ease",...es
+  }}>{children}</button>;
+};
 // QtyStepper [- N +] — usado na lista de extras do Card de Cesta da Home
 // (variant brand sobre fundo brand-50) e no Drawer (Fase 3, variant neutro).
 // SVG inline pros sinais − e + (mantém peso visual consistente, sem confusão
@@ -834,7 +856,7 @@ const EditarCestaDrawer=({
         padding:"12px 18px 18px",borderTop:`1px solid ${W[200]}`,
         display:"flex",gap:10,flexShrink:0,background:"#FFF",
       }}>
-        <Btn onClick={onClose} style={{flex:1}}>Cancelar</Btn>
+        <Btn ghost onClick={onClose} style={{flex:1}}>Cancelar</Btn>
         {showConfirmadoState
           ?(
             // Estado success: refinement do Hugo. Ação já feita, sem ambiguidade.
@@ -1122,117 +1144,491 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
 // Pluraliza nome do pao em portugues: "Pão Original" -> "Pães Originais", "Pão Integral" -> "Pães Integrais"
 const pluralizarPao=(n,nome)=>n===1?nome:nome.replace(/\bPão\b/,"Pães").replace(/\bOriginal\b/,"Originais").replace(/\bIntegral\b/,"Integrais");
 
-const composicaoToStr=(qtdsMap)=>Object.entries(qtdsMap).filter(([,q])=>q>0).map(([id,q])=>{const p=D.pães.find(x=>x.id===id);return p?`${q} ${pluralizarPao(q,p.nome)} (${p.peso})`:"";}).filter(Boolean).join(" + ");
-
-// Helper para nome do proximo mes em portugues
+// `composicaoToStr`/`proximoMesPt`/`mesAtualPt` saíram com o refactor da Assinatura
+// (Cenário A — mês alinhado eliminou cobrança proporcional). MESES_PT segue usado pelo Perfil.
 const MESES_PT=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
-const proximoMesPt=()=>MESES_PT[(new Date().getMonth()+1)%12];
-const mesAtualPt=()=>MESES_PT[new Date().getMonth()];
 
-const Assinatura=({onNav,hasPending,cutoff,assinaturaQtds,assinaturaBaseline,onSalvar})=>{
+// Frente C item 2 (Fase 2 + 3) — wireframe v4.
+// • Fase 2: tela idle reorganizada (Plano atual + Convite + read-only blocks + microcopy WA)
+// • Fase 3: edição inline (card vira "Alterar plano" com QtyStepper + ev-block + footer)
+// O modal de confirmação + POST com AbortController vem na Fase 4.
+const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
   const[editing,setEditing]=useState(false);
-  // Rascunho local SO durante a edicao. Ao salvar, chama onSalvar(rascunho). Ao cancelar, descarta.
-  const[rascunho,setRascunho]=useState(assinaturaQtds);
+  // Rascunho local durante a edição (composição em construção). Cancel descarta.
+  // Reset feito explicitamente nos handlers (abrir/cancelar) — evita useEffect+setState.
+  const[rascunho,setRascunho]=useState(()=>({...assinaturaQtds}));
+
+  // Fase 4: modal de confirmação + POST com AbortController + toasts.
   const[confirmModal,setConfirmModal]=useState(false);
+  const[saving,setSaving]=useState(false);
+  const[saveError,setSaveError]=useState(null);
+  const[successMsg,setSuccessMsg]=useState(null);
+  const abortControllerRef=useRef(null);
   const confirmDialogRef=useRef(null);
-  useModalA11y(confirmDialogRef,confirmModal,()=>setConfirmModal(false));
-  const[saved,setSaved]=useState(false);const[showCalc,setShowCalc]=useState(false);
-  const[addrSt,setAddrSt]=useState('idle');const[cardSt,setCardSt]=useState('idle');
+  useModalA11y(confirmDialogRef,confirmModal,()=>{if(!saving) setConfirmModal(false);});
+  // Cleanup: aborta POST pendente em unmount (evita setState após dismount).
+  useEffect(()=>()=>{abortControllerRef.current?.abort();},[]);
+  // Auto-dismiss dos toasts.
+  useEffect(()=>{
+    if(!successMsg) return;
+    const t=setTimeout(()=>setSuccessMsg(null),4000);
+    return()=>clearTimeout(t);
+  },[successMsg]);
+  useEffect(()=>{
+    if(!saveError) return;
+    const t=setTimeout(()=>setSaveError(null),4000);
+    return()=>clearTimeout(t);
+  },[saveError]);
 
-  // Sincroniza rascunho quando fecha edicao ou assinatura muda externamente
-  useEffect(()=>{setRascunho(assinaturaQtds);},[assinaturaQtds,editing]);
+  // ===== Estado vigente (baseline) =====
+  const total_paes=Object.values(assinaturaQtds||{}).reduce((s,q)=>s+q,0);
+  const valor_paes=total_paes*99;
+  const valor_frete=15;
+  const valor_mensal=valor_paes+valor_frete;
 
-  const total=Object.values(rascunho).reduce((s,q)=>s+q,0);
-  const baseline=assinaturaBaseline||assinaturaQtds;
-  const totalBaseline=Object.values(baseline).reduce((s,q)=>s+q,0);
-  const mensal=D.assinatura.valorMensal*total;
-  const mensalBaseline=D.assinatura.valorMensal*totalBaseline;
-  const changed=JSON.stringify(rascunho)!==JSON.stringify(assinaturaQtds);
+  // "1× Pão Original + 1× Pão Integral" (sem peso, com × separador). Mantém nome completo.
+  const planCompList=D.pães.filter(p=>(assinaturaQtds?.[p.id]||0)>0).map(p=>`${assinaturaQtds[p.id]}× ${p.nome}`).join(" + ")||"Sem pães";
 
-  // === Detecção de tipo VS BASELINE (não vs estado anterior) ===
-  // Volta ao baseline: rascunho === baseline (mesmo que diferente do estado atual)
-  const estaVoltandoAoBaseline=JSON.stringify(rascunho)===JSON.stringify(baseline);
-  const ehAumentoVsBaseline=total>totalBaseline;
-  const ehReducaoVsBaseline=total<totalBaseline;
-  const ehTrocaVsBaseline=total===totalBaseline&&!estaVoltandoAoBaseline;
-
-  // Proporcional: SEMPRE calculado vs baseline, nao vs estado anterior.
-  // So aumentos geram cobranca. Reducao/troca/volta ao baseline = 0.
-  const diffVsBaseline=mensal-mensalBaseline;
-  const propVsBaseline=ehAumentoVsBaseline?Math.abs(diffVsBaseline/4*D.semanasRestantes):0;
-
-  // Limites: min 1 pao (nao pode zerar a Assinatura), max 3 paes/semana.
-  const upd=(id,d)=>setRascunho(prev=>{const v=(prev[id]||0)+d;const t=total+d;if(v<0||t>3||t<1)return prev;return{...prev,[id]:v};});
-  const handleSaveClick=()=>setConfirmModal(true);
-  const handleConfirmAlteracao=()=>{
-    const tipo=ehAumentoVsBaseline?"aumento":(ehReducaoVsBaseline?"reducao":"troca");
-    onSalvar(rascunho,{tipo,valorProporcional:propVsBaseline,proximoCicloValor:mensal});
-    setConfirmModal(false);
-    setEditing(false);setSaved(true);setTimeout(()=>setSaved(false),5000);
+  // Formato do summary do modal: "2 pães · 2× Pão Original + 1× Pão Integral".
+  // Padrão da marca: sempre N× antes do nome do produto.
+  const fmtPlanFull=(qtds)=>{
+    const t=D.pães.reduce((s,p)=>s+(qtds?.[p.id]||0),0);
+    const parts=D.pães.filter(p=>(qtds?.[p.id]||0)>0).map(p=>`${qtds[p.id]}× ${p.nome}`);
+    return `${t} ${t===1?"pão":"pães"} · ${parts.join(" + ")}`;
   };
 
-  const itensStr=composicaoToStr(assinaturaQtds)||"Sem pães configurados";
-  const totalAtual=Object.values(assinaturaQtds).reduce((s,q)=>s+q,0);
-  const valorMensalAtual=D.assinatura.valorMensal*totalAtual;
-  const primeiroPao=D.pães.find(p=>assinaturaQtds[p.id]>0)||D.pães[0];
+  // ===== Estado do rascunho (Fase 3) =====
+  const sumAll=D.pães.reduce((s,p)=>s+(rascunho?.[p.id]||0),0);
+  const rascunhoValorPaes=sumAll*99;
+  const rascunhoValorMensal=rascunhoValorPaes+valor_frete;
+  const hasAlteration=D.pães.some(p=>(rascunho?.[p.id]||0)!==(assinaturaQtds?.[p.id]||0));
+  const isCompositionInvalid=sumAll===0;
+  const canSave=hasAlteration&&!isCompositionInvalid;
+  // Cenário A: nova composição vale a partir da próxima entrega editável.
+  // Cobrança nova começa no primeiro dia do próximo mês (mês alinhado).
+  const fmtDdMm=(d)=>`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;
+  const proxDelivery=new Date(`${nextSubscriptionChangeThursdayISO()}T12:00:00Z`);
+  const proxDeliveryDdMm=fmtDdMm(proxDelivery);
+  const today=new Date();
+  const proximoDia1=new Date(today.getFullYear(),today.getMonth()+1,1);
+  const proximaFaturaDdMm=fmtDdMm(proximoDia1);
+  const ehSwap=hasAlteration&&!isCompositionInvalid&&sumAll===total_paes;
+  const ehMudancaTotal=hasAlteration&&!isCompositionInvalid&&sumAll!==total_paes;
 
-  return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[500],margin:0}}>Sua Assinatura</h2><Badge label="Ativa"/></div>
-    <div style={{background:B[50],borderRadius:radii.lg,padding:16,marginBottom:16,fontFamily:fb,fontSize:14,color:B[800],lineHeight:1.6}}>Toda semana, pão fresco na sua porta. O valor da Assinatura é fixo. Em meses com 5 semanas, o pão extra é por nossa conta.</div>
-    <Card style={{marginBottom:12}}><SL t="Minha Assinatura"/>
-      <div style={{display:"flex",gap:12,alignItems:"center"}}><ProductThumb src={primeiroPao.img} w={56} h={48} alt={primeiroPao.nome}/><div style={{flex:1}}><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{itensStr} / semana</div><div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:B[500],marginTop:4}}><AnimatedNumber value={valorMensalAtual}/>/mês</div></div></div>
-      {!editing&&<><Btn full disabled={cutoff} onClick={()=>setEditing(true)} style={{marginTop:12}}>Alterar minha Assinatura</Btn>{cutoff&&<CutoffMsg/>}</>}
-      {editing&&<div style={{marginTop:16,borderTop:`1px solid ${W[200]}`,paddingTop:16}}>
-        <DeadlineWarning/>
-        <div style={{fontFamily:fb,fontSize:12,color:W[500],marginBottom:12}}>Limite: 3 pães/semana ({total}/3)</div>
-        {D.pães.map((p,i)=>{const q=rascunho[p.id]||0;const minusDisabled=q===0||total<=1;const plusDisabled=total>=3;return<div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:i<D.pães.length-1?`1px solid ${W[100]}`:"none"}}>
-          <ProductThumb src={p.img} w={48} h={40} alt={p.nome}/>
-          <div style={{flex:1}}><div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800]}}>{p.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>({p.peso})</span></div></div>
-          <div style={{display:"flex",alignItems:"center",gap:8}}><button onClick={()=>upd(p.id,-1)} disabled={minusDisabled} className="qb" style={{width:32,height:32,borderRadius:radii.md,border:`1px solid ${minusDisabled?W[200]:W[300]}`,background:"none",cursor:minusDisabled?"default":"pointer",fontSize:18,color:minusDisabled?W[300]:W[600],display:"flex",alignItems:"center",justifyContent:"center",opacity:minusDisabled?0.4:1}}>−</button><span style={{fontFamily:fb,fontSize:16,fontWeight:600,color:q>0?B[500]:W[400],width:24,textAlign:"center"}}>{q}</span><button onClick={()=>upd(p.id,1)} disabled={plusDisabled} className="qb" style={{width:32,height:32,borderRadius:radii.md,border:`1px solid ${plusDisabled?W[200]:B[500]}`,background:plusDisabled?"none":B[50],cursor:plusDisabled?"default":"pointer",fontSize:18,color:plusDisabled?W[300]:B[500],display:"flex",alignItems:"center",justifyContent:"center",opacity:plusDisabled?0.4:1}}>+</button></div>
-        </div>;})}
-        <div style={{fontFamily:fb,fontSize:15,fontWeight:600,color:W[800],textAlign:"right",padding:"12px 0 4px"}}>Novo valor mensal: <span style={{color:B[500]}}><AnimatedNumber value={mensal}/></span></div>
-        {changed&&<><div style={{fontFamily:fb,fontSize:12,color:W[500],textAlign:"right",marginBottom:4}}>Baseline do mês: {fmt(mensalBaseline)} → Novo: {fmt(mensal)}</div>
-          {/* Volta ao baseline: mensagem informativa, sem ajuste */}
-          {estaVoltandoAoBaseline&&<div style={{background:W[100],borderRadius:radii.md,padding:"10px 12px",marginBottom:12,border:`1px solid ${W[200]}`,fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5}}>Você voltou à sua Assinatura original deste mês. Nenhuma cobrança ou crédito adicional.</div>}
-          {/* Aumento vs baseline: proporcional calculado sobre baseline */}
-          {ehAumentoVsBaseline&&<div onClick={()=>setShowCalc(!showCalc)} style={{background:B[50],borderRadius:radii.md,padding:"10px 12px",marginBottom:12,cursor:"pointer",border:`1px solid ${B[100]}`}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontFamily:fb,fontSize:13,color:B[700]}}>Ajuste neste mês: <span style={{fontWeight:600}}>+{fmt(propVsBaseline)}</span></div><I d={ic.chevDown} size={16} color={B[400]}/></div>{showCalc&&<div style={{marginTop:8,fontFamily:fb,fontSize:12,color:B[600],lineHeight:1.6,animation:"fadeUp 200ms ease"}}>Faltam {D.semanasRestantes} {plural(D.semanasRestantes,"semana","semanas")} neste mês.<br/>Diferença semanal vs baseline: +{fmt(Math.abs(diffVsBaseline/4))}/semana<br/>Cobrado proporcionalmente na próxima fatura: +{fmt(propVsBaseline)}</div>}</div>}
-          {/* Reducao vs baseline: vale no proximo ciclo */}
-          {ehReducaoVsBaseline&&<div style={{background:W[100],borderRadius:radii.md,padding:"10px 12px",marginBottom:12,border:`1px solid ${W[200]}`,fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5}}>Até o fim de {mesAtualPt()}, você continua recebendo {totalBaseline} {plural(totalBaseline,"pão","pães")} por semana. Sua nova Assinatura começa em 1º de {proximoMesPt()}.</div>}
-        </>}
-        <div style={{display:"flex",gap:8}}><Btn onClick={()=>{setEditing(false);setRascunho(assinaturaQtds);setShowCalc(false);}} style={{flex:1}}>Cancelar</Btn><Btn primary disabled={!changed} onClick={handleSaveClick} style={{flex:2}}>{changed?"Salvar":"Faça uma alteração"}</Btn></div>
-      </div>}
+  // ===== State derivado pós-mudança (Fase 5) =====
+  // has_pending_change: há alteração agendada cuja cobrança nova ainda não entrou.
+  // Gate pela data de cobrança (next_billing_change_date > today). Quando a data
+  // passa (Hugo gera o link novo no Asaas e limpa os campos, ou só a data passa),
+  // a microcopy some sozinha.
+  const pendingChangeDeliveryISO=subscription?.next_composition_delivery;
+  const hasPendingChange=!!subscription?.next_billing_change_date
+    &&subscription?.next_billing_value!=null
+    &&new Date(`${subscription.next_billing_change_date}T00:00:00Z`)>today;
+  const pendingChangeDeliveryDdMm=pendingChangeDeliveryISO?fmtDdMm(new Date(`${pendingChangeDeliveryISO}T12:00:00Z`)):null;
+
+  // ===== Handlers do rascunho =====
+  // Swap atômico SÓ no cap absoluto (sumAll===3) — diferente do Drawer porque
+  // aqui total_paes é variável (cliente pode mudar de plano 1↔2↔3). Em estados
+  // intermediários (sumAll<3) o + incrementa direto pra permitir aumento natural
+  // de plano. Tradeoff: plano 1 → trocar tipo exige 2 cliques (+ outro, - antigo).
+  const handleIncrement=(id)=>{
+    const otherId=D.pães.find(p=>p.id!==id)?.id;
+    const otherQty=rascunho?.[otherId]||0;
+    if(sumAll===3&&otherQty>0){
+      setRascunho(prev=>({...prev,[id]:(prev?.[id]||0)+1,[otherId]:prev[otherId]-1}));
+      return;
+    }
+    if(sumAll>=3) return; // cap absoluto sem swap possível
+    setRascunho(prev=>({...prev,[id]:(prev?.[id]||0)+1}));
+  };
+  const handleDecrement=(id)=>{
+    const qty=rascunho?.[id]||0;
+    if(qty<=0) return;
+    // Safety net pra plano 1 pão: não pode zerar (sem como recuperar via decrement).
+    if(total_paes===1&&sumAll<=1) return;
+    setRascunho(prev=>({...prev,[id]:prev[id]-1}));
+  };
+  const handleCancelEdit=()=>{setRascunho({...assinaturaQtds});setEditing(false);};
+  const handleSalvar=()=>setConfirmModal(true);
+
+  const handleConfirmarMudanca=async()=>{
+    setSaving(true);setSaveError(null);
+    abortControllerRef.current=new AbortController();
+    try{
+      // PATCH real — backend recalcula valores e datas; só enviamos a composição.
+      const backendUpdated=await patchSubscription(
+        subscription.id,
+        {itens:{...rascunho},total_paes:sumAll},
+        abortControllerRef.current.signal,
+      );
+      // Merge: preserva o snapshot local (endereço, nome, cpf… que o backend não
+      // retorna), sobrescreve com os campos autoritativos do backend, e injeta o
+      // snapshot client-side da entrega em vigor (microcopy estável — não vem do
+      // backend, não recalcula ao vivo pra não "andar" após o cutoff).
+      const updated={
+        ...subscription,
+        ...backendUpdated,
+        next_composition_delivery:nextSubscriptionChangeThursdayISO(),
+      };
+      setSaving(false);
+      setConfirmModal(false);
+      setEditing(false);
+      setSuccessMsg(`Mudança confirmada. Vale a partir da entrega de ${proxDeliveryDdMm}.`);
+      onAlterado?.(updated);
+    }catch(err){
+      setSaving(false);
+      if(err?.name==="AbortError"){
+        // Cancel durante PATCH: fecha modal, volta pro edit com rascunho preservado.
+        setConfirmModal(false);
+        return;
+      }
+      setSaveError("Não conseguimos salvar agora. Tente de novo.");
+    }
+  };
+
+  const handleCancelarModal=()=>{
+    if(saving){abortControllerRef.current?.abort();return;}
+    setConfirmModal(false);
+  };
+
+  // ===== Endereço (subscription real, fallback pro placeholder do wireframe) =====
+  const end=subscription?.endereco;
+  const enderecoLine1=end?`${end.rua}, ${end.numero}${end.complemento?", "+end.complemento:""}`:"Rua Otávio Carneiro, 123, apt 401";
+  const enderecoLine2=end?`${end.bairro}, ${end.cidade} · ${end.estado} · ${end.cep}`:"Icaraí, Niterói · RJ · 24230-191";
+
+  return<div style={{padding:"18px 16px 12px",paddingBottom:hasPending?80:12}}>
+    {/* Card "Plano atual" — idle ou editing inline (Fase 3). Wireframe v4 removeu
+        o state-title "Sua Assinatura + Ativa": Nav já marca a seção, o card "Plano
+        atual" já comunica o estado. */}
+    <Card style={{marginBottom:12,...(editing?{background:"#FFF",border:`1.5px solid ${B[500]}`}:{})}}>
+      {!editing&&<>
+        <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"0 0 10px"}}>Plano atual</div>
+        <div style={{fontFamily:fb,fontWeight:700,fontSize:20,color:W[800],lineHeight:1.2,margin:"0 0 4px"}}>
+          {total_paes} {total_paes===1?"pão":"pães"} por semana
+        </div>
+        {/* Ajuste 1 do briefing: .plan-delivery clonado do .plan-comp (sem ::before, mesma tipografia) */}
+        <div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.5,margin:0}}>{planCompList}</div>
+        <div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.5,margin:"0 0 14px"}}>Entregas toda quinta</div>
+
+        {/* Breakdown Pães + Frete = Total */}
+        <div style={{display:"flex",flexDirection:"column",gap:6,padding:"12px 0 0",borderTop:`1px solid ${W[200]}`,marginBottom:14}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+            <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Pães</span>
+            <span style={{fontFamily:fb,fontSize:14,color:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(valor_paes)}/mês</span>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+            <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Frete</span>
+            <span style={{fontFamily:fb,fontSize:14,color:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(valor_frete)}/mês</span>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingTop:8,borderTop:`1px solid ${W[200]}`,marginTop:2}}>
+            <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[700]}}>Total</span>
+            <span style={{fontFamily:fb,fontWeight:700,fontSize:16,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(valor_mensal)}/mês</span>
+          </div>
+          {/* State derivado: alteração agendada — vale a partir da entrega de DD/MM (some quando a data de cobrança passa) */}
+          {hasPendingChange&&pendingChangeDeliveryDdMm&&<div style={{
+            fontFamily:fb,fontSize:11,color:W[500],
+            margin:"4px 0 0",paddingTop:4,
+            borderTop:`1px dashed ${W[200]}`,
+            textAlign:"right",
+          }}>
+            Vale a partir da entrega de {pendingChangeDeliveryDdMm}
+          </div>}
+        </div>
+
+        <button type="button" onClick={()=>{setRascunho({...assinaturaQtds});setEditing(true);}} disabled={cutoff} style={{
+          width:"100%",padding:13,minHeight:44,
+          background:"transparent",
+          color:cutoff?W[400]:B[500],
+          border:`1.5px solid ${cutoff?W[200]:B[500]}`,
+          borderRadius:radii.md,
+          cursor:cutoff?"not-allowed":"pointer",
+          fontFamily:fb,fontSize:14,fontWeight:600,
+          display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+          transition:"background 150ms ease",
+        }} onMouseEnter={e=>{if(!cutoff) e.currentTarget.style.background=B[50];}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}>
+          <I d={ic.edit} size={16} color={cutoff?W[400]:B[500]}/>
+          Alterar minha Assinatura
+        </button>
+        {cutoff&&<CutoffMsg/>}
+      </>}
+
+      {editing&&<>
+        <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:B[500],margin:"0 0 10px"}}>Alterar plano</div>
+        <div style={{fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.45,margin:"0 0 10px"}}>Quantos pães por semana?</div>
+
+        {/* asn-list: 1 row por tipo de pão. QtyStepper reusado do Drawer. */}
+        <div style={{display:"flex",flexDirection:"column",marginBottom:10}}>
+          {D.pães.map((p,i)=>{
+            const qty=rascunho?.[p.id]||0;
+            const otherId=D.pães.find(x=>x.id!==p.id)?.id;
+            const otherQty=rascunho?.[otherId]||0;
+            const isZero=qty===0;
+            const isRowAltered=qty!==(assinaturaQtds?.[p.id]||0);
+            // + disabled só quando nem swap nem increment é possível (cap absoluto + outra row em 0).
+            const incDis=sumAll>=3&&otherQty===0;
+            const decDis=qty===0||(total_paes===1&&sumAll<=1);
+            return <div key={p.id} style={{
+              display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
+              padding:"12px 0",
+              borderBottom:i<D.pães.length-1?`1px solid ${W[200]}`:"none",
+            }}>
+              {/* Opacity SÓ no name container (stepper íntegro mantém + brand-500 vívido
+                  quando swap atômico está habilitado em row esmaecida). */}
+              <div style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",opacity:isZero?0.55:1}}>
+                <span style={{fontFamily:fb,fontWeight:600,fontSize:15,color:isZero?W[500]:W[800],lineHeight:1.3}}>
+                  {p.nome} <span style={{fontWeight:400,fontSize:13,color:W[500]}}>· {p.peso}</span>
+                </span>
+                {isRowAltered&&<span style={{
+                  display:"inline-flex",alignItems:"center",gap:4,
+                  padding:"2px 6px",borderRadius:radii.xs,lineHeight:1.4,
+                  background:W[100],color:ST.warning.t,
+                  fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",
+                }}>
+                  <span style={{fontSize:6}}>●</span>Alterado
+                </span>}
+              </div>
+              <QtyStepper
+                qty={qty}
+                name={p.nome}
+                variant="neutral"
+                incrementDisabled={incDis}
+                decrementDisabled={decDis}
+                onIncrement={()=>handleIncrement(p.id)}
+                onDecrement={()=>handleDecrement(p.id)}
+              />
+            </div>;
+          })}
+        </div>
+
+        {/* total-week */}
+        <div style={{
+          display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,
+          padding:"10px 12px",marginBottom:12,
+          background:W[100],borderRadius:radii.md,
+          fontFamily:fb,fontSize:13,color:W[700],
+        }}>
+          <span style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Total da semana</span>
+          <span style={{fontFamily:fb,fontWeight:600,color:W[800]}}>
+            <span style={{fontSize:15,fontVariantNumeric:"tabular-nums"}}>{sumAll}</span> {sumAll===1?"pão":"pães"}
+          </span>
+        </div>
+
+        {/* ev-block: 3 colunas (label | Atual | Após). Total "Após" em warm-700 se igual ao Atual; brand-500 se diferente. */}
+        <div style={{
+          display:"grid",gridTemplateColumns:"auto 1fr 1fr",gap:"6px 10px",
+          padding:12,marginBottom:10,
+          background:W[50],border:`1px solid ${W[200]}`,borderRadius:radii.md,
+          fontFamily:fb,
+        }}>
+          <span/>
+          <span style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],textAlign:"right"}}>Atual</span>
+          <span style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:B[500],textAlign:"right"}}>Após mudança</span>
+          <span style={{fontSize:13,color:W[600],alignSelf:"center"}}>Pães</span>
+          <span style={{fontSize:13,color:W[700],textAlign:"right",fontVariantNumeric:"tabular-nums",alignSelf:"center"}}>{fmt(valor_paes)}</span>
+          <span style={{fontSize:13,color:W[700],textAlign:"right",fontVariantNumeric:"tabular-nums",alignSelf:"center"}}>{fmt(rascunhoValorPaes)}</span>
+          <span style={{fontSize:13,color:W[600],alignSelf:"center"}}>Frete</span>
+          <span style={{fontSize:13,color:W[700],textAlign:"right",fontVariantNumeric:"tabular-nums",alignSelf:"center"}}>{fmt(valor_frete)}</span>
+          <span style={{fontSize:13,color:W[700],textAlign:"right",fontVariantNumeric:"tabular-nums",alignSelf:"center"}}>{fmt(valor_frete)}</span>
+          <span style={{gridColumn:"1 / -1",height:1,background:W[200],margin:"4px 0 2px"}}/>
+          <span style={{fontSize:14,fontWeight:600,color:W[700],alignSelf:"center"}}>Total</span>
+          <span style={{fontSize:15,fontWeight:700,color:W[700],textAlign:"right",fontVariantNumeric:"tabular-nums",alignSelf:"center"}}>{fmt(valor_mensal)}/mês</span>
+          <span style={{fontSize:15,fontWeight:700,color:rascunhoValorMensal===valor_mensal?W[700]:B[500],textAlign:"right",fontVariantNumeric:"tabular-nums",alignSelf:"center"}}>{fmt(rascunhoValorMensal)}/mês</span>
+        </div>
+
+        {/* micro-context: copy dependente do tipo da alteração */}
+        {(ehSwap||ehMudancaTotal)&&<div style={{
+          display:"flex",alignItems:"flex-start",gap:8,
+          marginBottom:14,padding:"0 2px",
+          fontFamily:fb,fontSize:12,color:W[600],lineHeight:1.5,
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={W[500]} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:2}} aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span>
+            Vale a partir da entrega de {proxDeliveryDdMm}.{" "}
+            {ehSwap?"O valor mensal continua o mesmo.":`A cobrança nova começa em ${proximaFaturaDdMm}.`}
+          </span>
+        </div>}
+
+        {/* erro sumAll===0 */}
+        {isCompositionInvalid&&<div style={{
+          fontFamily:fb,fontSize:12,color:ST.warning.t,
+          margin:"-4px 0 12px",padding:"0 2px",lineHeight:1.4,
+        }}>
+          Sua Assinatura precisa de pelo menos 1 pão por semana.
+        </div>}
+
+        {/* edit-foot: Cancelar (ghost) + Salvar alterações (primary, label preservado quando disabled) */}
+        <div style={{display:"flex",gap:10}}>
+          <Btn ghost onClick={handleCancelEdit} style={{flex:1}}>Cancelar</Btn>
+          <Btn primary disabled={!canSave} onClick={handleSalvar} style={{flex:1}}>Salvar alterações</Btn>
+        </div>
+      </>}
     </Card>
 
-    {/* Modal de confirmacao */}
+    {/* Card Convite Condomínio (isolado, mais peso) */}
+    <div style={{background:B[50],border:`1px solid ${B[100]}`,borderRadius:radii.md,padding:18,marginBottom:12}}>
+      <div style={{fontFamily:fb,fontWeight:700,color:B[700],fontSize:15,lineHeight:1.35,margin:"0 0 6px"}}>Mora num condomínio?</div>
+      <div style={{fontFamily:fb,fontSize:13,color:B[800],lineHeight:1.5,margin:"0 0 12px"}}>Se 5 ou mais moradores assinam, o frete fica por nossa conta.</div>
+      <button type="button" style={{display:"inline-flex",alignItems:"center",gap:5,background:"transparent",border:"none",cursor:"pointer",padding:0,fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:B[500]}}>
+        Saiba como funciona
+        <I d={ic.chev} size={11} color={B[500]}/>
+      </button>
+    </div>
+
+    {/* Endereço read-only — sai na Frente C item 4 (Perfil) */}
+    <div style={{background:W[100],borderRadius:radii.lg,padding:"12px 14px",marginBottom:10}}>
+      <div style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"0 0 6px"}}>Endereço</div>
+      <div style={{fontFamily:fb,fontWeight:500,color:W[700],fontSize:13,lineHeight:1.5}}>
+        {enderecoLine1}<br/>{enderecoLine2}
+      </div>
+    </div>
+
+    {/* Cobrança read-only — sai na Frente C item 4 (Perfil) */}
+    <div style={{background:W[100],borderRadius:radii.lg,padding:"12px 14px",marginBottom:10}}>
+      <div style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"0 0 6px"}}>Cobrança</div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",fontFamily:fb,fontSize:13,color:W[700]}}>
+        <span style={{color:W[500],fontSize:12}}>Cartão</span>
+        <span style={{fontWeight:500,fontVariantNumeric:"tabular-nums"}}>{D.cartao.band} ●●●● {D.cartao.n}</span>
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderTop:`1px solid ${W[200]}`,fontFamily:fb,fontSize:13,color:W[700]}}>
+        <span style={{color:W[500],fontSize:12}}>Próxima fatura</span>
+        <span style={{fontWeight:500,fontVariantNumeric:"tabular-nums"}}>{fmt(valor_mensal)} · {proximaFaturaDdMm}</span>
+      </div>
+    </div>
+
+    {/* Histórico read-only — sai na Frente C item 4 (Perfil) */}
+    <div style={{background:W[100],borderRadius:radii.lg,padding:"12px 14px",marginBottom:10}}>
+      <div style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"0 0 6px"}}>Histórico</div>
+      {D.hist.slice(0,3).map((h,i)=>{
+        const dataDdMm=h.sem.replace(/^Semana\s+/,"");
+        const isEntregue=h.st==="Entregue";
+        return <div key={i} style={{
+          display:"flex",justifyContent:"space-between",alignItems:"center",
+          padding:"6px 0",
+          borderTop:i>0?`1px solid ${W[200]}`:"none",
+          fontFamily:fb,fontSize:13,color:W[700],
+        }}>
+          <span style={{color:W[500],fontSize:12}}>{dataDdMm} · {total_paes} {total_paes===1?"pão":"pães"}</span>
+          <span style={{
+            fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",
+            padding:"2px 6px",borderRadius:radii.xs,
+            background:isEntregue?ST.success.bg:ST.info.bg,
+            color:isEntregue?ST.success.t:ST.info.t,
+            border:`1px solid ${isEntregue?ST.success.b:ST.info.b}`,
+          }}>{h.st}</span>
+        </div>;
+      })}
+    </div>
+
+    {/* Microcopy WhatsApp pra alterações ainda não suportadas no app */}
+    <div style={{
+      margin:"14px 4px 16px",padding:"14px 0 0",
+      borderTop:`1px dashed ${W[300]}`,
+      fontFamily:fb,fontSize:12,color:W[500],lineHeight:1.55,
+    }}>
+      Pra mudar endereço, cartão ou pausar a assinatura, fale com a gente pelo{" "}
+      <a href="https://wa.me/5521999429843?text=Oi%2C%20gostaria%20de%20alterar%20minha%20Assinatura" target="_blank" rel="noopener noreferrer" style={{color:B[500],textDecoration:"none",fontWeight:600,display:"inline-flex",alignItems:"center",gap:4}}>
+        WhatsApp
+        <I d={ic.chev} size={11} color={B[500]}/>
+      </a>.
+    </div>
+
+    {/* Toast de sucesso (topo, verde) — auto-dismiss 4s */}
+    {successMsg&&<div role="status" aria-live="polite" style={{
+      position:"fixed",top:16,left:16,right:16,maxWidth:358,margin:"0 auto",zIndex:60,
+      display:"flex",alignItems:"flex-start",gap:10,
+      padding:"12px 14px",borderRadius:radii.md,
+      background:ST.success.bg,border:`1px solid ${ST.success.b}`,color:ST.success.t,
+      fontFamily:fb,fontSize:13,lineHeight:1.45,
+      boxShadow:"0 4px 16px rgba(26,24,21,0.12)",animation:"fadeIn 200ms ease",
+    }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}} aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>{successMsg}</span>
+    </div>}
+
+    {/* Toast de erro (topo, warning) — auto-dismiss 4s */}
+    {saveError&&<div role="status" aria-live="polite" style={{
+      position:"fixed",top:16,left:16,right:16,maxWidth:358,margin:"0 auto",zIndex:60,
+      display:"flex",alignItems:"flex-start",gap:10,
+      padding:"12px 14px",borderRadius:radii.md,
+      background:ST.warning.bg,border:`1px solid ${ST.warning.b}`,color:ST.warning.t,
+      fontFamily:fb,fontSize:13,lineHeight:1.45,
+      boxShadow:"0 4px 16px rgba(26,24,21,0.12)",animation:"fadeIn 200ms ease",
+    }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}} aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>{saveError}</span>
+    </div>}
+
+    {/* Modal de confirmação (bottom-sheet) */}
     {confirmModal&&<>
-      <div onClick={()=>setConfirmModal(false)} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
-      <div ref={confirmDialogRef} role="dialog" aria-modal="true" aria-label="Confirmar alteração da Assinatura" style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",background:"#FFF",borderRadius:`${radii.xl} ${radii.xl} 0 0`,zIndex:51,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",padding:20}}>
-        <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500],marginBottom:16}}>Confirmar alteração da Assinatura</div>
+      <div onClick={handleCancelarModal} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
+      <div ref={confirmDialogRef} role="dialog" aria-modal="true" aria-label="Confirmar nova assinatura" style={{
+        position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",
+        background:"#FFF",borderRadius:`${radii.xl} ${radii.xl} 0 0`,
+        zIndex:51,maxHeight:"90vh",overflowY:"auto",
+        boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",
+        padding:"0 0 18px",
+      }}>
+        <div aria-hidden="true" style={{width:36,height:4,background:W[300],borderRadius:radii.full,margin:"8px auto"}}/>
+        <h3 style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",margin:"6px 18px 4px",lineHeight:1.1}}>Confirmar nova assinatura</h3>
+        <div style={{padding:"0 18px",fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.55}}>
+          <p style={{margin:"0 0 10px"}}>Você está mudando o seu plano. Confira antes de confirmar.</p>
 
-        <div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:4}}>Baseline do mês:</div>
-        <div style={{fontFamily:fb,fontSize:14,color:W[800],marginBottom:10}}>{composicaoToStr(baseline)||"Sem pães"} · {fmt(mensalBaseline)}/mês</div>
-        <div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:4}}>Nova Assinatura:</div>
-        <div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:B[700],marginBottom:16}}>{composicaoToStr(rascunho)||"Sem pães"} · {fmt(mensal)}/mês</div>
+          <div style={{margin:"10px 0 12px",padding:12,background:W[50],border:`1px solid ${W[200]}`,borderRadius:radii.md,display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10}}>
+              <span style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],flexShrink:0}}>Plano atual</span>
+              <span style={{fontWeight:600,color:W[800],textAlign:"right"}}>{fmtPlanFull(assinaturaQtds)}</span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10}}>
+              <span style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],flexShrink:0}}>Plano novo</span>
+              <span style={{fontWeight:600,color:B[500],textAlign:"right"}}>{fmtPlanFull(rascunho)}</span>
+            </div>
+            <div style={{height:1,background:W[200],margin:"2px 0"}}/>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10}}>
+              <span style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],flexShrink:0}}>Vale a partir de</span>
+              <span style={{fontWeight:600,color:W[800],textAlign:"right",fontVariantNumeric:"tabular-nums"}}>Entrega de {proxDeliveryDdMm}</span>
+            </div>
+            {ehSwap
+              ?<div style={{fontFamily:fb,fontSize:13,color:W[600],lineHeight:1.5}}>O valor mensal continua o mesmo.</div>
+              :<div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10}}>
+                <span style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],flexShrink:0}}>Próxima cobrança</span>
+                <span style={{fontWeight:600,color:B[500],textAlign:"right",fontVariantNumeric:"tabular-nums"}}>
+                  {fmt(rascunhoValorMensal)}/mês em {proximaFaturaDdMm}
+                  <span style={{display:"block",fontFamily:fb,fontWeight:400,fontSize:11,color:W[500],marginTop:2}}>{fmt(rascunhoValorPaes)} (pães) + {fmt(valor_frete)} (frete)</span>
+                </span>
+              </div>
+            }
+          </div>
+        </div>
 
-        <div style={{height:1,background:W[200],marginBottom:16}}/>
-
-        {/* Mensagens por tipo vs BASELINE */}
-        {estaVoltandoAoBaseline&&<div style={{fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5,marginBottom:20}}>Você voltou à sua Assinatura original deste mês. Nenhuma cobrança ou crédito adicional.</div>}
-        {ehAumentoVsBaseline&&<div style={{fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5,marginBottom:20}}>Você será cobrado <strong>+{fmt(propVsBaseline)}</strong> neste mês (pelos dias restantes). Sua próxima fatura completa de {fmt(mensal)} será em 1º de {proximoMesPt()}.</div>}
-        {ehReducaoVsBaseline&&<div style={{fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5,marginBottom:20}}>Até o fim de {mesAtualPt()}, você continua recebendo {totalBaseline} {plural(totalBaseline,"pão","pães")} por semana. Sua nova Assinatura começa em 1º de {proximoMesPt()}: {total} {plural(total,"pão","pães")} por semana.</div>}
-        {ehTrocaVsBaseline&&<div style={{fontFamily:fb,fontSize:13,color:W[700],lineHeight:1.5,marginBottom:20}}>Você trocou quais pães recebe. O valor mensal não muda.</div>}
-
-        <div style={{display:"flex",gap:8}}>
-          <Btn onClick={()=>setConfirmModal(false)} style={{flex:1}}>Voltar</Btn>
-          <ActionBtn primary loadingText="Salvando…" successText="Atualizada ✓" onAction={()=>simulate()} onComplete={handleConfirmAlteracao} style={{flex:2}}>Confirmar alteração</ActionBtn>
+        <div style={{display:"flex",gap:10,padding:"14px 18px 0"}}>
+          <Btn ghost onClick={handleCancelarModal} style={{flex:1}}>Cancelar</Btn>
+          <button
+            type="button"
+            onClick={handleConfirmarMudanca}
+            disabled={saving}
+            aria-busy={saving}
+            style={{
+              flex:1,padding:13,minHeight:44,borderRadius:radii.md,border:"none",
+              background:B[500],color:"#FFF",
+              fontFamily:fb,fontSize:14,fontWeight:600,
+              cursor:saving?"wait":"pointer",opacity:saving?0.7:1,
+              display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,
+            }}>
+            {saving&&<span role="status" aria-label="Salvando alteração" style={{
+              width:14,height:14,borderRadius:"50%",flexShrink:0,
+              border:"2px solid rgba(255,255,255,0.35)",borderTopColor:"#FFF",
+              animation:"spin 0.8s linear infinite",
+            }}/>}
+            {saving?"Salvando…":"Confirmar mudança"}
+          </button>
         </div>
       </div>
     </>}
-
-    <Toast msg="Assinatura atualizada!" vis={saved}/>
-    <Card style={{marginBottom:12}}><SL t="Entrega"/><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800],marginBottom:4}}>Entregas às {D.ent.dia.toLowerCase()}</div><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{D.ent.cond}, {D.ent.bloco}</div><div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:8}}>Frete: {D.ent.frete}</div><div style={{fontFamily:fb,fontSize:12,color:B[700],background:B[50],padding:"8px 12px",borderRadius:radii.md,marginBottom:8,display:"flex",gap:8,alignItems:"flex-start"}}><I d={ic.users} size={16} color={B[500]}/><span>Traga 5 moradores do seu prédio e tenha entrega gratuita.</span></div><div onClick={async()=>{if(addrSt!=='idle')return;setAddrSt('loading');await simulate();setAddrSt('success');setTimeout(()=>setAddrSt('idle'),1500);}} className="lk" style={{fontFamily:fb,fontSize:13,color:addrSt==='success'?'#065F46':B[500],fontWeight:500,cursor:addrSt!=='idle'?'default':'pointer',background:addrSt==='success'?'#D1FAE5':'none',padding:addrSt==='success'?'4px 8px':0,borderRadius:radii.md,display:'inline-block',transition:'all 150ms ease',opacity:addrSt==='loading'?0.5:1}}>{addrSt==='loading'?'Salvando…':addrSt==='success'?'Salvo ✓':'Editar endereço ›'}</div></Card>
-    <Card style={{marginBottom:12}}><SL t="Cobrança"/><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800],marginBottom:4}}>Mensal no cartão</div><div style={{fontFamily:fb,fontSize:13,color:W[600]}}>{D.cartao.band} ••••{D.cartao.n}</div><div style={{fontFamily:fb,fontSize:13,color:W[500],marginBottom:8}}>Próxima: {D.cartao.prox}</div><div onClick={async()=>{if(cardSt!=='idle')return;setCardSt('loading');await simulate();setCardSt('success');setTimeout(()=>setCardSt('idle'),1500);}} className="lk" style={{fontFamily:fb,fontSize:13,color:cardSt==='success'?'#065F46':B[500],fontWeight:500,cursor:cardSt!=='idle'?'default':'pointer',background:cardSt==='success'?'#D1FAE5':'none',padding:cardSt==='success'?'4px 8px':0,borderRadius:radii.md,display:'inline-block',transition:'all 150ms ease',opacity:cardSt==='loading'?0.5:1}}>{cardSt==='loading'?'Validando…':cardSt==='success'?'Atualizado ✓':'Atualizar cartão ›'}</div></Card>
-    <Card onClick={()=>onNav("perfil")} style={{marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}} ariaLabel="Ver histórico"><div style={{display:"flex",alignItems:"center",gap:12}}><I d={ic.file} size={20} color={B[500]}/><div><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[700]}}>Histórico de entregas e cobranças</div><div style={{fontFamily:fb,fontSize:12,color:W[500]}}>{D.cob.mes} · {D.cob.valor} · {D.cob.status}</div></div></div><I d={ic.chev} size={16} color={W[400]}/></Card>
   </div>;
 };
 
@@ -1649,28 +2045,18 @@ export default function CoraPortal(){
     setScr("home");
   };
 
-  // Salvar alteracao da Assinatura. meta traz o tipo ja classificado pelo componente
-  // contra o BASELINE (nao contra o estado anterior).
-  const handleSalvarAssinatura=(novosQtds,meta)=>{
+  // Aplica alteração da Assinatura (Frente C item 2, Cenário A — mês alinhado).
+  // `updated` vem do POST (ou stub) com a subscription completa atualizada
+  // (itens, total_paes, valor_paes, valor_mensal, next_billing_change_date,
+  // next_billing_value). Sync local: state + localStorage. Alteração permanente,
+  // baseline = nova composição (sem ciclo histórico).
+  const handleAlterarAssinatura=(updated)=>{
     haptic();
-    setAssinaturaQtds(novosQtds);
-    setCestaSemana(null); // volta a seguir a Assinatura
-    // Se voltou ao baseline, limpa historico do ciclo atual (vai e volta = nada aconteceu)
-    if(JSON.stringify(novosQtds)===JSON.stringify(assinaturaBaseline)){
-      setHistoricoCicloAtual(null);
-      return;
-    }
-    // Senao, grava/atualiza entrada UNICA do ciclo com diferenca liquida vs baseline
-    if(meta){
-      setHistoricoCicloAtual({
-        data:new Date().toISOString(),
-        tipo:meta.tipo, // "aumento" | "reducao" | "troca"
-        baseline:{...assinaturaBaseline},
-        atual:{...novosQtds},
-        valorProporcional:meta.valorProporcional||0,
-        proximoCicloValor:meta.proximoCicloValor||0,
-      });
-    }
+    setSubscription(updated);
+    setAssinaturaQtds(updated.itens);
+    setAssinaturaBaseline(updated.itens);
+    setCestaSemana(null);
+    saveSubscription(updated);
   };
 
 const params = new URLSearchParams(window.location.search);
@@ -1702,7 +2088,7 @@ const params = new URLSearchParams(window.location.search);
     <main ref={mainRef} id="main-content" style={{flex:1,overflowY:"auto"}}>
       <div key={scr} className="tab-content">
         {scr==="home"&&<Home onNav={handleNav} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaAtual={cestaAtual} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} pendingPayment={pendingPayment} currentWeeklyOrder={currentWeeklyOrder} currentExtras={currentExtras} addExtraToCart={addExtraToCart} removeExtraFromCart={removeExtraFromCart} updateComposition={updateComposition} confirmCurrentOrder={confirmCurrentOrder}/>}
-        {scr==="assinatura"&&<Assinatura onNav={handleNav} hasPending={false} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} onSalvar={handleSalvarAssinatura}/>}
+        {scr==="assinatura"&&<Assinatura hasPending={false} cutoff={cutoff} subscription={subscription} assinaturaQtds={assinaturaQtds} onAlterado={handleAlterarAssinatura}/>}
         {scr==="cardapio"&&<Cardapio addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment}/>}
         {scr==="perfil"&&<Perfil confirmed={confirmedLegacy} hasPending={false} assinaturaQtds={assinaturaQtds} historicoCicloAtual={historicoCicloAtual} historicoCiclosPassados={historicoCiclosPassados}/>}
       </div>
@@ -1722,6 +2108,7 @@ const params = new URLSearchParams(window.location.search);
       @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
       @keyframes fadeIn{from{opacity:0}to{opacity:1}}
       @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+      @keyframes spin{to{transform:rotate(360deg)}}
       /* Toast: fadeUp dedicado (280ms ease-out) — translateY 8px → 0 + fade */
       @keyframes toastFadeUp{from{opacity:0;transform:translateY(8px) scale(1)}to{opacity:1;transform:translateY(0) scale(1)}}
       /* Remoção de linha do Card de Cesta + Drawer: slide-out horizontal + fade + colapso vertical (450ms ease-out — abaixo disso o user não acompanha a transição). */

@@ -3,6 +3,7 @@
  *
  * - postSubscription(payload):     POST /api/subscriptions
  * - getSubscription(id):           GET /api/subscriptions/{id}  (null se 404)
+ * - patchSubscription(id,payload): PATCH /api/subscriptions/{id} (altera composicao)
  * - postWaitlist(payload):         POST /api/coverage-waitlist
  * - getSettings():                 GET /api/settings
  * - postCapacityWaitlist(payload): POST /api/capacity-waitlist
@@ -48,6 +49,19 @@ export async function getSubscription(id) {
   if (res.status === 404) return null;
   if (!res.ok) {
     return throwApiError(res, "Falha ao consultar Assinatura");
+  }
+  return res.json();
+}
+
+export async function patchSubscription(id, payload, signal) {
+  const res = await fetch(`/api/subscriptions/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    signal,
+  });
+  if (!res.ok) {
+    return throwApiError(res, "Falha ao alterar Assinatura");
   }
   return res.json();
 }
