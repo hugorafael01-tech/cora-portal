@@ -160,7 +160,7 @@ async function handlePost(req, res) {
 }
 
 async function handleGet(req, res) {
-  const { subscription_id } = req.query || {};
+  const { subscription_id, history, limit } = req.query || {};
   if (!isValidUUID(subscription_id)) {
     return res.status(400).json({ error: "invalid_subscription_id" });
   }
@@ -170,6 +170,28 @@ async function handleGet(req, res) {
   // como se fosse de amanhã. Não gera bug funcional (lista cresce em 1
   // item no máximo) e mantém o SQL simples. Detalhe registrado.
   const today = new Date().toISOString().slice(0, 10);
+
+  // history=true → entregas passadas (tela Perfil). No MVP, "entregue" é
+  // inferido como delivery_date < hoje && status='confirmado'. Quando o enum
+  // weekly_order_status ganhar 'entregue' no cora-backoffice, troca-se o
+  // filtro por .eq("status","entregue"). Limit padrão 4 = 3 últimas + 1
+  // sentinela pro front decidir o link "Ver todos →" (length > 3).
+  if (history === "true") {
+    const max = Math.min(Number(limit) || 4, 20);
+    const { data, error } = await supabaseAdmin
+      .from("weekly_orders")
+      .select(PUBLIC_FIELDS)
+      .eq("subscription_id", subscription_id)
+      .eq("status", "confirmado")
+      .lt("delivery_date", today)
+      .order("delivery_date", { ascending: false })
+      .limit(max);
+    if (error) {
+      console.error("[weekly-orders GET history] select failed", error);
+      return res.status(500).json({ error: "internal_error" });
+    }
+    return res.status(200).json({ weekly_orders: data || [] });
+  }
 
   const { data, error } = await supabaseAdmin
     .from("weekly_orders")

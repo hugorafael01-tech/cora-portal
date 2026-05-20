@@ -13,9 +13,11 @@ import { isValidUUID } from "../../src/lib/validators.js";
 const VALOR_POR_PAO = 99;
 const FRETE_MENSAL = 15;
 
-// Campos que GET expoe (inclui os 2 de cobranca futura — migration 0014).
+// Campos que GET expoe (inclui os 2 de cobranca futura — migration 0014 — e
+// a decomposicao valor_paes/valor_frete usada pelo bloco Cobranca do Perfil;
+// valor_frete=0 sinaliza o cenario B2 frete gratis). Sem CPF/email/whatsapp.
 const GET_FIELDS =
-  "id, status, nome, itens, total_paes, valor_mensal, next_billing_change_date, next_billing_value, created_at";
+  "id, status, nome, itens, total_paes, valor_paes, valor_frete, valor_mensal, next_billing_change_date, next_billing_value, created_at";
 // Campos que PATCH le/retorna (precisa de itens+total_paes pra idempotencia).
 const PATCH_FIELDS =
   "id, status, itens, total_paes, valor_paes, valor_frete, valor_mensal, next_billing_change_date, next_billing_value";

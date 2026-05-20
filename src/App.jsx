@@ -8,9 +8,9 @@ import ProductCard from "./components/ProductCard";
 import PendingPaymentBanner from "./components/PendingPaymentBanner";
 import { isPastCutoff, nextEditableThursdayISO, nextSubscriptionChangeThursdayISO } from "./utils/cutoff";
 import { haptic } from "./utils/haptic";
-import { plural } from "./utils/plural";
 import { loadSubscription, saveSubscription, clearSubscription, reconcileSubscription } from "./utils/subscription";
-import { getSettings, getWeeklyOrders, postWeeklyOrder, confirmWeeklyOrder, patchSubscription } from "./utils/api";
+import { getSettings, getSubscription, getWeeklyOrders, postWeeklyOrder, confirmWeeklyOrder, patchSubscription } from "./utils/api";
+import { HUGO_WHATSAPP } from "./config/contact";
 import { B, W, fd, fb, fmt, radii } from "./tokens";
 
 // `?reset=true`: limpa subscription persistida e remove o param da URL.
@@ -303,7 +303,6 @@ const CutoffBanner=({cutoff})=>{
     <I d={ic.clock} size={14} color={W[500]}/> Pedidos desta semana fechados. Os pedidos da próxima semana abrirão em breve.
   </div>;
 };
-const simulate=()=>new Promise(r=>setTimeout(r,600));
 
 // Microcopy unica para bloqueio de extras enquanto subscription
 // esta com status pending_payment. Compartilhada por Home, Cardapio
@@ -396,13 +395,6 @@ const NovidadeCard=({extra,onAdd,cutoff,lockedReason})=>{
     </div>
   </div>;
 };
-
-// ─── HELPERS ───
-// `totalOf` ainda é usado pelo Perfil pra somar `confirmedLegacy` (extras
-// renderizados em forma 1-por-unidade pelo shim). Quando o Perfil também
-// migrar pra leitura direta de `currentWeeklyOrder.total_extras` (futura
-// frente do Perfil), esse helper sai junto.
-const totalOf=list=>list.filter(p=>p.kind!=="swap").reduce((s,p)=>s+p.precoNum,0);
 
 // ─── WEEKLY ORDERS — helpers de nível de módulo ───
 // Substitui (ou insere) um pedido no array por `delivery_date`,
@@ -1140,14 +1132,6 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
 };
 
 // ═══ ASSINATURA ═══
-// Helper pra montar a string "N Nome (peso) + N Nome (peso)" a partir de qtds map
-// Pluraliza nome do pao em portugues: "Pão Original" -> "Pães Originais", "Pão Integral" -> "Pães Integrais"
-const pluralizarPao=(n,nome)=>n===1?nome:nome.replace(/\bPão\b/,"Pães").replace(/\bOriginal\b/,"Originais").replace(/\bIntegral\b/,"Integrais");
-
-// `composicaoToStr`/`proximoMesPt`/`mesAtualPt` saíram com o refactor da Assinatura
-// (Cenário A — mês alinhado eliminou cobrança proporcional). MESES_PT segue usado pelo Perfil.
-const MESES_PT=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
-
 // Frente C item 2 (Fase 2 + 3) — wireframe v4.
 // • Fase 2: tela idle reorganizada (Plano atual + Convite + read-only blocks + microcopy WA)
 // • Fase 3: edição inline (card vira "Alterar plano" com QtyStepper + ev-block + footer)
@@ -1702,63 +1686,189 @@ const Cardapio=({addExtraToCart,cutoff,pendingPayment})=>{
 };
 
 // ═══ PERFIL ═══
-// Helper: gera copy humana de uma entrada de historico de ciclo.
-// Retorna string conforme o tipo (aumento / reducao / troca).
-const copyEntradaCiclo=(entrada)=>{
-  if(!entrada) return "";
-  const {tipo,baseline,atual}=entrada;
-  const totalA=Object.values(atual).reduce((s,q)=>s+q,0);
-  if(tipo==="aumento"){
-    // Calcula quais paes foram adicionados (positivos no delta)
-    const add=[];D.pães.forEach(p=>{const d=(atual[p.id]||0)-(baseline[p.id]||0);if(d>0)add.push(`${d} ${pluralizarPao(d,p.nome)}`);});
-    return add.length?`Você adicionou ${add.join(" e ")} à sua Assinatura.`:`Você aumentou sua Assinatura para ${totalA} ${plural(totalA,"pão","pães")} por semana.`;
-  }
-  if(tipo==="reducao"){
-    return `Você reduziu sua Assinatura para ${totalA} ${plural(totalA,"pão","pães")} por semana.`;
-  }
-  // troca: quantidade igual, composicao diferente
-  const removido=[];const adicionado=[];
-  D.pães.forEach(p=>{const d=(atual[p.id]||0)-(baseline[p.id]||0);if(d>0)adicionado.push(`${d} ${pluralizarPao(d,p.nome)}`);else if(d<0)removido.push(`${-d} ${pluralizarPao(-d,p.nome)}`);});
-  if(removido.length&&adicionado.length) return `Você trocou ${removido.join(" e ")} por ${adicionado.join(" e ")} na sua Assinatura.`;
-  return `Você ajustou a composição da sua Assinatura.`;
-};
+// Frente C item 4 — tela 100% read-only. Toda alteração de dados passa pelo
+// WhatsApp. Dados pessoais vêm do snapshot local; histórico (entregas) e a
+// decomposição da Cobrança vêm de dados reais (GET subscription expondo
+// valor_paes/valor_frete + GET weekly-orders?history=true). O modal de recibo
+// entra na Fase 2 (as linhas do histórico já são botões prontos pra abrir).
 
-const Perfil=({confirmed,hasPending,assinaturaQtds,historicoCicloAtual,historicoCiclosPassados=[]})=>{
-  const[cpf,setCpf]=useState(false);const dados=[["Endereço","Ed. Boa Vista, Bl. A / 502"],["Dia de entrega","Quintas-feiras"],["WhatsApp","(21) 99876-5432"],["E-mail","beatriz@email.com"],["CPF",cpf?"123.456.789-00":"•••.•••.789-00"]];const confirmedTotal=totalOf(confirmed);const qtdTotal=Object.values(assinaturaQtds||{}).reduce((s,q)=>s+q,0);const assinVal=D.assinatura.valorMensal*qtdTotal;
-  return<div style={{padding:"24px 16px 16px",paddingBottom:hasPending?80:16}}>
+// DD/MM a partir de Date ou string ISO "YYYY-MM-DD". Date-only é parseada como
+// local (new Date("2026-05-21") seria UTC meia-noite e poderia voltar 1 dia).
+const ddmm=(v)=>{
+  let d;
+  if(v instanceof Date) d=v;
+  else if(typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v)){const[y,m,dia]=v.split("-").map(Number);d=new Date(y,m-1,dia);}
+  else d=new Date(v);
+  return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;
+};
+// Primeiro dia do próximo mês, formato "01/MM". A fatura recorrente alinha no
+// dia 01 (modelo Cenário A — migration 0014), então a próxima cobrança é sempre
+// o dia 1 do mês seguinte. Não há data genérica de cobrança no schema.
+const proximaFaturaDDMM=(now=new Date())=>{
+  const prox=new Date(now.getFullYear(),now.getMonth()+1,1);
+  return `01/${String(prox.getMonth()+1).padStart(2,"0")}`;
+};
+// Resolve nome/peso de um produto pelo id (catálogo D: pães + rotativos + extras).
+const produtoInfo=(id)=>D.pães.find(p=>p.id===id)||D.rotativos.find(p=>p.id===id)||D.extras.find(p=>p.id===id)||null;
+// CPF mascarado: "123.456.789-00" -> "•••.•••.789-00".
+const maskCpf=(c)=>c?c.replace(/^\d{3}\.\d{3}/,"•••.•••"):"";
+// Linhas "N× Nome" de uma composição {id:qty>0}, nome do catálogo (com "Pão").
+const composicaoLinhas=(comp)=>Object.entries(comp||{})
+  .filter(([,q])=>Number(q)>0)
+  .map(([id,q])=>`${q}× ${produtoInfo(id)?.nome||id}`);
+
+const Perfil=({subscription,weeklyOrders=[],pendingPayment=false})=>{
+  const[cpfVisivel,setCpfVisivel]=useState(false);
+  // billing = GET subscription (valor_paes/valor_frete/next_billing_*).
+  // entregas: null = carregando, [] = sem entregas, [...] = histórico real.
+  const[billing,setBilling]=useState(null);
+  const[entregas,setEntregas]=useState(null);
+  const subId=subscription?.id;
+  const endereco=subscription?.endereco||{};
+  const subItens=subscription?.itens||{};
+
+  useEffect(()=>{
+    if(!subId) return;
+    let cancelado=false;
+    getSubscription(subId)
+      .then(d=>{if(!cancelado&&d) setBilling(d);})
+      .catch(err=>{if(!cancelado) console.error("[Perfil] getSubscription falhou",err);});
+    getWeeklyOrders(subId,{history:true})
+      .then(({weekly_orders})=>{if(!cancelado) setEntregas(weekly_orders||[]);})
+      .catch(err=>{if(!cancelado){console.error("[Perfil] getWeeklyOrders history falhou",err);setEntregas([]);}});
+    return()=>{cancelado=true;};
+  },[subId]);
+
+  // ─── Decomposição da próxima fatura ───
+  // Extras = soma de total_extras dos pedidos CONFIRMADOS com entrega no mês
+  // corrente (é o que entra na fatura do dia 01 do mês seguinte). Combina o
+  // histórico (semanas passadas do mês) com os pedidos futuros do mês.
+  const agora=new Date();
+  const extrasDoMes=[...(entregas||[]),...weeklyOrders]
+    .filter(o=>{
+      if(o.status!=="confirmado") return false;
+      const[y,m]=String(o.delivery_date).split("-").map(Number);
+      return y===agora.getFullYear()&&(m-1)===agora.getMonth();
+    })
+    .reduce((s,o)=>s+Number(o.total_extras||0),0);
+  const assinaturaVal=billing?Number(billing.valor_paes):null;
+  const freteVal=billing?Number(billing.valor_frete):null;
+  const freteGratis=freteVal===0;
+  const totalVal=billing?assinaturaVal+extrasDoMes+freteVal:null;
+  const mudancaPendente=billing?.next_billing_change_date||null;
+
+  const endStr=[endereco.rua,endereco.numero].filter(Boolean).join(", ")+(endereco.complemento?` / ${endereco.complemento}`:"");
+  const dados=[
+    ["Endereço",endStr||"—"],
+    ["Dia de entrega","Quintas-feiras"],
+    ["WhatsApp",subscription?.whatsapp||"—"],
+    ["E-mail",subscription?.email||"—"],
+    ["CPF",cpfVisivel?(subscription?.cpf||"—"):(maskCpf(subscription?.cpf)||"—")],
+  ];
+
+  // Sem subId (ex.: dev skip), nada a buscar: cai no estado vazio em vez de
+  // "Carregando…" perpétuo. Com subId, null = ainda buscando.
+  const carregandoHist=!!subId&&entregas===null;
+  const carregandoCobranca=!!subId&&!billing;
+  const entregasView=entregas||[];
+
+  return<div style={{padding:"24px 16px 16px",paddingBottom:pendingPayment?80:16}}>
     <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[500],margin:"0 0 20px"}}>Perfil</h2>
-    <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}><div style={{width:48,height:48,borderRadius:radii.full,background:B[50],display:"flex",alignItems:"center",justifyContent:"center",border:`1px solid ${B[200]}`,flexShrink:0}}><img src="/images/grafismo_coracao.svg" alt="" aria-hidden="true" style={{width:28,height:28}}/></div><div><div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800]}}>Beatriz Silva</div><div style={{fontFamily:fb,fontSize:12,color:W[500]}}>beatriz@email.com</div></div></div>
-    <Card style={{marginBottom:12}}><SL t="Dados pessoais"/>{dados.map(([l,v],i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderBottom:i<dados.length-1?`1px solid ${W[100]}`:"none"}}><div><div style={{fontFamily:fb,fontSize:11,color:W[500],marginBottom:2}}>{l}</div><div style={{fontFamily:fb,fontSize:13,color:W[700]}}>{v}</div></div>{l==="CPF"?<button aria-label={cpf?"Ocultar CPF":"Mostrar CPF"} onClick={()=>setCpf(!cpf)} style={{background:"none",border:"none",cursor:"pointer",padding:4,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={cpf?ic.eyeOff:ic.eye} size={16} color={W[400]}/></button>:<I d={ic.chev} size={14} color={W[400]}/>}</div>)}</Card>
-    <Card style={{marginBottom:12}}><SL t="Histórico de entregas e cobranças"/>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><I d={ic.check} size={14} color={ST.success.t}/><span style={{fontFamily:fb,fontSize:13,fontWeight:500,color:ST.success.t}}>Tudo em dia</span></div>
-      {/* Card "Esta semana" (brand-50) removido no PR 2 Fase 1.
-          A visão detalhada da cesta migra pro EditarCarrinhoDrawer na Fase 2. */}
-      {/* Ajuste do ciclo atual (uma unica entrada, ou null) */}
-      {[...(historicoCicloAtual?[historicoCicloAtual]:[]),...historicoCiclosPassados].map((alt,i)=>{
-        const d=new Date(alt.data);
-        const dataStr=`${d.getDate()} de ${MESES_PT[d.getMonth()]}`;
-        return<div key={`ajuste-${i}`} style={{padding:12,borderRadius:radii.md,background:"#FFF",border:`1px solid ${W[200]}`,marginBottom:12}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-            <span style={{fontFamily:fb,fontSize:12,color:W[500],fontWeight:500}}>{dataStr}</span>
-            <span style={{fontFamily:fb,fontSize:11,fontWeight:500,padding:"3px 8px",borderRadius:radii.xs,background:W[200],color:W[800]}}>Ajuste</span>
-          </div>
-          <div style={{fontFamily:fb,fontSize:13,color:W[800],lineHeight:1.5}}>{copyEntradaCiclo(alt)}</div>
-          {alt.tipo==="aumento"&&alt.valorProporcional>0&&<div style={{fontFamily:fb,fontSize:12,color:B[600],marginTop:4}}>Cobrança extra neste mês: +{fmt(alt.valorProporcional)}</div>}
-          {alt.tipo==="reducao"&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:4}}>Vale a partir de 1º de {proximoMesPt()}.</div>}
-        </div>;
-      })}
-      {D.hist.map((h,i)=><div key={i} style={{padding:"12px 0",borderBottom:i<D.hist.length-1?`1px solid ${W[100]}`:"none"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontFamily:fb,fontSize:12,color:W[500]}}>{h.sem}</span><Badge label={h.st} type={h.st==="Entregue"?"success":"info"}/></div><div style={{fontFamily:fb,fontSize:13,color:W[700],marginTop:4}}>{h.itens}</div>{h.extra&&<div style={{fontFamily:fb,fontSize:12,color:B[500],marginTop:4}}>+ {h.extra.nome} · {h.extra.valor}</div>}</div>)}
-      <div style={{marginTop:12,padding:12,borderRadius:radii.md,background:W[50],border:`1px solid ${W[200]}`}}><div style={{fontFamily:fb,fontSize:12,color:W[500],marginBottom:4}}>Cobrança do mês</div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800]}}>{D.cob.mes} · {D.cob.valor}</span><Badge label="Pago"/></div></div>
-      <div style={{marginTop:8,padding:12,borderRadius:radii.md,background:B[50],border:`1px solid ${B[100]}`}}><div style={{fontFamily:fb,fontSize:12,color:B[700],marginBottom:4}}>Próxima fatura (abril)</div><div style={{fontFamily:fb,fontSize:13,color:B[800],lineHeight:1.6}}>Assinatura: {fmt(assinVal)}<br/>+ Extras: {fmt(confirmedTotal||22)}<br/>+ Frete: R$ 15,00<br/><span style={{fontWeight:600}}>= {fmt(assinVal+15+(confirmedTotal||22))} (estimado)</span></div></div>
-    </Card>
-    <Card style={{marginBottom:12}}><SL t="Cartão"/><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontFamily:fb,fontSize:14,fontWeight:500,color:W[800]}}>{D.cartao.band} ••••{D.cartao.n}</div><div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:4}}>Próxima: {D.cartao.prox}</div></div><ActionBtn loadingText="Validando…" successText="Atualizado ✓" onAction={()=>simulate()} style={{padding:"8px 16px",fontSize:12}}>Atualizar</ActionBtn></div></Card>
-    {/* Pausar ou Cancelar — separador visual e secao formal com link WhatsApp */}
-    <div style={{borderTop:`1px solid ${W[200]}`,marginTop:24,paddingTop:24,marginBottom:12}}>
-      <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",marginBottom:8}}>Pausar ou Cancelar</div>
-      <div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6,marginBottom:16}}>Se precisar pausar por um tempo ou cancelar sua Assinatura, fale com a gente pelo WhatsApp. Sem taxa, a qualquer momento.</div>
-      <a href="https://wa.me/5521999429843?text=Oi%2C%20gostaria%20de%20pausar%2Fcancelar%20minha%20Assinatura" target="_blank" rel="noopener noreferrer" className="press-scale" style={{display:"block",width:"100%",padding:"12px 16px",borderRadius:radii.md,border:`1.5px solid ${B[500]}`,background:"transparent",color:B[500],fontFamily:fb,fontSize:14,fontWeight:500,textAlign:"center",textDecoration:"none",transition:"all 150ms ease",minHeight:44,lineHeight:"20px"}} onMouseEnter={e=>e.currentTarget.style.background=B[50]} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>Falar com a Cora no WhatsApp</a>
+
+    {/* Header de perfil */}
+    <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+      <div style={{width:48,height:48,borderRadius:radii.full,background:B[50],display:"flex",alignItems:"center",justifyContent:"center",border:`1px solid ${B[200]}`,flexShrink:0}}><img src="/images/grafismo_coracao.svg" alt="" aria-hidden="true" style={{width:28,height:28}}/></div>
+      <div style={{minWidth:0}}>
+        <div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:W[800]}}>{subscription?.nome||"—"}</div>
+        <div style={{fontFamily:fb,fontSize:12,color:W[500],overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{subscription?.email||""}</div>
+      </div>
     </div>
-    <button className="bl" style={{width:"100%",padding:"12px 0",borderRadius:radii.md,background:"none",color:W[500],border:`1px solid ${W[300]}`,fontFamily:fb,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,minHeight:44}}><I d={ic.logout} size={16} color={W[500]}/>Sair da conta</button>
+
+    {/* Dados pessoais — read-only, sem chevrons */}
+    <Card style={{marginBottom:12}}><SL t="Dados pessoais"/>
+      {dados.map(([l,v],i)=><div key={l} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderBottom:i<dados.length-1?`1px solid ${W[100]}`:"none",gap:12}}>
+        <div style={{minWidth:0}}>
+          <div style={{fontFamily:fb,fontSize:11,color:W[500],marginBottom:2}}>{l}</div>
+          <div style={{fontFamily:fb,fontSize:13,color:W[700],...(l==="CPF"?{fontVariantNumeric:"tabular-nums"}:{})}}>{v}</div>
+        </div>
+        {l==="CPF"&&<button aria-label={cpfVisivel?"Ocultar CPF":"Mostrar CPF"} onClick={()=>setCpfVisivel(s=>!s)} style={{background:"none",border:"none",cursor:"pointer",padding:4,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><I d={cpfVisivel?ic.eyeOff:ic.eye} size={16} color={W[400]}/></button>}
+      </div>)}
+    </Card>
+
+    {/* Histórico de pedidos */}
+    <Card style={{marginBottom:12}}><SL t="Histórico de pedidos"/>
+      {carregandoHist
+        ?<div style={{fontFamily:fb,fontSize:13,color:W[400],padding:"12px 0"}}>Carregando…</div>
+        :entregasView.length===0
+          ?<p style={{fontFamily:fb,fontSize:13,color:W[600],lineHeight:1.6,margin:"4px 0"}}>Você ainda não tem entregas.<br/><strong style={{color:W[800],fontWeight:600}}>Sua primeira chega em {ddmm(proximaQuinta())}.</strong></p>
+          :<>
+            {entregasView.slice(0,3).map((o,i,arr)=>{
+              const linhas=composicaoLinhas(o.composition||subItens);
+              const extras=Array.isArray(o.extras)?o.extras:[];
+              const extraLabel=extras.length===1
+                ?`+ ${extras[0].nome} · ${fmt(Number(extras[0].preco_unit)*extras[0].qty)}`
+                :extras.length>1?`+ ${extras.length} extras · ${fmt(Number(o.total_extras||0))}`:null;
+              return<button key={o.id} type="button" onClick={()=>{/* Fase 2: abre ReciboModal(o) */}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",textAlign:"left",background:"none",border:"none",cursor:"pointer",padding:"12px 0",borderBottom:i<Math.min(arr.length,3)-1?`1px solid ${W[100]}`:"none"}}>
+                <span style={{fontFamily:fb,fontSize:12,color:W[500],fontVariantNumeric:"tabular-nums",flexShrink:0,minWidth:42}}>{ddmm(o.delivery_date)}</span>
+                <span style={{flex:1,minWidth:0}}>
+                  {linhas.map((t,j)=><span key={j} style={{display:"block",fontFamily:fb,fontSize:13,fontWeight:500,color:W[800],lineHeight:1.4}}>{t}</span>)}
+                  {extraLabel&&<span style={{display:"block",fontFamily:fb,fontSize:12,color:B[500],marginTop:2}}>{extraLabel}</span>}
+                </span>
+                <span style={{display:"inline-flex",alignItems:"center",gap:4,fontFamily:fb,fontSize:12,fontWeight:500,color:ST.success.t,flexShrink:0}}><I d={ic.check} size={12} color={ST.success.t} sw={3}/>Entregue</span>
+                <I d={ic.chev} size={16} color={W[400]}/>
+              </button>;
+            })}
+            {entregasView.length>3&&<div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
+              <button type="button" onClick={()=>{/* Fase futura: ver histórico completo */}} style={{background:"none",border:"none",cursor:"pointer",fontFamily:fd,fontSize:11,letterSpacing:"0.04em",textTransform:"uppercase",color:B[500],padding:4}}>Ver todos →</button>
+            </div>}
+          </>
+      }
+    </Card>
+
+    {/* Cobrança — decomposição da próxima fatura */}
+    <Card style={{marginBottom:12}}><SL t="Cobrança"/>
+      {!billing
+        ?(carregandoCobranca?<div style={{fontFamily:fb,fontSize:13,color:W[400],padding:"12px 0"}}>Carregando…</div>:null)
+        :<>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:10}}>
+            <span style={{fontFamily:fb,fontSize:12,color:W[500]}}>Próxima fatura</span>
+            <span style={{fontFamily:fb,fontSize:13,fontWeight:600,color:W[800],fontVariantNumeric:"tabular-nums"}}>{proximaFaturaDDMM()}</span>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+              <span style={{fontFamily:fb,fontSize:13,color:W[600]}}>Assinatura</span>
+              <span style={{fontFamily:fb,fontSize:13,color:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(assinaturaVal)}</span>
+            </div>
+            {extrasDoMes>0&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+              <span style={{fontFamily:fb,fontSize:13,color:W[600]}}>Extras</span>
+              <span style={{fontFamily:fb,fontSize:13,color:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(extrasDoMes)}</span>
+            </div>}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+              <span style={{fontFamily:fb,fontSize:13,color:W[600]}}>Frete</span>
+              <span style={{textAlign:"right"}}>
+                <span style={{fontFamily:fb,fontSize:13,fontWeight:freteGratis?600:400,color:freteGratis?ST.success.t:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(freteVal)}</span>
+                {freteGratis&&<span style={{display:"block",fontFamily:fb,fontSize:11,color:ST.success.t,marginTop:1}}>frete grátis · programa condomínio</span>}
+              </span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingTop:8,borderTop:`1px solid ${W[200]}`,marginTop:2}}>
+              <span style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[700]}}>Total</span>
+              <span style={{fontFamily:fd,fontSize:18,fontWeight:700,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(totalVal)}</span>
+            </div>
+          </div>
+          {mudancaPendente&&billing.next_billing_value!=null&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:10,lineHeight:1.5}}>Novo valor {fmt(Number(billing.next_billing_value))}/mês a partir de {ddmm(mudancaPendente)}.</div>}
+        </>
+      }
+    </Card>
+
+    {/* Pausar ou cancelar */}
+    <div style={{borderTop:`1px solid ${W[200]}`,marginTop:24,paddingTop:24,marginBottom:12}}>
+      <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",marginBottom:8}}>Pausar ou cancelar</div>
+      <div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6,marginBottom:16}}>Se precisar pausar por um tempo ou cancelar sua assinatura, fale com a gente pelo WhatsApp. Sem taxa, a qualquer momento.</div>
+      <a href={`https://wa.me/${HUGO_WHATSAPP}?text=${encodeURIComponent("Oi, gostaria de pausar ou cancelar minha assinatura.")}`} target="_blank" rel="noopener noreferrer" className="press-scale" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",padding:"12px 16px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:600,textDecoration:"none",minHeight:44,lineHeight:"20px"}}><I d={ic.msg} size={18} color="#FFF"/>Falar com a Cora no WhatsApp</a>
+    </div>
+
+    {/* Microcopy final — sem <strong> */}
+    <p style={{fontFamily:fb,fontSize:12,color:W[500],textAlign:"center",lineHeight:1.6,borderTop:`1px dashed ${W[300]}`,paddingTop:16,margin:"4px 4px 0"}}>Pra atualizar seus dados, mudar endereço, pausar ou cancelar, fale com a gente pelo WhatsApp.</p>
   </div>;
 };
 
@@ -1805,8 +1915,6 @@ export default function CoraPortal(){
   // Historico do ciclo atual: null quando assinaturaQtds === assinaturaBaseline.
   // Objeto unico (nao array) representando a diferenca liquida vs baseline.
   const [historicoCicloAtual,setHistoricoCicloAtual]=useState(null);
-  // Ciclos anteriores (fechados). Populado por simularViradaDeMes.
-  const [historicoCiclosPassados,setHistoricoCiclosPassados]=useState([]);
   // Primeiro acesso (boas-vindas). Vira false apos navegar pra outra aba.
   const [ehPrimeiroAcesso,setEhPrimeiroAcesso]=useState(true);
 
@@ -1855,12 +1963,9 @@ export default function CoraPortal(){
     setEhPrimeiroAcesso(true); // boas-vindas ao voltar do onboarding
   },[onboardingConfig]);
 
-  // Utilitario mock: simula virada de ciclo. Move historicoCicloAtual pra passados
-  // e atualiza baseline = estado atual. Nao exposto na UI no MVP; util para testes.
+  // Utilitario mock: simula virada de ciclo. Fecha o ciclo atual e atualiza
+  // baseline = estado atual. Nao exposto na UI no MVP; util para testes.
   const simularViradaDeMes=()=>{
-    if(historicoCicloAtual){
-      setHistoricoCiclosPassados(prev=>[historicoCicloAtual,...prev]);
-    }
     setHistoricoCicloAtual(null);
     setAssinaturaBaseline({...assinaturaQtds});
   };
@@ -1985,18 +2090,6 @@ export default function CoraPortal(){
     }
   };
 
-  // ─── Compat shim residual ────────────────────────────────────────────────
-  // Home e Cardapio foram migrados pra `currentExtras` direto (PR 2 Fase 2).
-  // O Perfil ainda lê extras no shape antigo (1-por-unidade) pra somar
-  // `confirmedTotal` no card "Próxima fatura". Sai quando o Perfil for refeito.
-  const confirmedLegacy = currentExtras.flatMap(e =>
-    Array.from({ length: e.qty }, () => ({
-      nome: e.nome,
-      preco: `R$ ${Number(e.preco_unit).toFixed(2).replace(".", ",")}`,
-      precoNum: Number(e.preco_unit),
-      kind: "extra",
-    }))
-  );
   const isOnboarding=scr==="onboarding";
 
   const handleOnboardingComplete=(payload)=>{
@@ -2090,7 +2183,7 @@ const params = new URLSearchParams(window.location.search);
         {scr==="home"&&<Home onNav={handleNav} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaAtual={cestaAtual} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} pendingPayment={pendingPayment} currentWeeklyOrder={currentWeeklyOrder} currentExtras={currentExtras} addExtraToCart={addExtraToCart} removeExtraFromCart={removeExtraFromCart} updateComposition={updateComposition} confirmCurrentOrder={confirmCurrentOrder}/>}
         {scr==="assinatura"&&<Assinatura hasPending={false} cutoff={cutoff} subscription={subscription} assinaturaQtds={assinaturaQtds} onAlterado={handleAlterarAssinatura}/>}
         {scr==="cardapio"&&<Cardapio addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment}/>}
-        {scr==="perfil"&&<Perfil confirmed={confirmedLegacy} hasPending={false} assinaturaQtds={assinaturaQtds} historicoCicloAtual={historicoCicloAtual} historicoCiclosPassados={historicoCiclosPassados}/>}
+        {scr==="perfil"&&<Perfil subscription={subscription} weeklyOrders={weeklyOrders} pendingPayment={pendingPayment}/>}
       </div>
     </main>
     {/* Footers fixos (OrderFooter/ConfirmedFooter) removidos no PR 2 Fase 1.
