@@ -11,6 +11,7 @@ import { haptic } from "./utils/haptic";
 import { loadSubscription, saveSubscription, clearSubscription, reconcileSubscription } from "./utils/subscription";
 import { getSettings, getSubscription, getWeeklyOrders, postWeeklyOrder, confirmWeeklyOrder, patchSubscription } from "./utils/api";
 import { HUGO_WHATSAPP } from "./config/contact";
+import { MENU_SEMANA } from "./config/menu";
 import { B, W, fd, fb, fmt, radii } from "./tokens";
 
 // `?reset=true`: limpa subscription persistida e remove o param da URL.
@@ -61,7 +62,6 @@ const D={
   entrega:{dia:formatarDataEntrega(proximaQuinta()),produto:"1 Pão Original (700g)"},
   assinatura:{itens:"1 Pão Original (700g) / semana",valorMensal:99,qtdPaes:1},
   ent:{dia:"Quintas",cond:"Ed. Boa Vista",bloco:"Bl. A / 502",frete:"R$ 15/mês"},
-  cartao:{band:"Visa",n:"6411",prox:"1º de abril"},
   cob:{mes:"Março",valor:"R$ 99,00",status:"Pago"},
   semanasRestantes:2,
   // `genero` controla a flexão do toast pós-adicionar ("adicionada"/"adicionado").
@@ -1471,14 +1471,13 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
       </div>
     </div>
 
-    {/* Cobrança read-only — sai na Frente C item 4 (Perfil) */}
+    {/* Cobrança read-only — sai na Frente C item 4 (Perfil). Linha "Cartão"
+        removida (pré-Evandro): sem fonte de dado real de cartão não exibimos
+        mock — mesma lógica do Perfil (PR #8). Alteração de cartão segue via
+        WhatsApp (microcopy abaixo). "Próxima fatura" usa dado real e fica. */}
     <div style={{background:W[100],borderRadius:radii.lg,padding:"12px 14px",marginBottom:10}}>
       <div style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"0 0 6px"}}>Cobrança</div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",fontFamily:fb,fontSize:13,color:W[700]}}>
-        <span style={{color:W[500],fontSize:12}}>Cartão</span>
-        <span style={{fontWeight:500,fontVariantNumeric:"tabular-nums"}}>{D.cartao.band} ●●●● {D.cartao.n}</span>
-      </div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderTop:`1px solid ${W[200]}`,fontFamily:fb,fontSize:13,color:W[700]}}>
         <span style={{color:W[500],fontSize:12}}>Próxima fatura</span>
         <span style={{fontWeight:500,fontVariantNumeric:"tabular-nums"}}>{fmt(valor_mensal)} · {proximaFaturaDdMm}</span>
       </div>
@@ -1514,7 +1513,7 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
       borderTop:`1px dashed ${W[300]}`,
       fontFamily:fb,fontSize:12,color:W[500],lineHeight:1.55,
     }}>
-      Pra mudar endereço, cartão ou pausar a assinatura, fale com a gente pelo{" "}
+      Pra mudar endereço, forma de pagamento ou pausar a assinatura, fale com a gente pelo{" "}
       <a href="https://wa.me/5521999429843?text=Oi%2C%20gostaria%20de%20alterar%20minha%20Assinatura" target="_blank" rel="noopener noreferrer" style={{color:B[500],textDecoration:"none",fontWeight:600,display:"inline-flex",alignItems:"center",gap:4}}>
         WhatsApp
         <I d={ic.chev} size={11} color={B[500]}/>
@@ -1620,19 +1619,25 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
 // Refactor Frente C item 3 (wireframe v2):
 //  - Linha micro-tipográfica "Extras entram na sua próxima fatura."
 //  - NovidadeCard Hero (D.extras[0]) antes da lista
-//  - Lista unificada de 6 produtos na ordem do wireframe (Original → Integral →
+//  - Lista de produtos na ordem curada do wireframe (Original → Integral →
 //    Focaccia → Multigrãos → Brioche → Ciabatta), buscando primeiro em D.pães,
-//    fallback em D.rotativos pra cobrir os 4 do catálogo rotativo
+//    fallback em D.rotativos pra cobrir o catálogo rotativo
 //  - ProductCard expande inline (sem modal sobreposto)
 //  - Click no botão "Adicionar à cesta" dispara POST + toast (stack até 3)
+//  - Solução tática pré-Evandro: a lista é filtrada por MENU_SEMANA
+//    (src/config/menu.js) pra mostrar só os pães da semana corrente
 const CARDAPIO_PRODUCT_ORDER=["original","integral","focaccia","multigraos","brioche","ciabatta"];
 const Cardapio=({addExtraToCart,cutoff,pendingPayment})=>{
   const{toasts,push:pushToast}=useToastStack();
   const lockedReason=pendingPayment?LOCK_REASON_PENDING:undefined;
 
-  // Lista unificada na ordem curada do wireframe. Resolve cada id contra
-  // D.pães e D.rotativos (Pão Original/Integral em pães; demais em rotativos).
+  // Lista da semana na ordem curada do wireframe. Filtra por MENU_SEMANA
+  // (hardcode tático — só os pães da semana corrente). A Focaccia também é o
+  // Novidade Hero, mas continua na lista de propósito: só o card menor expande
+  // com a descrição completa do produto. Resolve cada id contra D.pães e
+  // D.rotativos (Original/Integral em pães; demais em rotativos).
   const cardapioProducts=CARDAPIO_PRODUCT_ORDER
+    .filter(id=>MENU_SEMANA.includes(id))
     .map(id=>D.pães.find(p=>p.id===id)||D.rotativos.find(p=>p.id===id))
     .filter(Boolean);
 

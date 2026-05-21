@@ -472,7 +472,7 @@ export default function CoraOnboarding({onComplete, subscriptionsOpen=true, onGo
       }));
       setCepFallback(false);
       const coberto=estaCoberto(result.bairro, result.cidade);
-      const naWhitelist=estaNaWhitelist({cpf:data.cpf, email:data.email, cep:result.cep});
+      const naWhitelist=estaNaWhitelist({cpf:data.cpf, email:data.email, cep:result.cep, cidade:result.cidade, estado:result.estado});
       setCoverageStatus(coberto || naWhitelist ? "ok" : "blocked");
       // Limpa erro de CEP se havia
       setErrors(prev=>{const n={...prev}; delete n.cep; return n;});
