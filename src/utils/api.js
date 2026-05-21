@@ -9,7 +9,8 @@
  * - postCapacityWaitlist(payload): POST /api/capacity-waitlist
  * - postWeeklyOrder(payload):      POST /api/weekly-orders        (upsert do rascunho)
  * - confirmWeeklyOrder(id):        POST /api/weekly-orders/:id/confirmar
- * - getWeeklyOrders(subId):        GET  /api/weekly-orders?subscription_id=…
+ * - getWeeklyOrders(subId,opts):   GET  /api/weekly-orders?subscription_id=…
+ *                                  opts.history=true → entregas passadas (Perfil)
  *
  * Erros que nao sejam 404 (no GET) viram throw com mensagem descritiva.
  * O Error tem `.status` (HTTP) e `.code` (campo `error` do body) anexados
@@ -122,11 +123,11 @@ export async function confirmWeeklyOrder(id) {
   return res.json();
 }
 
-export async function getWeeklyOrders(subscriptionId) {
-  const res = await fetch(
-    `/api/weekly-orders?subscription_id=${encodeURIComponent(subscriptionId)}`,
-    { method: "GET" }
-  );
+export async function getWeeklyOrders(subscriptionId, { history = false } = {}) {
+  const qs =
+    `subscription_id=${encodeURIComponent(subscriptionId)}` +
+    (history ? "&history=true" : "");
+  const res = await fetch(`/api/weekly-orders?${qs}`, { method: "GET" });
   if (!res.ok) {
     return throwApiError(res, "Falha ao consultar cestas");
   }
