@@ -102,11 +102,30 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 - **Frente B — SPF/DKIM no domínio acora.com.br no Resend** (task ClickUp: [86e1a8q5t](https://app.clickup.com/t/86e1a8q5t), high). ✅ **Concluída em 09/05/2026.** Domínio verificado, EMAIL_FROM=portal@acora.com.br em Production (também em Preview a partir de 11/05).
 - **Frente C — Telas internas pós-feedback UX.** Doc fonte: `docs/CORA_Telas_Internas_Pendencias.md`. 5 sub-itens distribuídos pelas 4 telas internas, exige discussão prévia por item antes de virar briefing técnico.
 - **Item 1 (hierarquia da Home) ✅ Concluída em 13/05/2026.** Cesta passa de info passiva → carrinho persistido com confirmação explícita. Detalhes na sessão de 13/05 abaixo em "Sessões anteriores". Tasks de follow-up: [86e1c2bnj](https://app.clickup.com/t/86e1c2bnj) e [86e1c2yh3](https://app.clickup.com/t/86e1c2yh3).
-- **Item 3 (Cardápio + Home + Drawer) ✅ Concluída em 15/05/2026.** Refactor completo do fluxo de cesta. Detalhes na sessão de 15/05 acima em "Última sessão de trabalho". Tasks de follow-up: [86e1d14zr](https://app.clickup.com/t/86e1d14zr), [86e1d777a](https://app.clickup.com/t/86e1d777a).
-- Itens 2, 4, 5 ficam em fila pra sessões futuras.
+- **Item 3 (Cardápio + Home + Drawer) ✅ Concluída em 15/05/2026.** Refactor completo do fluxo de cesta. Detalhes na sessão de 15/05 abaixo em "Sessões anteriores". Tasks de follow-up: [86e1d14zr](https://app.clickup.com/t/86e1d14zr), [86e1d777a](https://app.clickup.com/t/86e1d777a).
+- **Item 4 (Perfil read-only + Modal de Recibo) ✅ Concluída em 21/05/2026.** Tela 100% read-only (5 blocos) + modal de recibo bottom-sheet (3 variantes). Merge squash `e912675` (PR #8). Detalhes na "Última sessão de trabalho". Task ClickUp: [86e1fu240](https://app.clickup.com/t/86e1fu240).
+- Itens 2, 5 ficam em fila pra sessões futuras.
 - **Frente D — Whitelist de cobertura** — pendência da Fase 8 (`admin.acora.com.br`): endpoint pra consultar `coverage_whitelist` no banco, refatorar `estaNaWhitelist` em `src/utils/coverage.js` pra async. Hoje retorna sempre false (lista local vazia em `WHITELIST_HARDCODED`).
 
 ## Última sessão de trabalho
+
+- **Data:** 2026-05-21 (quinta)
+- **Tema:** Frente C item 4 — Tela Perfil read-only + Modal de Recibo (+ follow-up de tipografia da Cobrança)
+- **Saída:**
+  - Branch `feat/perfil-readonly-modal-recibo` mergeada em main (squash `e912675`, PR #8). Follow-up `chore/cobranca-typography-status-doc` na sequência.
+  - **Tela Perfil reescrita 100% read-only**, 5 blocos: Header de perfil, Dados Pessoais (snapshot local, CPF com olho, sem chevrons), Histórico de pedidos, Cobrança (decomposição), Pausar/Cancelar (WhatsApp) + microcopy final sem `<strong>`. Saíram: chevrons, botão "Atualizar" do Cartão, "Sair da conta", "(estimado)" e o **bloco Cartão inteiro** (sem Asaas no MVP). Sino fora do topbar.
+  - **Histórico real** com 3 estados (A1 idle 3 entregas / A2 vazio cliente novo / A3 parcial); "Ver todos →" só quando `entregas.length > 3`.
+  - **Cobrança real**: decomposição Assinatura + Extras (soma dos confirmados do mês) + Frete = Total; "Próxima fatura · 01/MM" derivada client-side; cenário B2 (frete grátis condomínio) detectado por `valor_frete === 0` com microcopy success-text. Sub-linha "Pago" omitida (não afirmar pagamento). Tipografia dos rótulos alinhada ao `.bk-row .k` do v4 no follow-up (League Gothic caixa-alta 11px; Total em Montagu Slab 16px brand-500).
+  - **Modal de Recibo (bottom-sheet)** reusando o padrão do modal de confirmação da Assinatura v4 + `useModalA11y` (Esc, click fora, foco volta pra linha). 3 variantes: **C2** (sem extras) e **C3** (com extras) ativas; **C1** (futura) dormante porque o histórico é só passado. Seção "Assinatura" (gramatura como meta, sem preço) + "Extras" condicional (total da seção em brand-500 15px/700). Footnotes sem afirmar pagamento.
+  - **Endpoints (sem schema novo):** modo `?history=true` em `GET /api/weekly-orders` (entregas passadas confirmadas; "entregue" inferido por `delivery_date < hoje && status='confirmado'`); `valor_paes` + `valor_frete` expostos no `GET /api/subscriptions/[id]`. Wrapper `getWeeklyOrders(id, {history})`.
+  - **Smoke em Preview** (Hugo): A1×B1, A1×B2, A2×B1, A3×B1 + modal C2/C3 + a11y completa. Build validado no ambiente da Vercel (build local quebra porque o iCloud esvazia o binário nativo do rolldown — não é bug do código).
+  - **Limpeza:** removido código morto do Perfil antigo (copyEntradaCiclo, pluralizarPao, MESES_PT, totalOf, confirmedLegacy, simulate, historicoCiclosPassados, import plural) e um arquivo-lixo de iCloud (`api/weekly-orders/[id]/confirmar 2.js`).
+- **Pendências externas (cora-backoffice):** tabela `faturas` (status "Pago" + datas → reativa a sub-linha de cobrança paga e o footnote "paga em") e valor `'entregue'` no enum `weekly_order_status` (troca a inferência do `?history=true` por filtro direto). Documento de recomendação já existe.
+- **Housekeeping de repo:** task ClickUp [86e1ga7fz](https://app.clickup.com/t/86e1ga7fz) aberta — migrations untracked copiadas do backoffice (`0002_admin_users` etc.) colidindo com a numeração do portal + arquivos-lixo de iCloud com espaço no nome (ex.: `package-lock 4.json`).
+- **Pendência operacional:** check manual semanal de carrinhos abandonados toda terça 8h BRT continua.
+- **Próximo:** Frente C itens 2 e 5 (telas internas restantes) ou Frente D (whitelist de cobertura).
+
+## Sessões anteriores
 
 - **Data:** 2026-05-16 (sábado)
 - **Tema:** Refactor da seção SUA ASSINATURA do Drawer "Editar cesta" — QtyStepper + colapso + polish v2
@@ -139,9 +158,8 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
   - [86e1dwdqe — UX: Aplicar QtyStepper + swap atômico na edição da assinatura permanente (tela Assinatura)](https://app.clickup.com/t/86e1dwdqe) (priority high, antes do Alpha). Consistência entre edição semanal e permanente.
   - [86e1dwk1v — UX: Recibo detalhado pós-confirmação da cesta](https://app.clickup.com/t/86e1dwk1v) (priority high, antes do Alpha). Momento ideal pro recibo é justamente no click "Confirmar pedido" — caminhos a discutir: modal pós-confirmação, e-mail transacional, seção "Próxima entrega" em Perfil, ou combinação.
 - **Pendência operacional:** check manual semanal de carrinhos abandonados toda terça 8h BRT continua.
-- **Próximo:** sessão dedicada de copy dos produtos com Mariane (task 86e1d14zr); discussão estratégica do Drawer com Mariane antes do Alpha (task 86e1c2yh3); Frente C itens 2, 4, 5 (telas internas restantes) ou Frente D (whitelist de cobertura).
+- **Próximo:** sessão dedicada de copy dos produtos com Mariane (task 86e1d14zr); discussão estratégica do Drawer com Mariane antes do Alpha (task 86e1c2yh3); Frente C itens 2, 5 (telas internas restantes) ou Frente D (whitelist de cobertura).
 
-## Sessões anteriores
 - **Data:** 2026-05-15 (sexta)
 - **Tema:** Frente C item 3 — Refactor do Cardápio, Home e Drawer
 - **Saída:**
