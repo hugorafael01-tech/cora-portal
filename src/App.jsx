@@ -1286,7 +1286,7 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
         atual" já comunica o estado. */}
     <Card style={{marginBottom:12,...(editing?{background:"#FFF",border:`1.5px solid ${B[500]}`}:{})}}>
       {!editing&&<>
-        <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"0 0 10px"}}>Plano atual</div>
+        <div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"0 0 10px"}}>Plano atual</div>
         <div style={{fontFamily:fb,fontWeight:700,fontSize:20,color:W[800],lineHeight:1.2,margin:"0 0 4px"}}>
           {total_paes} {total_paes===1?"pão":"pães"} por semana
         </div>
@@ -1297,15 +1297,15 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
         {/* Breakdown Pães + Frete = Total */}
         <div style={{display:"flex",flexDirection:"column",gap:6,padding:"12px 0 0",borderTop:`1px solid ${W[200]}`,marginBottom:14}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-            <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Pães</span>
+            <span style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Pães</span>
             <span style={{fontFamily:fb,fontSize:14,color:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(valor_paes)}/mês</span>
           </div>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-            <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Frete</span>
+            <span style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Frete</span>
             <span style={{fontFamily:fb,fontSize:14,color:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(valor_frete)}/mês</span>
           </div>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingTop:8,borderTop:`1px solid ${W[200]}`,marginTop:2}}>
-            <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[700]}}>Total</span>
+            <span style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",color:W[700]}}>Total</span>
             <span style={{fontFamily:fb,fontWeight:700,fontSize:16,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(valor_mensal)}/mês</span>
           </div>
           {/* State derivado: alteração agendada — vale a partir da entrega de DD/MM (some quando a data de cobrança passa) */}
@@ -1766,7 +1766,7 @@ const ReciboModal=({order,subscriptionItens,onClose})=>{
       <div style={{padding:"10px 18px 0"}}>
         {/* Seção Assinatura — gramatura como meta, sem preço, sem total */}
         <div style={{padding:"10px 12px",background:W[50],border:`1px solid ${W[200]}`,borderRadius:radii.md}}>
-          <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],marginBottom:6}}>Assinatura</div>
+          <div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],marginBottom:6}}>Assinatura</div>
           <ul style={{margin:0,padding:0,listStyle:"none"}}>
             {assinaturaItens.map((l,i)=><li key={i} style={{padding:"6px 0",borderTop:i>0?`1px solid ${W[200]}`:"none",fontFamily:fb,fontSize:14,color:W[800]}}>{l.qty}× {l.nome}{l.peso&&<span style={meta}>{l.peso}</span>}</li>)}
           </ul>
@@ -1775,7 +1775,7 @@ const ReciboModal=({order,subscriptionItens,onClose})=>{
         {/* Seção Extras — condicional, com preço e total da seção */}
         {temExtras&&<div style={{padding:"10px 12px",background:W[50],border:`1px solid ${W[200]}`,borderRadius:radii.md,marginTop:10}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:6}}>
-            <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Extras</span>
+            <span style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Extras</span>
             <span style={{fontFamily:fb,fontSize:15,fontWeight:700,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(totalExtras)}</span>
           </div>
           <ul style={{margin:0,padding:0,listStyle:"none"}}>
@@ -1914,28 +1914,28 @@ const Perfil=({subscription,weeklyOrders=[],pendingPayment=false})=>{
         ?(carregandoCobranca?<div style={{fontFamily:fb,fontSize:13,color:W[400],padding:"12px 0"}}>Carregando…</div>:null)
         :<>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:10}}>
-            <span style={{fontFamily:fb,fontSize:12,color:W[500]}}>Próxima fatura</span>
+            <span style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Próxima fatura</span>
             <span style={{fontFamily:fb,fontSize:13,fontWeight:600,color:W[800],fontVariantNumeric:"tabular-nums"}}>{proximaFaturaDDMM()}</span>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-              <span style={{fontFamily:fb,fontSize:13,color:W[600]}}>Assinatura</span>
+              <span style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Assinatura</span>
               <span style={{fontFamily:fb,fontSize:13,color:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(assinaturaVal)}</span>
             </div>
             {extrasDoMes>0&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-              <span style={{fontFamily:fb,fontSize:13,color:W[600]}}>Extras</span>
+              <span style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Extras</span>
               <span style={{fontFamily:fb,fontSize:13,color:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(extrasDoMes)}</span>
             </div>}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-              <span style={{fontFamily:fb,fontSize:13,color:W[600]}}>Frete</span>
+              <span style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Frete</span>
               <span style={{textAlign:"right"}}>
                 <span style={{fontFamily:fb,fontSize:13,fontWeight:freteGratis?600:400,color:freteGratis?ST.success.t:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(freteVal)}</span>
                 {freteGratis&&<span style={{display:"block",fontFamily:fb,fontSize:11,color:ST.success.t,marginTop:1}}>frete grátis · programa condomínio</span>}
               </span>
             </div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingTop:8,borderTop:`1px solid ${W[200]}`,marginTop:2}}>
-              <span style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[700]}}>Total</span>
-              <span style={{fontFamily:fd,fontSize:18,fontWeight:700,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(totalVal)}</span>
+              <span style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",color:W[700]}}>Total</span>
+              <span style={{fontFamily:fb,fontSize:16,fontWeight:700,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(totalVal)}</span>
             </div>
           </div>
           {mudancaPendente&&billing.next_billing_value!=null&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:10,lineHeight:1.5}}>Novo valor {fmt(Number(billing.next_billing_value))}/mês a partir de {ddmm(mudancaPendente)}.</div>}
