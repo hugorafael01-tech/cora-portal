@@ -1131,6 +1131,37 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
   </div>;
 };
 
+// ─── MODAL CONVITE CONDOMÍNIO (bottom-sheet) ───
+// Mesma anatomia do ReciboModal / modal de confirmação da Assinatura (overlay +
+// sheet com grab handle + slideUp). useModalA11y: Esc fecha, click fora fecha,
+// foco volta pro link "Saiba como funciona" que abriu (onClose estável via
+// useCallback no Assinatura). Conteúdo estático — explica o frete grátis.
+const CondominioModal=({onClose})=>{
+  const dialogRef=useRef(null);
+  useModalA11y(dialogRef,true,onClose);
+  return<>
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Frete grátis em condomínio" style={{
+      position:"fixed",bottom:0,left:0,right:0,maxWidth:390,margin:"0 auto",
+      background:"#FFF",borderRadius:`${radii.xl} ${radii.xl} 0 0`,
+      zIndex:51,maxHeight:"90vh",overflowY:"auto",
+      boxShadow:"0 -4px 24px rgba(26,24,21,0.12)",animation:"slideUp 300ms ease",
+      padding:"0 0 18px",
+    }}>
+      <div aria-hidden="true" style={{width:36,height:4,background:W[300],borderRadius:radii.full,margin:"8px auto"}}/>
+      <h3 style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",margin:"6px 18px 4px",lineHeight:1.1}}>Frete grátis em condomínio</h3>
+      <div style={{padding:"0 18px",fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.55}}>
+        <p style={{margin:"0 0 10px"}}>Quando 5 ou mais assinantes moram no mesmo prédio, o frete fica grátis pra todos. É uma forma da Cora agradecer a vizinhança que escolhe trazer a padaria pra perto.</p>
+        <p style={{margin:0}}>Convide quem mora com você. O desconto aparece automaticamente assim que o quinto cadastro acontecer.</p>
+        <p style={{margin:"14px 0 0",fontSize:12,color:W[500],lineHeight:1.5}}>Hoje a verificação é manual. Em breve fica automática direto no portal.</p>
+      </div>
+      <div style={{padding:"14px 18px 0"}}>
+        <Btn ghost full onClick={onClose}>Fechar</Btn>
+      </div>
+    </div>
+  </>;
+};
+
 // ═══ ASSINATURA ═══
 // Frente C item 2 (Fase 2 + 3) — wireframe v4.
 // • Fase 2: tela idle reorganizada (Plano atual + Convite + read-only blocks + microcopy WA)
@@ -1150,6 +1181,10 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
   const abortControllerRef=useRef(null);
   const confirmDialogRef=useRef(null);
   useModalA11y(confirmDialogRef,confirmModal,()=>{if(!saving) setConfirmModal(false);});
+  // Modal "Saiba como funciona" do Card Convite Condomínio (conteúdo estático).
+  // onClose estável pra useModalA11y devolver o foco certinho pro link.
+  const[condoModal,setCondoModal]=useState(false);
+  const fecharCondo=useCallback(()=>setCondoModal(false),[]);
   // Cleanup: aborta POST pendente em unmount (evita setState após dismount).
   useEffect(()=>()=>{abortControllerRef.current?.abort();},[]);
   // Auto-dismiss dos toasts.
@@ -1457,7 +1492,7 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
     <div style={{background:B[50],border:`1px solid ${B[100]}`,borderRadius:radii.md,padding:18,marginBottom:12}}>
       <div style={{fontFamily:fb,fontWeight:700,color:B[700],fontSize:15,lineHeight:1.35,margin:"0 0 6px"}}>Mora num condomínio?</div>
       <div style={{fontFamily:fb,fontSize:13,color:B[800],lineHeight:1.5,margin:"0 0 12px"}}>Se 5 ou mais moradores assinam, o frete fica por nossa conta.</div>
-      <button type="button" style={{display:"inline-flex",alignItems:"center",gap:5,background:"transparent",border:"none",cursor:"pointer",padding:0,fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:B[500]}}>
+      <button type="button" onClick={()=>setCondoModal(true)} style={{display:"inline-flex",alignItems:"center",gap:5,background:"transparent",border:"none",cursor:"pointer",padding:0,fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:B[500]}}>
         Saiba como funciona
         <I d={ic.chev} size={11} color={B[500]}/>
       </button>
@@ -1612,6 +1647,9 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
         </div>
       </div>
     </>}
+
+    {/* Modal "Saiba como funciona" do Card Convite Condomínio */}
+    {condoModal&&<CondominioModal onClose={fecharCondo}/>}
   </div>;
 };
 
