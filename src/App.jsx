@@ -1766,7 +1766,7 @@ const ReciboModal=({order,subscriptionItens,onClose})=>{
       <div style={{padding:"10px 18px 0"}}>
         {/* Seção Assinatura — gramatura como meta, sem preço, sem total */}
         <div style={{padding:"10px 12px",background:W[50],border:`1px solid ${W[200]}`,borderRadius:radii.md}}>
-          <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],marginBottom:6}}>Assinatura</div>
+          <div style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],marginBottom:6}}>Assinatura</div>
           <ul style={{margin:0,padding:0,listStyle:"none"}}>
             {assinaturaItens.map((l,i)=><li key={i} style={{padding:"6px 0",borderTop:i>0?`1px solid ${W[200]}`:"none",fontFamily:fb,fontSize:14,color:W[800]}}>{l.qty}× {l.nome}{l.peso&&<span style={meta}>{l.peso}</span>}</li>)}
           </ul>
@@ -1775,7 +1775,7 @@ const ReciboModal=({order,subscriptionItens,onClose})=>{
         {/* Seção Extras — condicional, com preço e total da seção */}
         {temExtras&&<div style={{padding:"10px 12px",background:W[50],border:`1px solid ${W[200]}`,borderRadius:radii.md,marginTop:10}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:6}}>
-            <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Extras</span>
+            <span style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Extras</span>
             <span style={{fontFamily:fb,fontSize:15,fontWeight:700,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(totalExtras)}</span>
           </div>
           <ul style={{margin:0,padding:0,listStyle:"none"}}>
