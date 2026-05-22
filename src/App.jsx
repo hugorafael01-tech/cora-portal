@@ -586,6 +586,14 @@ const EditarCestaDrawer=({
     return parts.length===0?"Cesta vazia":parts.join(" + ");
   };
 
+  // Microcopy do CTA "Trocar pães" (Variante C, ponto 7): nomes derivados do
+  // plano em vez de hardcoded — "Você pode trocar Original por Integral, sem
+  // custo extra." Comunica que a troca 1:1 dentro do plano não tem custo.
+  const _tiposPlano=D.pães.map(p=>p.nome.replace(/^Pão\s+/,""));
+  const trocaHint=_tiposPlano.length>=2
+    ?`Você pode trocar ${_tiposPlano[0]} por ${_tiposPlano[1]}, sem custo extra.`
+    :"Você pode trocar os pães da semana, sem custo extra.";
+
   const sumAll=D.pães.reduce((s,p)=>s+(comp[p.id]||0),0);
   const hasAlteration=D.pães.some(p=>(comp[p.id]||0)!==(baselineNorm[p.id]||0));
   const isCompositionInvalid=sumAll!==totalPaes;
@@ -643,41 +651,51 @@ const EditarCestaDrawer=({
       <div style={{padding:"14px 18px",overflowY:"auto",flex:1}}>
 
         {/* Seção: Sua assinatura — colapsável. Default fechada; auto-expand quando alterado.
-            Pós-cutoff/confirmado: força fechada e remove affordance do chevron. */}
+            Pós-cutoff/confirmado: força fechada e remove o CTA de edição. */}
         <div style={{opacity:isLockedOrConfirmado?0.55:1}}>
-          <button
-            type="button"
-            onClick={()=>setIsAssinaturaOpen(prev=>!prev)}
-            disabled={isLockedOrConfirmado}
-            aria-expanded={effectiveOpen}
-            aria-controls="assinatura-body"
-            style={{
-              display:"flex",flexDirection:"column",alignItems:"stretch",gap:6,
-              width:"100%",padding:"4px 0",
-              background:"transparent",border:"none",
-              cursor:isLockedOrConfirmado?"default":"pointer",
-              textAlign:"left",
-            }}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,width:"100%"}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",flex:1,minWidth:0}}>
-                <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],lineHeight:1}}>Sua assinatura</span>
-                {hasAlteration&&<span style={{
-                  display:"inline-flex",alignItems:"center",gap:4,
-                  padding:"3px 8px",borderRadius:radii.xs,
-                  background:ST.warning.bg,border:`1px solid ${ST.warning.b}`,color:ST.warning.t,
-                  fontFamily:fd,fontSize:10,letterSpacing:"0.06em",textTransform:"uppercase",lineHeight:1,
-                }}>
-                  <span style={{fontSize:6}}>●</span>Trocado só esta semana
-                </span>}
-              </div>
-              {!isLockedOrConfirmado&&<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={W[500]} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{flexShrink:0,transform:effectiveOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 200ms ease"}}>
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>}
+          {/* Header estático (Variante C, ponto 7): label + composição compacta são
+              leitura inerte. O convite pra abrir virou CTA ghost explícito abaixo —
+              o chevron solto da v2 não comunicava clicabilidade (feedback tester). */}
+          <div style={{padding:"4px 0"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+              <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],lineHeight:1}}>Sua assinatura</span>
+              {hasAlteration&&<span style={{
+                display:"inline-flex",alignItems:"center",gap:4,
+                padding:"3px 8px",borderRadius:radii.xs,
+                background:ST.warning.bg,border:`1px solid ${ST.warning.b}`,color:ST.warning.t,
+                fontFamily:fd,fontSize:10,letterSpacing:"0.06em",textTransform:"uppercase",lineHeight:1,
+              }}>
+                <span style={{fontSize:6}}>●</span>Trocado só esta semana
+              </span>}
             </div>
-            <div style={{fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.3}}>
+            <div style={{fontFamily:fb,fontSize:14,color:W[700],lineHeight:1.3,marginTop:6}}>
               {renderCompactComposition()}
             </div>
-          </button>
+          </div>
+          {/* CTA ghost explícito + microcopy de benefício. Toggla a edição.
+              Suprimido pós-cutoff/confirmado (sem affordance quando bloqueado). */}
+          {!isLockedOrConfirmado&&<>
+            <button
+              type="button"
+              onClick={()=>setIsAssinaturaOpen(prev=>!prev)}
+              aria-expanded={effectiveOpen}
+              aria-controls="assinatura-body"
+              style={{
+                marginTop:10,width:"100%",minHeight:40,
+                display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,
+                padding:"10px 12px",borderRadius:radii.md,
+                background:"transparent",border:`1.5px solid ${B[500]}`,
+                fontFamily:fb,fontSize:13.5,fontWeight:500,color:B[500],cursor:"pointer",
+              }}>
+              <span>Trocar pães desta semana</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{flexShrink:0,transform:effectiveOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 200ms ease"}}>
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div style={{fontFamily:fb,fontSize:11,color:W[500],lineHeight:1.45,margin:"6px 2px 0"}}>
+              {trocaHint}
+            </div>
+          </>}
           <div id="assinatura-body" style={{
             maxHeight:effectiveOpen?1000:0,
             overflow:"hidden",
