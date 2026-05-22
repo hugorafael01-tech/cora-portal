@@ -685,14 +685,17 @@ const EditarCestaDrawer=({
                 background:"transparent",border:`1.5px solid ${B[500]}`,
                 fontFamily:fb,fontSize:13.5,fontWeight:500,color:B[500],cursor:"pointer",
               }}>
-              <span>Trocar pães desta semana</span>
+              {/* Label espelha o estado: aberto (cesta editada abre expandida) vira
+                  ação de fechar — antes ficava "Trocar pães…" com a seção já aberta. */}
+              <span>{effectiveOpen?"Fechar troca de pães":"Trocar pães desta semana"}</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{flexShrink:0,transform:effectiveOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 200ms ease"}}>
                 <polyline points="6 9 12 15 18 9"/>
               </svg>
             </button>
-            <div style={{fontFamily:fb,fontSize:11,color:W[500],lineHeight:1.45,margin:"6px 2px 0"}}>
+            {/* Hint é convite pra abrir — some quando já está aberto (a seção tem a própria microcopy). */}
+            {!effectiveOpen&&<div style={{fontFamily:fb,fontSize:11,color:W[500],lineHeight:1.45,margin:"6px 2px 0"}}>
               {trocaHint}
-            </div>
+            </div>}
           </>}
           <div id="assinatura-body" style={{
             maxHeight:effectiveOpen?1000:0,
