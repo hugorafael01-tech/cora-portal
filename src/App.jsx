@@ -79,12 +79,6 @@ const D={
     {id:"brioche",nome:"Brioche",peso:"256g",preco:"R$ 32,00",precoNum:32,genero:"m",img:IMG.brioche,desc:"Macio, levemente adocicado, com perfume cítrico. Cabe na lancheira da escola e no café da manhã sem pressa.",sobre:"Brioche que junta a tradição francesa com técnica italiana. Blend de farinha italiana com um toque de semola, ovos, manteiga, leite e mel. Açúcar aromatizado com raspas de laranja, limão siciliano e baunilha. Pão leve, com leve doçura e perfume cítrico. Fermentação lenta, 100% levain Cora. Exige atenção constante na temperatura pra não perder o ponto da massa. Hugo desenhou pensando nas crianças, num lanche fácil de mastigar pra escola. Adulto também não resiste.",ingredientes:"Blend de farinha italiana e semola, ovos, manteiga, levain Cora, leite, açúcar, mel, sal marinho, raspas de laranja, raspas de limão siciliano e baunilha",subCopy:"O lanche fácil."},
   ],
   semana:{pedidosAbertos:false,cardapioProxima:["Pão Original","Pão Integral","Focaccia Genovesa"],entregaProxima:formatarDataEntrega(proximaQuinta(new Date(Date.now()+7*24*60*60*1000)))},
-  hist:[
-    {sem:"Semana 28/03",itens:"1 Pão Original (700g)",st:"Pendente",extra:null},
-    {sem:"Semana 21/03",itens:"1 Pão Original (700g)",st:"Entregue",extra:null},
-    {sem:"Semana 14/03",itens:"1 Pão Original (700g)",st:"Entregue",extra:{nome:"Focaccia Genovesa",valor:"R$ 22,00"}},
-    {sem:"Semana 07/03",itens:"1 Pão Original (700g)",st:"Entregue",extra:null},
-  ],
 };
 
 const I=({d,size=20,color=W[400],sw=1.5})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
@@ -507,7 +501,10 @@ const EditarCestaDrawer=({
 
   const isLocked=cutoff||pendingPayment;
   const isConfirmado=currentWeeklyOrder?.status==="confirmado";
-  const isLockedOrConfirmado=isLocked||isConfirmado;
+  // Edição da composição fica liberada até o cutoff real (terça 12h), mesmo
+  // com o pedido já confirmado — confirmar não congela a cesta. Antes isso
+  // usava `isLocked||isConfirmado` e o CTA "Trocar pães" sumia pós-confirmação
+  // (só voltava ao adicionar um extra, que reabria o pedido como rascunho).
 
   // Animação de remoção idêntica à Home (reusa keyframe slideOutFade 450ms).
   const[removing,setRemoving]=useState(()=>new Set());
@@ -542,7 +539,7 @@ const EditarCestaDrawer=({
     triggerCompositionSave(nextComp);
     // Auto-expand quando composição diverge do baseline (briefing v2 §C).
     // Disparo unidirecional: só abre, nunca fecha — preserva expansão após user reverter.
-    if(!isLockedOrConfirmado){
+    if(!isLocked){
       const nextAlt=D.pães.some(p=>(nextComp[p.id]||0)!==(baselineNorm[p.id]||0));
       if(nextAlt) setIsAssinaturaOpen(true);
     }
@@ -551,7 +548,7 @@ const EditarCestaDrawer=({
   // Swap atômico: capacity full + clique em + na row B com row A > 0 → A--, B++.
   // Evita deadlock no plano 1 pão e dá UX de 1 clique pra trocar tipos.
   const handleIncrement=(id)=>{
-    if(isLockedOrConfirmado) return;
+    if(isLocked) return;
     const sumAll=D.pães.reduce((s,p)=>s+(comp[p.id]||0),0);
     if(sumAll<totalPaes){applyComp({...comp,[id]:(comp[id]||0)+1});return;}
     const otherId=D.pães.find(p=>p.id!==id)?.id;
@@ -561,7 +558,7 @@ const EditarCestaDrawer=({
   };
 
   const handleDecrement=(id)=>{
-    if(isLockedOrConfirmado) return;
+    if(isLocked) return;
     if((comp[id]||0)<=0) return;
     const sumAll=D.pães.reduce((s,p)=>s+(comp[p.id]||0),0);
     // Plano 1 pão: bloqueio do 0 total (cesta sem pão). Planos 2+: permite estado
@@ -571,7 +568,7 @@ const EditarCestaDrawer=({
   };
 
   const revertToBaseline=()=>{
-    if(isLockedOrConfirmado) return;
+    if(isLocked) return;
     applyComp({...baselineNorm});
   };
 
@@ -603,11 +600,11 @@ const EditarCestaDrawer=({
   // (cesta customizada persistida) e não está locked. Mudanças subsequentes
   // disparam via applyComp. Estado locked é tratado em render via effectiveOpen.
   const[isAssinaturaOpen,setIsAssinaturaOpen]=useState(()=>{
-    if(isLockedOrConfirmado) return false;
+    if(isLocked) return false;
     const initial=normalizeComp(cestaAtual||baselineQtds);
     return D.pães.some(p=>(initial[p.id]||0)!==(baselineNorm[p.id]||0));
   });
-  const effectiveOpen=!isLockedOrConfirmado&&isAssinaturaOpen;
+  const effectiveOpen=!isLocked&&isAssinaturaOpen;
 
   const totalExtras=currentExtras.reduce((s,e)=>s+e.qty*Number(e.preco_unit),0);
   const hasExtras=currentExtras.length>0;
@@ -651,8 +648,9 @@ const EditarCestaDrawer=({
       <div style={{padding:"14px 18px",overflowY:"auto",flex:1}}>
 
         {/* Seção: Sua assinatura — colapsável. Default fechada; auto-expand quando alterado.
-            Pós-cutoff/confirmado: força fechada e remove o CTA de edição. */}
-        <div style={{opacity:isLockedOrConfirmado?0.55:1}}>
+            Locked (pós-cutoff/pending): força fechada e remove o CTA de edição.
+            Confirmado pré-cutoff segue editável (confirmar não congela a cesta). */}
+        <div style={{opacity:isLocked?0.55:1}}>
           {/* Header estático (Variante C, ponto 7): label + composição compacta são
               leitura inerte. O convite pra abrir virou CTA ghost explícito abaixo —
               o chevron solto da v2 não comunicava clicabilidade (feedback tester). */}
@@ -673,8 +671,8 @@ const EditarCestaDrawer=({
             </div>
           </div>
           {/* CTA ghost explícito + microcopy de benefício. Toggla a edição.
-              Suprimido pós-cutoff/confirmado (sem affordance quando bloqueado). */}
-          {!isLockedOrConfirmado&&<>
+              Suprimido só quando locked (pós-cutoff/pending). */}
+          {!isLocked&&<>
             <button
               type="button"
               onClick={()=>setIsAssinaturaOpen(prev=>!prev)}
@@ -687,14 +685,17 @@ const EditarCestaDrawer=({
                 background:"transparent",border:`1.5px solid ${B[500]}`,
                 fontFamily:fb,fontSize:13.5,fontWeight:500,color:B[500],cursor:"pointer",
               }}>
-              <span>Trocar pães desta semana</span>
+              {/* Label espelha o estado: aberto (cesta editada abre expandida) vira
+                  ação de fechar — antes ficava "Trocar pães…" com a seção já aberta. */}
+              <span>{effectiveOpen?"Fechar troca de pães":"Trocar pães desta semana"}</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{flexShrink:0,transform:effectiveOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 200ms ease"}}>
                 <polyline points="6 9 12 15 18 9"/>
               </svg>
             </button>
-            <div style={{fontFamily:fb,fontSize:11,color:W[500],lineHeight:1.45,margin:"6px 2px 0"}}>
+            {/* Hint é convite pra abrir — some quando já está aberto (a seção tem a própria microcopy). */}
+            {!effectiveOpen&&<div style={{fontFamily:fb,fontSize:11,color:W[500],lineHeight:1.45,margin:"6px 2px 0"}}>
               {trocaHint}
-            </div>
+            </div>}
           </>}
           <div id="assinatura-body" style={{
             maxHeight:effectiveOpen?1000:0,
@@ -709,8 +710,8 @@ const EditarCestaDrawer=({
                 const qty=comp[p.id]||0;
                 const otherId=D.pães.find(x=>x.id!==p.id)?.id;
                 const isZero=qty===0;
-                const decDis=isLockedOrConfirmado||qty===0||(totalPaes===1&&sumAll<=1);
-                const incDis=isLockedOrConfirmado||(sumAll>=totalPaes&&(comp[otherId]||0)===0);
+                const decDis=isLocked||qty===0||(totalPaes===1&&sumAll<=1);
+                const incDis=isLocked||(sumAll>=totalPaes&&(comp[otherId]||0)===0);
                 return <div key={p.id} style={{
                   display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
                   padding:"12px 0",
@@ -718,7 +719,7 @@ const EditarCestaDrawer=({
                 }}>
                   {/* opacity SÓ no name container: stepper íntegro permite que o `+` brand
                       em row esmaecida fique visualmente claro (signal do swap atômico). */}
-                  <div style={{flex:1,minWidth:0,fontFamily:fb,fontSize:14,fontWeight:500,color:isZero?W[500]:W[800],opacity:isLockedOrConfirmado?1:(isZero?0.55:1)}}>
+                  <div style={{flex:1,minWidth:0,fontFamily:fb,fontSize:14,fontWeight:500,color:isZero?W[500]:W[800],opacity:isLocked?1:(isZero?0.55:1)}}>
                     {p.nome} <span style={{fontWeight:400,fontSize:12,color:W[500]}}>· {p.peso}</span>
                   </div>
                   <QtyStepper
@@ -751,7 +752,7 @@ const EditarCestaDrawer=({
             }}>
               Sua cesta é composta por {totalPaes} {totalPaes===1?"pão":"pães"}, {faltam>1?`faltam ${faltam}`:`falta ${faltam}`}.
             </div>}
-            {hasAlteration&&!isLockedOrConfirmado&&<button onClick={revertToBaseline} style={{
+            {hasAlteration&&!isLocked&&<button onClick={revertToBaseline} style={{
               display:"inline-flex",alignItems:"center",gap:6,
               marginTop:10,padding:"6px 0",
               background:"transparent",border:"none",cursor:"pointer",
@@ -764,7 +765,7 @@ const EditarCestaDrawer=({
               </svg>
               Voltar pro padrão ({renderBaselineComposition()})
             </button>}
-            {hasAlteration&&!isLockedOrConfirmado&&<div style={{
+            {hasAlteration&&!isLocked&&<div style={{
               display:"flex",alignItems:"flex-start",gap:6,
               marginTop:10,padding:"8px 0",
               fontFamily:fb,fontSize:12,color:W[500],lineHeight:1.4,
@@ -1536,29 +1537,9 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
       </div>
     </div>
 
-    {/* Histórico read-only — sai na Frente C item 4 (Perfil) */}
-    <div style={{background:W[100],borderRadius:radii.lg,padding:"12px 14px",marginBottom:10}}>
-      <div style={{fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],margin:"0 0 6px"}}>Histórico</div>
-      {D.hist.slice(0,3).map((h,i)=>{
-        const dataDdMm=h.sem.replace(/^Semana\s+/,"");
-        const isEntregue=h.st==="Entregue";
-        return <div key={i} style={{
-          display:"flex",justifyContent:"space-between",alignItems:"center",
-          padding:"6px 0",
-          borderTop:i>0?`1px solid ${W[200]}`:"none",
-          fontFamily:fb,fontSize:13,color:W[700],
-        }}>
-          <span style={{color:W[500],fontSize:12}}>{dataDdMm} · {total_paes} {total_paes===1?"pão":"pães"}</span>
-          <span style={{
-            fontFamily:fd,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",
-            padding:"2px 6px",borderRadius:radii.xs,
-            background:isEntregue?ST.success.bg:ST.info.bg,
-            color:isEntregue?ST.success.t:ST.info.t,
-            border:`1px solid ${isEntregue?ST.success.b:ST.info.b}`,
-          }}>{h.st}</span>
-        </div>;
-      })}
-    </div>
+    {/* Histórico de pedidos vive no Perfil (Frente C item 4) com dado real
+        (entregas API). Bloco mockado (D.hist) removido daqui — evitava mostrar
+        histórico fake na Assinatura quando o real está zerado. */}
 
     {/* Microcopy WhatsApp pra alterações ainda não suportadas no app */}
     <div style={{
