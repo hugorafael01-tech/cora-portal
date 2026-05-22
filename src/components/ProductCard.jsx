@@ -5,7 +5,10 @@ const QtyBtn=({qty,onAdd,onRemove,name,addDisabled=false})=>{
   const removeDisabled=qty<=0;
   return (
     <div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-      <button aria-label={`Remover ${name}`} onClick={onRemove} disabled={removeDisabled} style={{width:32,height:32,borderRadius:radii.md,border:`1px solid ${W[300]}`,background:"none",cursor:removeDisabled?"not-allowed":"pointer",fontSize:18,color:removeDisabled?W[300]:W[600],display:"flex",alignItems:"center",justifyContent:"center",opacity:removeDisabled?0.35:1}}>−</button>
+      {/* "−" habilitado: glyph W[700] + borda W[400] pra ler como claramente clicável
+          (feedback: parecia disabled). Disabled real (qty<=0): W[300]+borda W[200]+opacity
+          0.35, nitidamente mais apagado. "+" segue o mais "ativo" (azul B[500] com fundo). */}
+      <button aria-label={`Remover ${name}`} onClick={onRemove} disabled={removeDisabled} style={{width:32,height:32,borderRadius:radii.md,border:`1px solid ${removeDisabled?W[200]:W[400]}`,background:"none",cursor:removeDisabled?"not-allowed":"pointer",fontSize:18,color:removeDisabled?W[300]:W[700],display:"flex",alignItems:"center",justifyContent:"center",opacity:removeDisabled?0.35:1}}>−</button>
       <span style={{fontFamily:fb,fontSize:16,fontWeight:600,color:B[500],width:24,textAlign:"center"}}>{qty}</span>
       <button aria-label={`Adicionar ${name}`} onClick={onAdd} disabled={addDisabled} style={{width:32,height:32,borderRadius:radii.md,border:`1px solid ${addDisabled?W[200]:B[500]}`,background:addDisabled?"transparent":B[50],cursor:addDisabled?"not-allowed":"pointer",fontSize:18,color:addDisabled?W[300]:B[500],display:"flex",alignItems:"center",justifyContent:"center",opacity:addDisabled?0.35:1}}>+</button>
     </div>

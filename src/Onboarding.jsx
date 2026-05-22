@@ -106,8 +106,10 @@ const Splash=({onStart, gateClosed=false, onGoToWaitlist})=>(
 );
 
 /* ═══ STEP 1 . Sobre voce + Entrega ═══ */
+// marginBottom alinhado ao ritmo do form (campos espaçados 16px). 12px deixava
+// o título grudado no primeiro input (feedback de tester).
 const SectionTitle=({children})=>(
-  <div style={{fontFamily:fd,fontSize:14,textTransform:"uppercase",color:B[500],letterSpacing:"0.04em",marginBottom:12,marginTop:4}}>{children}</div>
+  <div style={{fontFamily:fd,fontSize:14,textTransform:"uppercase",color:B[500],letterSpacing:"0.04em",marginBottom:16,marginTop:4}}>{children}</div>
 );
 
 // Input controlado com mascara/sanitize externo + onBlur pra validacao inline.
@@ -157,7 +159,7 @@ const Step1=({
         <div style={{fontFamily:fb,fontSize:14,color:W[500],marginTop:6,lineHeight:1.5}}>Pra começar, conta pra gente quem é você e onde quer receber.</div>
       </div>
 
-      <SectionTitle>Sobre você</SectionTitle>
+      <SectionTitle>Seus dados</SectionTitle>
 
       <Field label="Como quer ser chamado(a)?" error={errors.nome}>
         <FormInput placeholder="ex: Beatriz" value={data.nome}
@@ -591,7 +593,7 @@ export default function CoraOnboarding({onComplete, subscriptionsOpen=true, onGo
   const stepLabel=["SOBRE VOCÊ","SUA ASSINATURA"];
 
   const shell=(content)=>(
-    <div style={{maxWidth:390,margin:"0 auto",minHeight:"100vh",background:W[50],display:"flex",flexDirection:"column"}}>
+    <div style={{maxWidth:390,margin:"0 auto",height:"100dvh",background:W[50],display:"flex",flexDirection:"column"}}>
       {content}
       <style>{`
         *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
@@ -651,7 +653,7 @@ export default function CoraOnboarding({onComplete, subscriptionsOpen=true, onGo
       </div>
       <Progress step={step}/>
     </div>
-    <div ref={scrollRef} style={{flex:1,overflowY:"auto",padding:16}}>
+    <div ref={scrollRef} style={{flex:1,minHeight:0,overflowY:"auto",padding:16}}>
       {step===1&&<Step1
         data={data}
         updateField={updateField}
