@@ -559,23 +559,30 @@ const FormScreen = ({ onSubmit }) => {
         padding: "0 0 40px",
       }}
     >
-      {/* Header — warm-50 contínuo com o body, borda sutil */}
-      <div
+      {/* Header — barra warm-50 full-width; conteudo interno alinhado ao max-width do body */}
+      <header
         style={{
-          padding: desktop ? "18px 40px" : "14px 24px",
-          borderBottom: `1px solid ${W[200]}`,
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
           background: W[50],
+          borderBottom: `1px solid ${W[200]}`,
         }}
       >
-        <img
-          src="/images/cora_logo_com_tag.svg"
-          alt="Cora"
-          style={{ height: desktop ? 36 : 30, width: "auto" }}
-        />
-      </div>
+        <div
+          style={{
+            maxWidth: desktop ? 720 : 460,
+            margin: "0 auto",
+            padding: desktop ? "18px 40px" : "14px 24px",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <img
+            src="/images/cora_logo_com_tag.svg"
+            alt="Cora"
+            style={{ height: desktop ? 36 : 30, width: "auto" }}
+          />
+        </div>
+      </header>
 
       <div
         style={{
