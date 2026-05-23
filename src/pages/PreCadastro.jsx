@@ -294,44 +294,22 @@ const PaoCard = ({ p, selected, disabled, desktop, onToggle }) => {
         )}
       </div>
 
-      {/* Info */}
+      {/* Info — peso fica no array PRODUCTS pra uso em outras telas, mas nao renderiza aqui */}
       <div style={{ padding: "16px 18px 18px" }}>
-        <div
+        <h3
           style={{
-            display: "flex",
-            alignItems: "baseline",
-            justifyContent: "space-between",
-            gap: 12,
-            marginBottom: 8,
+            fontFamily: "'Montagu Slab', Georgia, serif",
+            fontWeight: 600,
+            fontSize: desktop ? 20 : 18,
+            lineHeight: 1.2,
+            color: selected ? B[700] : W[800],
+            textTransform: "none",
+            letterSpacing: 0,
+            margin: "0 0 8px",
           }}
         >
-          <h3
-            style={{
-              fontFamily: "'Montagu Slab', Georgia, serif",
-              fontWeight: 600,
-              fontSize: desktop ? 20 : 18,
-              lineHeight: 1.2,
-              color: selected ? B[700] : W[800],
-              textTransform: "none",
-              letterSpacing: 0,
-              margin: 0,
-            }}
-          >
-            {p.nome}
-          </h3>
-          <span
-            style={{
-              fontFamily: "'Montagu Slab', Georgia, serif",
-              fontSize: 12,
-              color: W[500],
-              fontWeight: 500,
-              whiteSpace: "nowrap",
-              letterSpacing: "0.02em",
-            }}
-          >
-            {p.peso}
-          </span>
-        </div>
+          {p.nome}
+        </h3>
         <p
           style={{
             fontFamily: "'Montagu Slab', Georgia, serif",
@@ -454,6 +432,7 @@ const FormScreen = ({ onSubmit }) => {
   const [submitError, setSubmitError] = useState("");
   const [website, setWebsite] = useState("");
   const formErrorRef = useRef(null);
+  const formTopRef = useRef(null);
 
   const MAX_SELECTION = 2;
 
@@ -483,10 +462,9 @@ const FormScreen = ({ onSubmit }) => {
     if (formErrorRef.current) formErrorRef.current.style.display = 'none';
     if (!validate()) {
       setTimeout(() => {
-        if (formErrorRef.current) {
-          formErrorRef.current.style.display = 'block';
-          formErrorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        if (formErrorRef.current) formErrorRef.current.style.display = 'block';
+        // scroll smooth pro topo do form pra usuario ver os campos com erro (restricao secao 8)
+        if (formTopRef.current) formTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
       return;
     }
@@ -574,6 +552,7 @@ const FormScreen = ({ onSubmit }) => {
 
   return (
     <div
+      ref={formTopRef}
       style={{
         minHeight: "100dvh",
         background: W[50],
@@ -609,7 +588,7 @@ const FormScreen = ({ onSubmit }) => {
         <h1
           style={{
             fontFamily: "'League Gothic', Impact, sans-serif",
-            fontSize: desktop ? 56 : 32,
+            fontSize: desktop ? 44 : 32,
             fontWeight: 400,
             color: B[500],
             textTransform: "uppercase",
@@ -891,6 +870,7 @@ const FormScreen = ({ onSubmit }) => {
               display: "block",
               width: "100%",
               maxWidth: desktop ? 320 : "100%",
+              margin: desktop ? "0 auto" : 0,
               height: desktop ? 60 : 54,
               borderRadius: radii.md,
               border: "none",
