@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { B, W, radii } from "../tokens";
 import { haptic } from "../utils/haptic";
 
@@ -14,44 +14,44 @@ const PRODUCTS = [
   {
     id: "original",
     nome: "Pão Original",
-    peso: "580g",
+    peso: "700g",
     img: "/images/_original.webp",
-    desc: "Mix de farinhas italiana e brasileira, água, sal e o levain da Cora. Fermentação lenta, crosta firme e miolo aberto.",
+    desc: "Aquele pão que começou a Cora. Versátil, vai do café ao jantar. Blend de farinha italiana com toque de integral brasileira e 24 horas de fermentação.",
   },
   {
     id: "integral",
     nome: "Pão Integral",
-    peso: "614g",
+    peso: "700g",
     img: "/images/_integral.webp",
-    desc: "100% integral, com um blend de farinhas brasileira e italiana que traz mais complexidade ao sabor. Azeite na massa, fermentação lenta e miolo que fica macio por dias.",
-  },
-  {
-    id: "multigraos",
-    nome: "Multigrãos",
-    peso: "631g",
-    img: "/images/_multigraos.webp",
-    desc: "Sete sementes torradas e escaldadas misturadas a farinha italiana e ao levain da Cora. Massa de alta hidratação, cheia de textura e sabor em cada fatia.",
+    desc: "Integral leve e macio, daqueles que dá pra comer todo dia. Farinha integral da Fazenda Vargem, azeite extra virgem que traz maciez, gergelim na crosta.",
   },
   {
     id: "focaccia",
     nome: "Focaccia Genovesa",
-    peso: "400g",
+    peso: "430g",
     img: "/images/_focaccia.webp",
-    desc: "Massa de fermentação lenta com azeite generoso e o levain da Cora, coberta com cebola roxa, alecrim fresco e sal grosso.",
+    desc: "Receita da Ligúria, no norte da Itália. Miolo macio, crosta dourada, azeite extra virgem generoso. Cobertura de alecrim, sal grosso e cebola roxa.",
+  },
+  {
+    id: "multigraos",
+    nome: "Multigrãos",
+    peso: "615g",
+    img: "/images/_multigraos.webp",
+    desc: "Seis grãos torrados e escaldados na massa, crosta de farelo de aveia. Hidratação alta, miolo úmido, sabor que ganha em cada mordida.",
+  },
+  {
+    id: "ciabatta",
+    nome: "Ciabatta",
+    peso: "533g",
+    img: "/images/_ciabatta.webp",
+    desc: "Hidratação alta deixa o miolo cheio de alvéolos. Casca fina e crocante, formato achatado de chinelo, que é o que ciabatta significa em italiano. O pão do sanduíche.",
   },
   {
     id: "brioche",
     nome: "Brioche",
-    peso: "400g",
+    peso: "256g",
     img: "/images/_brioche.webp",
-    desc: "Farinha italiana, manteiga, ovos e mel encontram o levain da Cora numa massa amanteigada de fermentação natural, com miolo dourado que desfia.",
-  },
-  {
-    id: "ciabatta",
-    nome: "Ciabatta Rústica",
-    peso: "400g",
-    img: "/images/_ciabatta.webp",
-    desc: "Massa leve de alta hidratação com farinha italiana, azeite e o levain da Cora. Casca fina e miolo aerado, feito pra abrir no meio e virar sanduíche.",
+    desc: "Massa amanteigada com ovos, mel e raspas de laranja, limão siciliano e baunilha. Macio, levemente adocicado, com perfume cítrico. Pro lanche da escola e o café da manhã sem pressa.",
   },
 ];
 
@@ -90,6 +90,263 @@ const formatWhatsApp = (value) => {
   if (digits.length <= 2) return digits;
   if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
+/* ── Breakpoint desktop (>=768px) ── */
+const useIsDesktop = () => {
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== "undefined" &&
+      window.matchMedia("(min-width: 768px)").matches
+  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 768px)");
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return isDesktop;
+};
+
+/* ── Checkbox custom (card de produto + optin) ── */
+const Checkbox = ({ checked, size = 22 }) => (
+  <span
+    style={{
+      width: size,
+      height: size,
+      borderRadius: radii.xs,
+      border: `1.5px solid ${checked ? B[500] : W[300]}`,
+      background: checked ? B[500] : "#FFF",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+      boxSizing: "border-box",
+      transition: "all 150ms",
+    }}
+  >
+    {checked && (
+      <svg
+        width={Math.round(size * 0.55)}
+        height={Math.round(size * 0.55)}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#FFF"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M20 6L9 17l-5-5" />
+      </svg>
+    )}
+  </span>
+);
+
+/* ── Counter chip (contador "X de 2", verde ao atingir o limite) ── */
+const CounterChip = ({ n, max = 2 }) => {
+  const full = n >= max;
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        background: full ? "#D1FAE5" : B[50],
+        color: full ? "#065F46" : B[700],
+        fontFamily: "'Montagu Slab', Georgia, serif",
+        fontSize: 12.5,
+        fontWeight: 600,
+        padding: "5px 10px",
+        borderRadius: radii.xs,
+        lineHeight: 1,
+        whiteSpace: "nowrap",
+      }}
+    >
+      <span
+        style={{
+          fontSize: 10,
+          lineHeight: 0,
+          color: full ? "#047857" : B[500],
+        }}
+        aria-hidden="true"
+      >
+        ●
+      </span>
+      {n} de {max}
+    </span>
+  );
+};
+
+/* ── Seção (eyebrow League Gothic + linha divisória) ── */
+const Section = ({ eyebrow, desktop, top, children }) => (
+  <section style={{ marginTop: top }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        margin: "0 0 14px",
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "'League Gothic', Impact, sans-serif",
+          textTransform: "uppercase",
+          letterSpacing: "0.06em",
+          fontSize: desktop ? 13 : 12,
+          color: B[500],
+          lineHeight: 1,
+          fontWeight: 400,
+        }}
+      >
+        {eyebrow}
+      </span>
+      <span
+        style={{ flex: 1, height: 1, background: W[200] }}
+        aria-hidden="true"
+      />
+    </div>
+    {children}
+  </section>
+);
+
+/* ── Card de produto (Variante A — foto 16:10 em cima, info embaixo) ── */
+const PaoCard = ({ p, selected, disabled, desktop, onToggle }) => {
+  const handleKey = (e) => {
+    if (disabled) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onToggle(p.id);
+    }
+  };
+  return (
+    <article
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-pressed={selected}
+      aria-disabled={disabled}
+      aria-label={p.nome}
+      onClick={() => !disabled && onToggle(p.id)}
+      onKeyDown={handleKey}
+      onMouseOver={(e) => {
+        if (!disabled && !selected) e.currentTarget.style.borderColor = W[300];
+      }}
+      onMouseOut={(e) => {
+        if (!disabled && !selected) e.currentTarget.style.borderColor = W[200];
+      }}
+      style={{
+        background: selected ? B[50] : "#FFF",
+        border: `1.5px solid ${selected ? B[500] : W[200]}`,
+        borderRadius: radii.lg,
+        overflow: "hidden",
+        cursor: disabled ? "default" : "pointer",
+        opacity: disabled ? 0.55 : 1,
+        transition: "border-color 150ms, background 150ms",
+        position: "relative",
+      }}
+    >
+      {/* Foto 16:10 com checkbox sobreposto */}
+      <div
+        style={{
+          width: "100%",
+          aspectRatio: "16 / 10",
+          background: W[100],
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <img
+          src={p.img}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            top: 12,
+            right: 12,
+            background: selected ? "transparent" : "rgba(255,255,255,0.95)",
+            borderRadius: radii.xs,
+            padding: selected ? 0 : 4,
+            display: "flex",
+          }}
+          aria-hidden="true"
+        >
+          <Checkbox checked={selected} size={28} />
+        </div>
+        {disabled && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(250,250,248,0.55)",
+            }}
+            aria-hidden="true"
+          />
+        )}
+      </div>
+
+      {/* Info */}
+      <div style={{ padding: "16px 18px 18px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: 12,
+            marginBottom: 8,
+          }}
+        >
+          <h3
+            style={{
+              fontFamily: "'Montagu Slab', Georgia, serif",
+              fontWeight: 600,
+              fontSize: desktop ? 20 : 18,
+              lineHeight: 1.2,
+              color: selected ? B[700] : W[800],
+              textTransform: "none",
+              letterSpacing: 0,
+              margin: 0,
+            }}
+          >
+            {p.nome}
+          </h3>
+          <span
+            style={{
+              fontFamily: "'Montagu Slab', Georgia, serif",
+              fontSize: 12,
+              color: W[500],
+              fontWeight: 500,
+              whiteSpace: "nowrap",
+              letterSpacing: "0.02em",
+            }}
+          >
+            {p.peso}
+          </span>
+        </div>
+        <p
+          style={{
+            fontFamily: "'Montagu Slab', Georgia, serif",
+            fontSize: desktop ? 15 : 14,
+            lineHeight: 1.55,
+            color: W[600],
+            margin: 0,
+            textWrap: "pretty",
+          }}
+        >
+          {p.desc}
+        </p>
+      </div>
+    </article>
+  );
 };
 
 /* ══════════════════════════════════════════
@@ -184,6 +441,7 @@ const SplashScreen = ({ onNext }) => (
    TELA 2 — FORMULÁRIO
    ══════════════════════════════════════════ */
 const FormScreen = ({ onSubmit }) => {
+  const desktop = useIsDesktop();
   const [nome, setNome] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [selectedPaes, setSelectedPaes] = useState([]);
@@ -209,8 +467,8 @@ const FormScreen = ({ onSubmit }) => {
 
   const validate = () => {
     const e = {};
-    if (!nome.trim() || nome.trim().split(/\s+/).length < 2)
-      e.nome = "Precisamos do nome e sobrenome.";
+    if (nome.trim().length < 2)
+      e.nome = "Conta pra gente como prefere ser chamado(a).";
     const digits = whatsapp.replace(/\D/g, "");
     if (digits.length < 10 || digits.length > 11)
       e.whatsapp = "Confira o número com DDD.";
@@ -272,13 +530,13 @@ const FormScreen = ({ onSubmit }) => {
 
   const inputStyle = (field) => ({
     width: "100%",
-    height: 48,
+    height: desktop ? 56 : 52,
     borderRadius: radii.md,
-    border: `1.5px solid ${errors[field] ? "#EF4444" : W[300]}`,
+    border: `1.5px solid ${errors[field] ? "#DC2626" : W[300]}`,
     padding: "0 16px",
-    fontSize: 16,
+    fontSize: desktop ? 17 : 16,
     fontFamily: "'Montagu Slab', Georgia, serif",
-    color: W[700],
+    color: W[800],
     background: "#FFF",
     outline: "none",
     boxSizing: "border-box",
@@ -286,12 +544,13 @@ const FormScreen = ({ onSubmit }) => {
   });
 
   const labelStyle = {
-    fontSize: 12,
-    fontWeight: 500,
-    color: W[600],
-    fontFamily: "'Montagu Slab', Georgia, serif",
-    marginBottom: 6,
     display: "block",
+    fontSize: 13,
+    fontWeight: 500,
+    color: W[700],
+    fontFamily: "'Montagu Slab', Georgia, serif",
+    margin: "0 0 6px",
+    lineHeight: 1.3,
   };
 
   const errorStyle = {
@@ -301,6 +560,18 @@ const FormScreen = ({ onSubmit }) => {
     marginTop: 4,
   };
 
+  const clearFormError = () => {
+    if (formErrorRef.current) formErrorRef.current.style.display = 'none';
+  };
+
+  const twoCol = {
+    display: "grid",
+    gridTemplateColumns: desktop ? "1fr 1fr" : "1fr",
+    gap: desktop ? 20 : 16,
+  };
+
+  const secTop = desktop ? 48 : 32;
+
   return (
     <div
       style={{
@@ -309,394 +580,338 @@ const FormScreen = ({ onSubmit }) => {
         padding: "0 0 40px",
       }}
     >
-      {/* Header */}
+      {/* Header — warm-50 contínuo com o body, borda sutil */}
       <div
         style={{
-          padding: "16px 24px",
+          padding: desktop ? "18px 40px" : "14px 24px",
           borderBottom: `1px solid ${W[200]}`,
           display: "flex",
           alignItems: "center",
           gap: 10,
-          background: "#FFF",
+          background: W[50],
         }}
       >
         <img
           src="/images/cora_logo_com_tag.svg"
           alt="Cora"
-          style={{ height: 28 }}
+          style={{ height: desktop ? 36 : 30, width: "auto" }}
         />
       </div>
 
-      <div style={{ padding: "32px 24px 0", maxWidth: 420, margin: "0 auto" }}>
+      <div
+        style={{
+          padding: desktop ? "56px 40px 0" : "28px 24px 0",
+          maxWidth: desktop ? 720 : 460,
+          margin: "0 auto",
+        }}
+      >
         {/* Título */}
         <h1
           style={{
             fontFamily: "'League Gothic', Impact, sans-serif",
-            fontSize: 24,
+            fontSize: desktop ? 56 : 32,
             fontWeight: 400,
             color: B[500],
             textTransform: "uppercase",
             letterSpacing: "0.02em",
-            lineHeight: 1.2,
-            margin: "0 0 8px",
+            lineHeight: desktop ? 1 : 1.05,
+            margin: 0,
+            textWrap: "balance",
           }}
         >
-          CONTE UM POUCO SOBRE VOCÊ
+          Conte um pouco sobre você
         </h1>
-        <p
-          style={{
-            fontFamily: "'Montagu Slab', Georgia, serif",
-            fontSize: 14,
-            color: W[500],
-            margin: "0 0 32px",
-            lineHeight: 1.5,
-          }}
-        >
-          Seus dados ficam só com a Cora.
-        </p>
 
-        {/* Campo: Nome */}
-        <div style={{ marginBottom: 20 }}>
-          <label style={labelStyle}>Nome completo *</label>
-          <input
-            id="field-nome"
-            type="text"
-            value={nome}
-            onChange={(e) => { setNome(e.target.value); if (formErrorRef.current) formErrorRef.current.style.display = 'none'; }}
-            placeholder="Como você gostaria de ser chamado(a)?"
-            style={inputStyle("nome")}
-            onFocus={(e) =>
-              (e.target.style.borderColor = errors.nome ? "#EF4444" : B[500])
-            }
-            onBlur={(e) =>
-              (e.target.style.borderColor = errors.nome ? "#EF4444" : W[300])
-            }
-          />
-          {errors.nome && <div style={errorStyle}>{errors.nome}</div>}
-        </div>
+        {/* ─── Seção: Quem é você ─── */}
+        <Section eyebrow="Quem é você" desktop={desktop} top={desktop ? 48 : 28}>
+          <div style={twoCol}>
+            {/* Nome */}
+            <div>
+              <label style={labelStyle}>Como quer ser chamado(a)?</label>
+              <input
+                id="field-nome"
+                type="text"
+                value={nome}
+                onChange={(e) => { setNome(e.target.value); clearFormError(); }}
+                placeholder="Seu nome"
+                style={inputStyle("nome")}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = errors.nome ? "#DC2626" : B[500])
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = errors.nome ? "#DC2626" : W[300])
+                }
+              />
+              {errors.nome && <div style={errorStyle}>{errors.nome}</div>}
+            </div>
 
-        {/* Campo: WhatsApp */}
-        <div style={{ marginBottom: 20 }}>
-          <label style={labelStyle}>WhatsApp com DDD *</label>
-          <input
-            id="field-whatsapp"
-            type="tel"
-            value={whatsapp}
-            onChange={(e) => { setWhatsapp(formatWhatsApp(e.target.value)); if (formErrorRef.current) formErrorRef.current.style.display = 'none'; }}
-            placeholder="(21) 99999-9999"
-            style={inputStyle("whatsapp")}
-            onFocus={(e) =>
-              (e.target.style.borderColor = errors.whatsapp
-                ? "#EF4444"
-                : B[500])
-            }
-            onBlur={(e) =>
-              (e.target.style.borderColor = errors.whatsapp
-                ? "#EF4444"
-                : W[300])
-            }
-          />
-          {errors.whatsapp && <div style={errorStyle}>{errors.whatsapp}</div>}
-        </div>
+            {/* WhatsApp */}
+            <div>
+              <label style={labelStyle}>WhatsApp com DDD</label>
+              <input
+                id="field-whatsapp"
+                type="tel"
+                value={whatsapp}
+                onChange={(e) => { setWhatsapp(formatWhatsApp(e.target.value)); clearFormError(); }}
+                placeholder="(21) 99999-9999"
+                style={inputStyle("whatsapp")}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = errors.whatsapp ? "#DC2626" : B[500])
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = errors.whatsapp ? "#DC2626" : W[300])
+                }
+              />
+              {errors.whatsapp && <div style={errorStyle}>{errors.whatsapp}</div>}
+            </div>
+          </div>
 
-        {/* Honeypot anti-bot */}
-        <div style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0, overflow: "hidden" }} aria-hidden="true">
-          <label htmlFor="website">Website</label>
-          <input
-            type="text"
-            id="website"
-            name="website"
-            value={website}
-            onChange={(e) => setWebsite(e.target.value)}
-            tabIndex={-1}
-            autoComplete="off"
-          />
-        </div>
+          {/* Honeypot anti-bot */}
+          <div style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0, overflow: "hidden" }} aria-hidden="true">
+            <label htmlFor="website">Website</label>
+            <input
+              type="text"
+              id="website"
+              name="website"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
+        </Section>
 
-        {/* Pães — vitrine */}
-        <div style={{ marginBottom: 24 }}>
-          <label style={labelStyle}>
-            O que mais te atrai? (até 2 opções)
-          </label>
+        {/* ─── Seção: Pães ─── */}
+        <Section eyebrow="Pães" desktop={desktop} top={secTop}>
           <div
-            style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              margin: "0 0 14px",
+            }}
+          >
+            <p
+              style={{
+                fontFamily: "'Montagu Slab', Georgia, serif",
+                fontSize: desktop ? 19 : 17,
+                lineHeight: 1.4,
+                color: W[800],
+                fontWeight: 500,
+                margin: 0,
+              }}
+            >
+              Quais te interessam mais? Pode marcar 2.
+            </p>
+            <CounterChip n={selectedPaes.length} max={MAX_SELECTION} />
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: desktop ? "1fr 1fr" : "1fr",
+              gap: desktop ? 18 : 16,
+            }}
           >
             {PRODUCTS.map((product) => {
               const selected = selectedPaes.includes(product.id);
-              const disabled =
-                !selected && selectedPaes.length >= MAX_SELECTION;
+              const disabled = !selected && selectedPaes.length >= MAX_SELECTION;
               return (
-                <div
+                <PaoCard
                   key={product.id}
-                  onClick={() => !disabled && togglePao(product.id)}
-                  style={{
-                    display: "flex",
-                    gap: 14,
-                    padding: 12,
-                    borderRadius: radii.lg,
-                    border: `1.5px solid ${
-                      selected ? B[500] : W[200]
-                    }`,
-                    background: selected ? B[50] : "#FFF",
-                    cursor: disabled ? "default" : "pointer",
-                    opacity: disabled ? 0.5 : 1,
-                    transition: "all 150ms",
-                    alignItems: "flex-start",
-                  }}
-                >
-                  {/* Foto */}
-                  <img
-                    src={product.img}
-                    alt={product.nome}
-                    loading="lazy"
-                    decoding="async"
-                    style={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: radii.md,
-                      objectFit: "cover",
-                      flexShrink: 0,
-                    }}
-                  />
-
-                  {/* Info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                      }}
-                    >
-                      <div>
-                        <div
-                          style={{
-                            fontFamily: "'Montagu Slab', Georgia, serif",
-                            fontSize: 16,
-                            fontWeight: 600,
-                            color: W[800],
-                          }}
-                        >
-                          {product.nome}
-                        </div>
-                      </div>
-
-                      {/* Checkbox visual */}
-                      <div
-                        style={{
-                          width: 24,
-                          height: 24,
-                          borderRadius: radii.xs,
-                          border: `2px solid ${selected ? B[500] : W[300]}`,
-                          background: selected ? B[500] : "transparent",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                          marginTop: 2,
-                          transition: "all 150ms",
-                        }}
-                      >
-                        {selected && (
-                          <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
-                            <path
-                              d="M1 5L5 9L13 1"
-                              stroke="#FFF"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-
-                    <div
-                      style={{
-                        fontFamily: "'Montagu Slab', Georgia, serif",
-                        fontSize: 13,
-                        color: W[500],
-                        lineHeight: 1.5,
-                        marginTop: 6,
-                      }}
-                    >
-                      {product.desc}
-                    </div>
-                  </div>
-                </div>
+                  p={product}
+                  selected={selected}
+                  disabled={disabled}
+                  desktop={desktop}
+                  onToggle={togglePao}
+                />
               );
             })}
           </div>
+
+          {selectedPaes.length >= MAX_SELECTION && (
+            <p
+              style={{
+                fontFamily: "'Montagu Slab', Georgia, serif",
+                fontSize: 12.5,
+                fontStyle: "italic",
+                color: W[500],
+                lineHeight: 1.5,
+                margin: "12px 0 0",
+              }}
+            >
+              Pra trocar, desmarque um dos que já estão escolhidos.
+            </p>
+          )}
 
           {/* Campo aberto: outra opção */}
           <input
             type="text"
             value={outraOpcao}
             onChange={(e) => setOutraOpcao(e.target.value)}
-            placeholder="Outra opção que gostaria muito..."
-            style={{
-              ...inputStyle("_none"),
-              marginTop: 12,
-              fontSize: 14,
-              color: W[600],
-            }}
+            placeholder="Outra opção que gostaria muito…"
+            style={{ ...inputStyle("_none"), marginTop: 14 }}
             onFocus={(e) => (e.target.style.borderColor = B[500])}
             onBlur={(e) => (e.target.style.borderColor = W[300])}
           />
-        </div>
+        </Section>
 
-        {/* Campo: Cidade */}
-        <div style={{ marginBottom: 20 }}>
-          <label style={labelStyle}>Cidade *</label>
-          <select
-            id="field-cidade"
-            value={cidade}
-            onChange={(e) => { setCidade(e.target.value); if (formErrorRef.current) formErrorRef.current.style.display = 'none'; }}
-            style={{
-              ...inputStyle("cidade"),
-              appearance: "none",
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23A8A49C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E")`,
-              backgroundRepeat: "no-repeat",
-              backgroundPosition: "right 16px center",
-              color: cidade ? W[700] : W[400],
-            }}
-          >
-            <option value="">Selecione</option>
-            <option value="Niterói">Niterói</option>
-            <option value="Rio de Janeiro">Rio de Janeiro</option>
-            <option value="Outra">Outra</option>
-          </select>
-          {errors.cidade && <div style={errorStyle}>{errors.cidade}</div>}
-        </div>
+        {/* ─── Seção: Onde você está ─── */}
+        <Section eyebrow="Onde você está" desktop={desktop} top={secTop}>
+          <div style={twoCol}>
+            {/* Cidade */}
+            <div>
+              <label style={labelStyle}>Cidade</label>
+              <select
+                id="field-cidade"
+                value={cidade}
+                onChange={(e) => { setCidade(e.target.value); clearFormError(); }}
+                style={{
+                  ...inputStyle("cidade"),
+                  appearance: "none",
+                  WebkitAppearance: "none",
+                  paddingRight: 44,
+                  cursor: "pointer",
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23A8A49C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 16px center",
+                  color: cidade ? W[800] : W[400],
+                }}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = errors.cidade ? "#DC2626" : B[500])
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = errors.cidade ? "#DC2626" : W[300])
+                }
+              >
+                <option value="">Selecione</option>
+                <option value="Niterói">Niterói</option>
+                <option value="Rio de Janeiro">Rio de Janeiro</option>
+                <option value="Outra">Outra</option>
+              </select>
+              {errors.cidade && <div style={errorStyle}>{errors.cidade}</div>}
+            </div>
 
-        {/* Campo: Bairro */}
-        <div style={{ marginBottom: 24 }}>
-          <label style={labelStyle}>Bairro *</label>
-          <input
-            id="field-bairro"
-            type="text"
-            value={bairro}
-            onChange={(e) => { setBairro(e.target.value); if (formErrorRef.current) formErrorRef.current.style.display = 'none'; }}
-            placeholder="Ex: Icaraí, Copacabana..."
-            style={inputStyle("bairro")}
-            onFocus={(e) =>
-              (e.target.style.borderColor = errors.bairro ? "#EF4444" : B[500])
-            }
-            onBlur={(e) =>
-              (e.target.style.borderColor = errors.bairro ? "#EF4444" : W[300])
-            }
-          />
-          {errors.bairro && <div style={errorStyle}>{errors.bairro}</div>}
-        </div>
-
-        {/* Optin mailing */}
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            alignItems: "flex-start",
-            marginBottom: 12,
-            cursor: "pointer",
-          }}
-          onClick={() => setOptinMailing(!optinMailing)}
-        >
-          <div
-            style={{
-              width: 22,
-              height: 22,
-              borderRadius: radii.xs,
-              border: `2px solid ${optinMailing ? B[500] : W[300]}`,
-              background: optinMailing ? B[500] : "transparent",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-              marginTop: 1,
-              transition: "all 150ms",
-            }}
-          >
-            {optinMailing && (
-              <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
-                <path
-                  d="M1 4L4.5 7.5L11 1"
-                  stroke="#FFF"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            )}
+            {/* Bairro */}
+            <div>
+              <label style={labelStyle}>Bairro</label>
+              <input
+                id="field-bairro"
+                type="text"
+                value={bairro}
+                onChange={(e) => { setBairro(e.target.value); clearFormError(); }}
+                placeholder="Ex: Icaraí, Copacabana…"
+                style={inputStyle("bairro")}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = errors.bairro ? "#DC2626" : B[500])
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = errors.bairro ? "#DC2626" : W[300])
+                }
+              />
+              {errors.bairro && <div style={errorStyle}>{errors.bairro}</div>}
+            </div>
           </div>
-          <span
+        </Section>
+
+        {/* ─── Seção: Antes de enviar ─── */}
+        <Section eyebrow="Antes de enviar" desktop={desktop} top={secTop}>
+          {/* Optin mailing */}
+          <div
+            role="checkbox"
+            aria-checked={optinMailing}
+            tabIndex={0}
+            onClick={() => setOptinMailing(!optinMailing)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setOptinMailing(!optinMailing);
+              }
+            }}
+            style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "flex-start",
+              margin: "4px 0 14px",
+              cursor: "pointer",
+            }}
+          >
+            <Checkbox checked={optinMailing} size={22} />
+            <span
+              style={{
+                fontFamily: "'Montagu Slab', Georgia, serif",
+                fontSize: 14,
+                color: W[700],
+                lineHeight: 1.5,
+              }}
+            >
+              Quero receber novidades da Cora pelo WhatsApp até as entregas começarem.
+            </span>
+          </div>
+
+          {/* Microcopy LGPD */}
+          <p
             style={{
               fontFamily: "'Montagu Slab', Georgia, serif",
+              fontSize: 12,
+              color: W[500],
+              lineHeight: 1.6,
+              margin: "0 0 24px",
+            }}
+          >
+            Seus dados ficam guardados só pra te avisar quando a Cora abrir oficialmente. Pode pedir pra excluir a qualquer momento pelo WhatsApp.
+          </p>
+
+          {submitError && <div style={{padding:"12px 16px",borderRadius:radii.md,background:"#FFEDD5",color:"#9A3412",fontFamily:"'Montagu Slab', Georgia, serif",fontSize:14,marginBottom:16,lineHeight:1.5}}>{submitError}</div>}
+
+          <div
+            ref={formErrorRef}
+            style={{
+              display: "none",
+              padding: "12px 16px",
+              borderRadius: radii.md,
+              background: "#FEF2F2",
+              border: "1px solid #FECACA",
+              color: "#991B1B",
+              fontFamily: "'Montagu Slab', Georgia, serif",
               fontSize: 14,
-              color: W[600],
+              marginBottom: 16,
               lineHeight: 1.5,
             }}
           >
-            Quero receber novidades da Cora pelo WhatsApp até as entregas começarem.
-          </span>
-        </div>
+            Preencha os campos obrigatórios acima.
+          </div>
 
-        <p
-          style={{
-            fontFamily: "'Montagu Slab', Georgia, serif",
-            fontSize: 12,
-            color: W[600],
-            lineHeight: 1.6,
-            margin: "0 0 24px",
-          }}
-        >
-          Seus dados ficam guardados só pra te avisar quando a Cora abrir oficialmente. Pode pedir pra excluir a qualquer momento pelo WhatsApp.
-        </p>
-
-        {submitError && <div style={{padding:"12px 16px",borderRadius:radii.md,background:"#FFEDD5",color:"#9A3412",fontFamily:"'Montagu Slab', Georgia, serif",fontSize:14,marginBottom:16,lineHeight:1.5}}>{submitError}</div>}
-
-        <div
-          ref={formErrorRef}
-          style={{
-            display: "none",
-            padding: "12px 16px",
-            borderRadius: radii.md,
-            background: "#FEF2F2",
-            border: "1px solid #FECACA",
-            color: "#991B1B",
-            fontFamily: "'Montagu Slab', Georgia, serif",
-            fontSize: 14,
-            marginBottom: 16,
-            lineHeight: 1.5,
-          }}
-        >
-          Preencha os campos obrigatórios acima.
-        </div>
-
-        {/* Botão enviar */}
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          style={{
-            width: "100%",
-            height: 52,
-            borderRadius: radii.md,
-            border: "none",
-            background: loading ? B[600] : B[500],
-            color: "#FFF",
-            fontSize: 16,
-            fontWeight: 600,
-            fontFamily: "'Montagu Slab', Georgia, serif",
-            cursor: loading ? "not-allowed" : "pointer",
-            transition: "background 150ms",
-          }}
-          onMouseOver={(e) => {
-            if (!loading) e.currentTarget.style.background = B[600];
-          }}
-          onMouseOut={(e) => {
-            if (!loading) e.currentTarget.style.background = B[500];
-          }}
-        >
-          {loading ? "Enviando..." : "Tenho interesse"}
-        </button>
+          {/* Botão enviar */}
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            style={{
+              display: "block",
+              width: "100%",
+              maxWidth: desktop ? 320 : "100%",
+              height: desktop ? 60 : 54,
+              borderRadius: radii.md,
+              border: "none",
+              background: loading ? B[600] : B[500],
+              color: "#FFF",
+              fontSize: desktop ? 17 : 16,
+              fontWeight: 600,
+              fontFamily: "'Montagu Slab', Georgia, serif",
+              cursor: loading ? "not-allowed" : "pointer",
+              transition: "background 150ms",
+            }}
+            onMouseOver={(e) => {
+              if (!loading) e.currentTarget.style.background = B[600];
+            }}
+            onMouseOut={(e) => {
+              if (!loading) e.currentTarget.style.background = B[500];
+            }}
+          >
+            {loading ? "Enviando..." : "Tenho interesse"}
+          </button>
+        </Section>
       </div>
     </div>
   );
