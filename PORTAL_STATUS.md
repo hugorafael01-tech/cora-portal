@@ -109,6 +109,26 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 ## Última sessão de trabalho
 
+- **Data:** 2026-05-23 (sábado)
+- **Tema:** Redesign da Tela 2 (Form) do PreCadastro `/interesse` — Variante A (Digital & Portal)
+- **Saída:**
+  - Branch `feat/precadastro-polimento-v1` mergeada em main (squash `0cd58c4`, PR #14). Só `src/pages/PreCadastro.jsx` mudou; Splash (Tela 1) e Confirm (Tela 3) ficaram byte-identical ao baseline (verificado por diff).
+  - **Tela 2 reescrita em 4 seções nomeadas** com eyebrows League Gothic + linha divisória: "Quem é você", "Pães", "Onde você está", "Antes de enviar". Header virou barra warm-50 full-width com conteúdo interno alinhado ao max-width do body (logo alinha com o form no desktop). Sub-heading "Seus dados ficam só com a Cora." removido.
+  - **Cards de produto (Variante A):** foto 16:10 no topo, info embaixo, checkbox sobreposto à foto, nome em Montagu Slab sentence case (corrige bug do `text-transform: uppercase` global do DS via `textTransform:'none'` + `letterSpacing:0`; brand-700 quando selecionado). **Peso removido do render** (mantido no array `PRODUCTS` pra uso em outras telas). Estados: default / hover (border warm-300) / selected (brand-50 + border brand-500) / disabled (véu + opacity 0.55 ao atingir 2).
+  - **CounterChip "X de 2"** (copy curta, `whiteSpace:nowrap`, vira verde em 2/2) + dica "Pra trocar, desmarque um dos que já estão escolhidos." ao atingir o limite.
+  - **Responsivo via hook `useIsDesktop`** (matchMedia ≥768px, `addEventListener('change')` + cleanup): grid 2 colunas (Nome+WhatsApp, Cidade+Bairro) no desktop, empilhado no mobile; heading 32px mobile / 44px desktop; CTA full-width mobile / max-width 320 centralizado no desktop.
+  - **PRODUCTS atualizado** com pesos corretos (700/700/430/615/533/256g) e copys aprovadas, paths `.webp`.
+  - **Validação do nome relaxada** pra aceitar 1+ palavra ("Conta pra gente como prefere ser chamado(a).") alinhando com a nova copy "Como quer ser chamado(a)?"; mantém anti-bot. Border de erro unificado em `#DC2626`. **P0 corrigido:** falha de validação agora dá scroll suave pro topo do form (antes ia pro bloco de erro agregado no rodapé) via novo `formTopRef`.
+  - **A11y:** card com `role="button"`, `tabIndex`, `onKeyDown` (Enter/Space), `aria-disabled`; optin reusa o `Checkbox` compartilhado, com suporte a teclado.
+  - **Intocados (restrição §8 do briefing):** sanitização anti-XSS, honeypot `website`, máscara WhatsApp, webhook `POST /api/lead`, payload exato.
+  - **Verificação:** `npm run build` + `eslint` limpos; verificação visual headless (Chrome CDP) em mobile 390 e desktop 1440 confirmou alinhamento do logo (logoLeft==contentLeft), heading 44px, CTA centralizado, chip curto verde em 2/2 e scroll-to-top no erro (scrollY 2486→0). Smoke test funcional do submit em Vercel Preview pelo Hugo.
+  - **Fonte:** briefing `docs/handoff/precadastro-v1-mai2026/CORA_Briefing_CC_PreCadastro_v1.md` + referências do Claude Design (Variante A).
+- **Pendências pós-merge:** patch da DS hospedada (regra de nome de produto em Montagu Slab sentence case, `docs/handoff/precadastro-v1-mai2026/DS-PATCH.md`) a propagar pro Portal/landing/backoffice; registrar a entrega na ClickUp lista Digital & Portal (`901712612053`).
+- **Pendência operacional:** check manual semanal de carrinhos abandonados toda terça 8h BRT continua.
+- **Próximo:** Frente C itens 2 e 5 (telas internas restantes) ou Frente D (whitelist de cobertura).
+
+## Sessões anteriores
+
 - **Data:** 2026-05-21 (quinta)
 - **Tema:** Frente C item 4 — Tela Perfil read-only + Modal de Recibo (+ follow-up de tipografia da Cobrança)
 - **Saída:**
@@ -124,8 +144,6 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 - **Housekeeping de repo:** task ClickUp [86e1ga7fz](https://app.clickup.com/t/86e1ga7fz) aberta — migrations untracked copiadas do backoffice (`0002_admin_users` etc.) colidindo com a numeração do portal + arquivos-lixo de iCloud com espaço no nome (ex.: `package-lock 4.json`).
 - **Pendência operacional:** check manual semanal de carrinhos abandonados toda terça 8h BRT continua.
 - **Próximo:** Frente C itens 2 e 5 (telas internas restantes) ou Frente D (whitelist de cobertura).
-
-## Sessões anteriores
 
 - **Data:** 2026-05-16 (sábado)
 - **Tema:** Refactor da seção SUA ASSINATURA do Drawer "Editar cesta" — QtyStepper + colapso + polish v2
