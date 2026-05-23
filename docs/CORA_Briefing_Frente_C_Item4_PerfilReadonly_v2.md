@@ -8,6 +8,8 @@
 
 > **v2 desta nota** incorpora as descobertas do CC: a tela hoje é 100% mock, não há tabela `faturas`/`invoices`, `weekly_order_status` não tem valor `'entregue'`, e o GET de `subscriptions` não expõe `valor_paes`/`valor_frete`. Decisões abaixo.
 
+> **🚫 Atualização 22/mai/2026 — Cenário B2 descartado.** A regra "frete grátis em condomínio com 5+ assinantes" foi removida do modelo comercial (ver `CORA_Decisoes_v2.md` v2.2). O B2 foi implementado neste branch antes do descarte e está em produção. **PR de remoção pendente** em sessão dedicada ao `cora-portal`. Trechos do briefing que descrevem o B2 ficam mantidos como registro histórico do que foi feito.
+
 ---
 
 ## Escopo final (decidido em 20/05/2026)
@@ -53,11 +55,13 @@
   - Semana passada sem extras: `"Sem extras nesta semana."` (sem footnote financeiro)
 - **Botão único:** `Fechar` ghost full-width.
 
-### Cenário B2: Frete grátis (programa condomínio ativo)
-- Aceito como cenário válido do MVP. Lógica de ativação é manual (SQL periódico).
-- **Detecção no front:** quando `valor_frete === 0` (depois que o GET de `subscriptions` expor essa coluna).
-- **UI:** `Frete R$ 0,00` em success-text weight 600, com microcopy abaixo do valor em success-text 11px regular: `"frete grátis · programa condomínio"`. Total reflete.
-- Sem celebração. Fato seco.
+### Cenário B2: Frete grátis (programa condomínio ativo) — 🚫 DESCARTADO em 22/mai/2026
+- ~~Aceito como cenário válido do MVP. Lógica de ativação é manual (SQL periódico).~~
+- ~~**Detecção no front:** quando `valor_frete === 0` (depois que o GET de `subscriptions` expor essa coluna).~~
+- ~~**UI:** `Frete R$ 0,00` em success-text weight 600, com microcopy abaixo do valor em success-text 11px regular: `"frete grátis · programa condomínio"`. Total reflete.~~
+- ~~Sem celebração. Fato seco.~~
+
+**Nota:** este cenário foi implementado e está em produção. A regra de gratuidade foi removida do modelo comercial. PR de remoção pendente.
 
 ---
 
@@ -129,7 +133,7 @@ A solução definitiva está num **documento de recomendação separado para o c
 | | Decomposição |
 |---|---|
 | B1. Padrão | Assinatura + Extras (se houver) + Frete = Total |
-| B2. Condomínio ativo | Assinatura + Extras (se houver) + Frete R$ 0,00 com microcopy = Total |
+| ~~B2. Condomínio ativo~~ 🚫 | ~~Assinatura + Extras (se houver) + Frete R$ 0,00 com microcopy = Total~~ — descartado 22/mai |
 
 > Sub-linha "Cobrança de [mês anterior]" **omitida no MVP**.
 
@@ -177,7 +181,7 @@ A solução definitiva está num **documento de recomendação separado para o c
 | ✓ | Modal: label "Assinatura" (nunca "Cesta") |
 | ✓ | Modal: footnote nunca afirma "paga em" ou "Pago" |
 | ✓ | Modal: gramatura como meta tanto em Assinatura quanto em Extras |
-| ✓ | Frete grátis (B2): valor em success-text + microcopy abaixo, sem celebração |
+| 🚫 | ~~Frete grátis (B2): valor em success-text + microcopy abaixo, sem celebração~~ — critério descartado 22/mai |
 | ✓ | Datas em `DD/MM`, "Pão" sempre prefixando nome do produto |
 | ✓ | Sem travessão (`—`) em copy nova |
 | ✓ | Histórico lê do endpoint real (não mock) |
