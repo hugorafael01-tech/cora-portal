@@ -910,7 +910,7 @@ const FormScreen = ({ onSubmit }) => {
 const shareCora = () => {
   haptic();
   const url = typeof window !== "undefined" ? `${window.location.origin}/interesse` : "";
-  const texto = `Conheci a Cora, padaria por assinatura de Niterói. Achei que você também pode gostar: ${url}`;
+  const texto = `Conheci a Cora, padaria por assinatura. Achei que você também pode gostar: ${url}`;
   if (typeof navigator !== "undefined" && navigator.share) {
     navigator.share({ title: "Cora", text: texto, url }).catch(() => {});
   } else if (typeof window !== "undefined") {
@@ -1002,7 +1002,7 @@ const ConfirmScreen = ({ nome }) => (
           padding: "0 8px",
         }}
       >
-        Quando as entregas começarem, você é das primeiras a saber.
+        Quando as entregas começarem você será das primeiras a saber.
       </p>
 
       <p
@@ -1026,18 +1026,18 @@ const ConfirmScreen = ({ nome }) => (
           marginTop: 24,
           padding: "12px 24px",
           borderRadius: radii.md,
-          border: `1.5px solid ${B[500]}`,
-          background: "transparent",
-          color: B[500],
+          border: "none",
+          background: B[500],
+          color: "#FFF",
           fontFamily: "'Montagu Slab', Georgia, serif",
           fontSize: 15,
-          fontWeight: 500,
+          fontWeight: 600,
           cursor: "pointer",
-          transition: "all 150ms ease",
+          transition: "background 150ms ease",
           minHeight: 48,
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = B[50])}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+        onMouseEnter={(e) => (e.currentTarget.style.background = B[600])}
+        onMouseLeave={(e) => (e.currentTarget.style.background = B[500])}
         aria-label="Compartilhar a Cora"
       >
         Compartilhar
