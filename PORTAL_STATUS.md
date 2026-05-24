@@ -126,6 +126,7 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
   - **Verificação:** `npm run build` + `eslint` limpos; verificação visual headless (Chrome CDP) em mobile 390 e desktop 1440 confirmou alinhamento do logo (logoLeft==contentLeft), heading 44px, CTA centralizado, chip curto verde em 2/2 e scroll-to-top no erro (scrollY 2486→0). Smoke test funcional do submit em Vercel Preview pelo Hugo.
   - **Smoke em produção:** validado em `app.acora.com.br/interesse` em 24/05/2026 (mobile + desktop) antes do push de captura na terça (26/05).
   - **Fonte:** briefing `docs/handoff/precadastro-v1-mai2026/CORA_Briefing_CC_PreCadastro_v1.md` + referências do Claude Design (Variante A).
+- **Refinamento Tela 3 (PR #15):** CTA padronizado com as demais telas, pequeno refinamento de texto, "Niterói" removido do copy de compartilhamento. Sem mexer em estrutura ou lógica da Confirm.
 - **Pendências pós-merge:** patch da DS hospedada (regra de nome de produto em Montagu Slab sentence case, `docs/handoff/precadastro-v1-mai2026/DS-PATCH.md`) a propagar pro Portal/landing/backoffice; registrar a entrega na ClickUp lista Digital & Portal (`901712612053`).
 - **Pendência operacional:** check manual semanal de carrinhos abandonados toda terça 8h BRT continua.
 - **Próximo:** Frente C itens 2 e 5 (telas internas restantes) ou Frente D (whitelist de cobertura).
