@@ -107,7 +107,7 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 - **Item 4 (Perfil read-only + Modal de Recibo) ✅ Concluída em 21/05/2026.** Tela 100% read-only (5 blocos) + modal de recibo bottom-sheet (3 variantes). Merge squash `e912675` (PR #8). Detalhes na "Última sessão de trabalho". Task ClickUp: [86e1fu240](https://app.clickup.com/t/86e1fu240).
 - Itens 2, 5 ficam em fila pra sessões futuras.
 - **Frente D — Whitelist de cobertura** — pendência da Fase 8 (`admin.acora.com.br`): endpoint pra consultar `coverage_whitelist` no banco, refatorar `estaNaWhitelist` em `src/utils/coverage.js` pra async. Hoje retorna sempre false (lista local vazia em `WHITELIST_HARDCODED`).
-- **PreCadastro polimento v1 (Digital & Portal, não Frente C)** ✅ **Concluído em 23/05/2026.** Tela 2 (`/interesse`) redesenhada conforme a Variante A do Claude Design. Merge squash `0cd58c4` (PR #14). Detalhes na "Última sessão de trabalho". Task ClickUp: a criar.
+- **PreCadastro polimento v1 (Digital & Portal, não Frente C)** ✅ **Concluído em 23/05/2026.** Tela 2 (`/interesse`) redesenhada conforme a Variante A do Claude Design. Merge squash `0cd58c4` (PR #14). Detalhes na "Última sessão de trabalho". Task ClickUp: [86e1heqvg](https://app.clickup.com/t/86e1heqvg) (Complete).
 
 ## Última sessão de trabalho
 
@@ -127,7 +127,7 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
   - **Smoke em produção:** validado em `app.acora.com.br/interesse` em 24/05/2026 (mobile + desktop) antes do push de captura na terça (26/05).
   - **Fonte:** briefing `docs/handoff/precadastro-v1-mai2026/CORA_Briefing_CC_PreCadastro_v1.md` + referências do Claude Design (Variante A).
 - **Refinamento Tela 3 (PR #15):** CTA padronizado com as demais telas, pequeno refinamento de texto, "Niterói" removido do copy de compartilhamento. Sem mexer em estrutura ou lógica da Confirm.
-- **Pendências pós-merge:** patch da DS hospedada (regra de nome de produto em Montagu Slab sentence case, `docs/handoff/precadastro-v1-mai2026/DS-PATCH.md`) a propagar pro Portal/landing/backoffice; registrar a entrega na ClickUp lista Digital & Portal (`901712612053`).
+- **Pendências pós-merge:** propagar a regra de nome de produto da DS (Montagu Slab sentence case, `docs/handoff/precadastro-v1-mai2026/DS-PATCH.md`) — tasks ClickUp: Portal [86e1heqw3](https://app.clickup.com/t/86e1heqw3), landing [86e1heqw8](https://app.clickup.com/t/86e1heqw8), Backoffice [86e1heqwb](https://app.clickup.com/t/86e1heqwb). Entrega registrada na lista Digital & Portal (`901712612053`): [86e1heqvg](https://app.clickup.com/t/86e1heqvg) (Complete).
 - **Pendência operacional:** check manual semanal de carrinhos abandonados toda terça 8h BRT continua.
 - **Próximo:** Frente C itens 2 e 5 (telas internas restantes) ou Frente D (whitelist de cobertura).
 
