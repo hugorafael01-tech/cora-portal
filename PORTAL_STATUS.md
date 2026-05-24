@@ -74,6 +74,7 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 ## Observações sobre este arquivo
 - `package.json` com version `0.0.0` — produto é v3.2.7, não há versionamento formal no código. A decidir: adotar semver no package.json ou tratar versão só como conceito de produto.
 - Listagem de rotas/componentes pode estar incompleta (top-level apenas). Ajustar prompt na próxima regeneração se for o caso.
+- Handoffs de design vivem em `docs/handoff/[escopo]-[mes-ano]/` (convenção a partir de mai/2026, ex.: `docs/handoff/precadastro-v1-mai2026/`). Próximos handoffs do Claude Design ou de outras frentes seguem o mesmo padrão.
 
 ## Decisões de produto aguardando Hugo
 - [x] Preços unitários dos pães extras na cesta semanal — **resolvido** (CORA_Precos_e_Planos_v1.md)
@@ -106,6 +107,7 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 - **Item 4 (Perfil read-only + Modal de Recibo) ✅ Concluída em 21/05/2026.** Tela 100% read-only (5 blocos) + modal de recibo bottom-sheet (3 variantes). Merge squash `e912675` (PR #8). Detalhes na "Última sessão de trabalho". Task ClickUp: [86e1fu240](https://app.clickup.com/t/86e1fu240).
 - Itens 2, 5 ficam em fila pra sessões futuras.
 - **Frente D — Whitelist de cobertura** — pendência da Fase 8 (`admin.acora.com.br`): endpoint pra consultar `coverage_whitelist` no banco, refatorar `estaNaWhitelist` em `src/utils/coverage.js` pra async. Hoje retorna sempre false (lista local vazia em `WHITELIST_HARDCODED`).
+- **PreCadastro polimento v1 (Digital & Portal, não Frente C)** ✅ **Concluído em 23/05/2026.** Tela 2 (`/interesse`) redesenhada conforme a Variante A do Claude Design. Merge squash `0cd58c4` (PR #14). Detalhes na "Última sessão de trabalho". Task ClickUp: a criar.
 
 ## Última sessão de trabalho
 
@@ -122,6 +124,7 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
   - **A11y:** card com `role="button"`, `tabIndex`, `onKeyDown` (Enter/Space), `aria-disabled`; optin reusa o `Checkbox` compartilhado, com suporte a teclado.
   - **Intocados (restrição §8 do briefing):** sanitização anti-XSS, honeypot `website`, máscara WhatsApp, webhook `POST /api/lead`, payload exato.
   - **Verificação:** `npm run build` + `eslint` limpos; verificação visual headless (Chrome CDP) em mobile 390 e desktop 1440 confirmou alinhamento do logo (logoLeft==contentLeft), heading 44px, CTA centralizado, chip curto verde em 2/2 e scroll-to-top no erro (scrollY 2486→0). Smoke test funcional do submit em Vercel Preview pelo Hugo.
+  - **Smoke em produção:** validado em `app.acora.com.br/interesse` em 24/05/2026 (mobile + desktop) antes do push de captura na terça (26/05).
   - **Fonte:** briefing `docs/handoff/precadastro-v1-mai2026/CORA_Briefing_CC_PreCadastro_v1.md` + referências do Claude Design (Variante A).
 - **Pendências pós-merge:** patch da DS hospedada (regra de nome de produto em Montagu Slab sentence case, `docs/handoff/precadastro-v1-mai2026/DS-PATCH.md`) a propagar pro Portal/landing/backoffice; registrar a entrega na ClickUp lista Digital & Portal (`901712612053`).
 - **Pendência operacional:** check manual semanal de carrinhos abandonados toda terça 8h BRT continua.
