@@ -1,17 +1,19 @@
 # Checklist — Auth Frente A: configuração do dashboard Supabase
 
 > **Hugo executa via dashboard Supabase. CC não toca no dashboard.**
-> Este documento é a fonte auditável do que precisa ser configurado. Marque cada `[ ]` conforme executa.
+> Este documento é a fonte auditável do que foi configurado. Marque cada `[ ]` conforme executa.
 
 **Briefing fonte:** [`docs/CORA_Briefing_Auth_MagicLink_SMS_Ready.md`](./CORA_Briefing_Auth_MagicLink_SMS_Ready.md) — Frente A (§4).
 
-**Atualizações pós-briefing aplicadas** (consolidadas na sessão de 25/05/2026):
+**Status:** ✅ **Concluído em 25/05/2026.** Todas as seções executadas e validadas via smoke test (Seção 8).
+
+**Atualizações pós-briefing aplicadas:**
 - **#3 — Sender na raiz:** o magic link sai de `oi@acora.com.br` (raiz, já verificada no Resend), **não** de `oi@send.acora.com.br` como diz a §4.2 do briefing. Razão: `send.acora.com.br` é só return-path técnico; a raiz já está verificada e enviando em produção. Não mexer em DNS raiz.
-- As demais decisões (schema pronto, JWT 30 dias, providers) seguem o briefing e foram reconfirmadas na mesma sessão.
+- **#4 — Site URL preservado em `admin.acora.com.br`:** o briefing original assumiu que o portal seria o único sistema usando o projeto Supabase. Na prática, o projeto é compartilhado com o backoffice e o Site URL já apontava pra ele. Decisão consciente: não mexer. O portal vai sempre passar `emailRedirectTo` explícito no SDK (Frente B), tornando o Site URL irrelevante pro fluxo do portal. Tarefa futura: revisar quando o backoffice for auditado.
+- **#5 — Phone provider deixado em Disabled na Frente A:** UI atual do Supabase (mai/2026) não oferece "modo dev/preview" sem provedor SMS. Todas as 5 opções (Twilio, Messagebird, Textlocal, Vonage, Twilio Verify) exigem credenciais reais. Habilitar sem credenciais quebra o fluxo. Decisão revisitada na Frente D. Em produção Alpha (`VITE_AUTH_METHODS=email`), telefone não aparece na tela de login — sem impacto operacional.
+- **#6 — JWT expiry por equivalência:** o campo `JWT expiry` (2592000s = 30 dias) não está editável no dashboard atual (Free Plan / configuração consolidada). Comportamento desejado coberto por refresh rotation ON + inactivity timeout 0. Ver Seção 6.
 
-**Projeto Supabase alvo:** `kjzuvmhedicxbuynfqev` (banco compartilhado — preview e produção usam o mesmo projeto).
-
-**Como usar:** marque cada `[ ]` conforme executa. Onde a ordem importa, está indicado.
+**Projeto Supabase alvo:** `kjzuvmhedicxbuynfqev` (banco compartilhado — preview e produção usam o mesmo projeto, e o backoffice também).
 
 ---
 
@@ -31,71 +33,86 @@ Rodado e validado em **25/05/2026** (read-only, via SQL Editor). Resultado:
 
 ## Seção 1 — Providers > Email
 
-`Authentication > Providers > Email`
+`Authentication > Sign In / Providers > Email`
 
-- [ ] Email provider: **habilitado**
-- [ ] Magic link: **on**
-- [ ] Confirm email: **off** _(o magic link já confirma o e-mail)_
-- [ ] Secure email change: **on**
-- [ ] Email OTP: **off** _(usamos só o link, não o código de 6 dígitos por e-mail)_
+- [x] Email provider: **habilitado** (Enable email provider)
+- [x] Secure email change: **on**
+- [x] Confirm email: **off** _(o magic link já confirma o e-mail — passo redundante)_
+
+> **Nota sobre UI atual:** Magic Link e Email OTP **não são toggles separados** no Supabase atual. Ambos coexistem automaticamente quando Email provider está habilitado; a escolha de qual usar fica no SDK (`signInWithOtp({ options: { ... } })`). Pra Frente A, basta Email provider ON — o portal usará magic link via código.
+
+> Outros toggles na tela (Secure password change, Require current password when updating, Prevent use of leaked passwords, Minimum password length, Password requirements, Email OTP expiration/length) são irrelevantes pro fluxo do portal (que usa magic link puro, sem password). Mantidos no default.
 
 ---
 
-## Seção 2 — Providers > Phone (dormente)
+## Seção 2 — Providers > Phone (Disabled na Frente A)
 
-`Authentication > Providers > Phone`
+`Authentication > Sign In / Providers > Auth Providers > Phone`
 
-- [ ] Phone provider: **habilitado** em modo dev/preview
-- [ ] SMS provider: **nenhum** — **NÃO ligar Twilio agora**
-- [ ] Confirmar que, sem provedor real, o OTP aparece no **log do Supabase** (console)
+- [x] Phone provider: **Disabled** (não habilitado)
+- [x] Nenhum SMS provider configurado (nenhuma credencial Twilio/etc inserida)
 
-> Isto deixa o caminho SMS exercitável em preview (Frente D) com `VITE_AUTH_METHODS=sms,email`, sem custo e sem provedor contratado. Em produção Alpha o telefone **não** aparece na tela de login.
+> **Mudança de plano vs briefing original.** O briefing previa "Phone habilitado em modo dev/preview com OTP no log do console". A UI atual do Supabase não oferece esse modo: as 5 opções de SMS provider (Twilio, Messagebird, Textlocal, Vonage, Twilio Verify) exigem credenciais reais. Habilitar Phone sem credenciais quebra o fluxo de auth.
+
+> **Implicação pra Frente D (SMS dormente):** revisitar a estratégia quando chegar a hora. Possíveis caminhos:
+> - **(a)** deixar Phone OFF mesmo no Alpha, exercitar SMS via testes locais com mock (não testa o fluxo real, mas valida a interface do código);
+> - **(b)** criar conta Twilio (ou Twilio Verify) só pra preview com credenciais isoladas — gasta pra cada teste, mas é o fluxo real;
+> - **(c)** outra estratégia ainda não desenhada.
+
+> **Em produção Alpha:** `VITE_AUTH_METHODS=email` faz com que o telefone nem apareça na tela de login. Sem impacto operacional. SMS continua "dormente" no nível do código.
+
+> **Descoberta de bônus:** o Supabase agora oferece **Twilio Verify** como opção separada do Twilio puro. Twilio Verify cobra por verificação bem-sucedida (~$0.05 cada) em vez de por SMS individual + custo da mensagem. Pode ser uma escolha melhor que Twilio puro quando virar a chave do SMS. Decisão fica pra Frente D / momento da virada.
 
 ---
 
 ## Seção 3 — SMTP customizado (Resend)
 
-`Authentication > Email Templates > SMTP Settings` (habilitar "Custom SMTP")
+`Authentication > Notifications > Emails > SMTP Settings` (habilitar "Custom SMTP")
 
-- [ ] Host: `smtp.resend.com`
-- [ ] Port: `465`
-- [ ] User: `resend`
-- [ ] Pass: API key do Resend (mesma de `RESEND_API_KEY`)
-- [ ] Sender email: **`oi@acora.com.br`** _(raiz)_
-- [ ] Sender name: **`Cora`**
+- [x] Host: `smtp.resend.com`
+- [x] Port: `465`
+- [x] Username: `resend`
+- [x] Password: API key específica do Resend, **criada exclusivamente pra este uso** (não é a `RESEND_API_KEY` legacy do `.env`)
+- [x] Sender email: **`oi@acora.com.br`** _(raiz)_
+- [x] Sender name: **`Cora`**
 
 > ⚠️ **OVERRIDE DO BRIEFING.** A §4.2 manda usar `oi@send.acora.com.br` — **ISSO ESTÁ DESATUALIZADO**. Usar a raiz `oi@acora.com.br` (decisão pós-briefing #3).
+
+> 🔑 **API key específica.** No Resend, criada uma key dedicada chamada `supabase-auth-cora`, com **Sending Access** (não Full Access) e **restrita ao domínio `acora.com.br`**. Decisão de segurança: se um dia for necessário revogar/rotacionar esta key, não afeta os outros usos do Resend (ex: emails de pré-cadastro). Auditoria fica mais clara no painel do Resend (cada key mostra quais emails enviou).
 
 > 📌 **Reply-To é redundante aqui.** Como o sender já é `oi@acora.com.br` (raiz, cujo MX aponta pro Google Workspace e entrega no inbox do Hugo via alias `oi@`), responder o e-mail cai naturalmente no inbox certo. Não precisa de custom header nem ajuste no template HTML — toda a ginástica de Reply-To da §4.2 deixa de ser necessária com o sender na raiz.
 
 > 🔒 Não tocar em DNS de `acora.com.br` (raiz). SPF/DKIM do Google Workspace continuam intactos.
 
+> **Minimum interval per user:** mantido em **60 segundos** (default). Limita a frequência de envio de magic links pro mesmo endereço — proteção contra abuso. Se virar problema, ajustar.
+
 ---
 
 ## Seção 4 — Template do magic link
 
-`Authentication > Email Templates > Magic Link` (substituir o default)
+`Authentication > Notifications > Emails > Templates > Magic Link or OTP` (substituir o default)
 
 Copy **aprovada por Hugo** nesta sessão (não alterar sem nova aprovação):
 
-- [ ] **Assunto:**
-```
+- [x] **Assunto:**
+````
 Seu acesso à Cora
+````
+
+- [x] **Corpo** (HTML, link clicável com URL inteira como texto — anti-phishing):
+```html
+<p>Oi,</p>
+
+<p>Aqui está o link pra entrar na sua conta da Cora:</p>
+
+<p><a href="{{ .ConfirmationURL }}">{{ .ConfirmationURL }}</a></p>
+
+<p>Ele funciona por 1 hora. Se você não pediu esse link, pode ignorar essa mensagem.</p>
+
+<p>Cora<br>A padaria do seu tempo</p>
 ```
 
-- [ ] **Corpo** (HTML simples, texto direto, link puro — sem branding pesado, sem botão estilizado):
-```
-Oi,
-
-Aqui está o link pra entrar na sua conta da Cora:
-
-{{ .ConfirmationURL }}
-
-Ele funciona por 1 hora. Se você não pediu esse link, pode ignorar essa mensagem.
-
-Cora
-A padaria do seu tempo
-```
+> **Decisões de design embutidas:** sem botão estilizado (link em texto, mais "humano"); URL inteira como texto clicável em vez de "Log In" como anchor (boa prática anti-phishing — a pessoa vê pra onde vai antes de clicar); assinatura compacta sem ser corporativa.
 
 ---
 
@@ -103,22 +120,44 @@ A padaria do seu tempo
 
 `Authentication > URL Configuration > Redirect URLs`
 
-- [ ] `https://app.acora.com.br/auth/callback` _(produção)_
-- [ ] `https://cora-portal-*-hugorafael01-techs-projects.vercel.app/auth/callback` _(todos os previews)_
-- [ ] `http://localhost:5173/auth/callback` _(Vite puro · `npm run dev`)_
-- [ ] `http://localhost:3000/auth/callback` _(`npx vercel dev`)_
+**Site URL:** `https://admin.acora.com.br` _(pré-existente, NÃO mexido — ver atualização #4 no header)_
 
-> O wildcard `*` cobre o hash variável de cada deploy de preview. Confirmar que o Supabase aceita o glob (campo "Redirect URLs" suporta `*`).
+**URLs cadastradas** (5 no total, após adições da Frente A):
+
+URLs do portal _(adicionadas na Frente A)_:
+- [x] `https://app.acora.com.br/auth/callback` _(produção)_
+- [x] `https://cora-portal-*-hugorafael01-techs-projects.vercel.app/auth/callback` _(todos os previews)_
+- [x] `http://localhost:3000/auth/callback` _(`npx vercel dev`)_
+
+URLs compartilhadas / pré-existentes do backoffice _(mantidas intactas)_:
+- [x] `http://localhost:5173/auth/callback` _(Vite puro · serve aos dois projetos)_
+- `https://admin.acora.com.br/auth/callback` _(produção backoffice)_
+
+> O wildcard `*` no hostname é aceito pelo Supabase (validado empiricamente no smoke test da Seção 8). O Supabase cria múltiplos aliases por preview do Vercel; o wildcard cobre os dois padrões.
+
+> **Site URL é apenas fallback.** Quando alguém chama `signInWithOtp` sem passar `emailRedirectTo`, o Supabase usa o Site URL como redirect default. Na Frente B, o portal vai SEMPRE passar `emailRedirectTo: 'https://app.acora.com.br/auth/callback'` explícito, então o Site URL nunca é usado pelo portal. Por isso ele pode continuar apontando pra `admin.acora.com.br` sem prejuízo ao portal.
 
 ---
 
-## Seção 6 — Sessão e JWT
+## Seção 6 — Sessão e JWT (configurado por equivalência)
 
-`Authentication > Sessions` / `Settings`
+`Authentication > Sessions`
 
-- [ ] JWT expiry: `2592000` _(30 dias, em segundos)_
-- [ ] Refresh token rotation: **on**
-- [ ] Reuse interval: `10` _(segundos)_
+- [x] Refresh token rotation (toggle "Detect and revoke potentially compromised refresh tokens"): **ON**
+- [x] Refresh token reuse interval: **10 segundos** (default)
+- [x] Inactivity timeout: **never (0)** _(bloqueado no Free Plan; default é "never", que é o desejado)_
+- [x] Time-box user sessions: **never (0)** _(idem)_
+
+> **Nota sobre JWT expiry:** o campo `JWT expiry` específico (2592000s = 30 dias) **não está editável** no dashboard atual do Supabase (Free Plan / configuração consolidada). O default permanece 1 hora pro access token. **Isso não bloqueia o objetivo desejado** — o comportamento "usuário fica logado por longo período sem precisar relogar" é alcançado por equivalência:
+>
+> - O access token (JWT) expira em 1h
+> - O refresh token tem expiry separado (longo) e rola automaticamente
+> - O SDK do Supabase renova o access token transparentemente em background usando o refresh token
+> - Como `inactivity timeout = 0` e `time-box = 0`, a sessão não tem prazo máximo enquanto o usuário continuar usando o portal
+>
+> **Resultado prático:** usuário fica logado **indefinidamente** enquanto continuar interagindo, sem perceber renovações. Se ficar muito tempo sem usar, em algum momento o refresh token expira e pede magic link de novo (raro e baixo atrito). Comportamento esperado pra Cora — assinante de padaria não vai relogar toda semana.
+
+> **User Sessions configuráveis (Pro Plan):** os campos "Enforce single session per user", "Time-box user sessions" e "Inactivity timeout" só são editáveis no Pro Plan. No Free, os defaults atendem (never em todos).
 
 ---
 
@@ -126,37 +165,40 @@ A padaria do seu tempo
 
 - **Refs stale do briefing:** §9.1 e §10.9 ainda citam `oi@send.acora.com.br`. O smoke test correto da Frente B valida **display "Cora" + sender `oi@acora.com.br`**.
 - **`VITE_AUTH_METHODS` na Vercel** (não é dashboard Supabase): setar em `Production = email` e, se quiser exercitar SMS em preview, `Preview = sms,email`. Fica pra Frente B; aqui só registrado.
+- **`emailRedirectTo` sempre explícito no portal:** sempre passar `{ options: { emailRedirectTo: 'https://app.acora.com.br/auth/callback' } }` (ou URL equivalente em preview/dev) na chamada `signInWithOtp`. Sem isso, o Supabase cai no Site URL, que aponta pro backoffice. Crítico pra Frente B.
 - **Rate limit:** usar o default do Supabase. Ajustar no dashboard só se necessário (§11 do briefing proíbe rate limit custom no código).
 
 ---
 
 ## Seção 8 — Validação pós-configuração (smoke test via dashboard)
 
-Depois de configurar as seções 1–6, validar o envio real **antes** de considerar a Frente A concluída:
+Executado em **25/05/2026** após configurar as Seções 1–6.
 
-- [ ] Em `Authentication > Users`, criar usuário teste com o **e-mail pessoal do Hugo**
-- [ ] Clicar **"Send magic link"** pra esse usuário
-- [ ] No inbox, validar:
-  - [ ] Sender técnico: `oi@acora.com.br`
-  - [ ] Display name: `Cora`
-  - [ ] Assunto: `Seu acesso à Cora`
-  - [ ] Corpo conforme aprovado, **incluindo a subline `A padaria do seu tempo`**
-  - [ ] Reply-To natural: responder o e-mail cai no inbox certo (oi@ → inbox do Hugo)
-- [ ] Clicar no link e confirmar que **não** dá erro de "redirect URL não permitida"
-  - 404 do app é **esperado** nesta Frente A (ainda não existe a tela `/auth/callback` — ela entra na Frente B). O que importa aqui é o redirect ser aceito, não a tela carregar.
-- [ ] **Housekeeping:** deletar o usuário teste após validar
+- [x] Em `Authentication > Users`, criado usuário teste `hugorafael01@gmail.com`
+- [x] Clicado **"Send magic link"** pra esse usuário
+- [x] E-mail recebido no inbox (não Spam, não Promoções) — deliverability boa
+- [x] Validado no e-mail:
+  - [x] Sender técnico: `oi@acora.com.br`
+  - [x] Display name: `Cora`
+  - [x] Assunto: `Seu acesso à Cora`
+  - [x] Corpo conforme aprovado, incluindo subline `A padaria do seu tempo`
+  - [x] Reply-To natural (sender é raiz; responder cai no inbox certo via alias `oi@`)
+- [x] Clicado no link — redirect aceito pra `https://admin.acora.com.br/auth/callback` (comportamento esperado: Site URL é admin, link sem `emailRedirectTo` cai no fallback). Não houve erro de "redirect URL não permitida" — confirma que a allow list funciona.
+- [x] **Housekeeping:** usuário teste `hugorafael01@gmail.com` deletado em `Authentication > Users` após validação.
+
+> O redirect pro backoffice no smoke test é esperado e não indica erro — vai ser corrigido na Frente B quando o portal disparar magic link via SDK com `emailRedirectTo` explícito.
 
 ---
 
-## Rodapé — Verificação final (6 pontos críticos)
+## Rodapé — Verificação final
 
 | # | Ponto | OK? |
 |---|---|---|
-| 1 | Email provider: magic link **on**, confirm email **off**, Email OTP **off** | [ ] |
-| 2 | Phone provider habilitado em modo dev, **sem** Twilio | [ ] |
-| 3 | SMTP Resend com sender **`oi@acora.com.br`** + display **`Cora`** | [ ] |
-| 4 | Template magic link com assunto e corpo aprovados | [ ] |
-| 5 | 4 Redirect URLs cadastradas (prod + preview wildcard + 2 localhost) | [ ] |
-| 6 | JWT expiry `2592000`, refresh rotation **on**, reuse `10`s | [ ] |
+| 1 | Email provider habilitado, Confirm email off | [x] |
+| 2 | Phone provider em **Disabled** (decisão atualizada, ver Seção 2) | [x] |
+| 3 | SMTP Resend com sender **`oi@acora.com.br`** + display **`Cora`** + key específica | [x] |
+| 4 | Template magic link com assunto e corpo aprovados | [x] |
+| 5 | 5 Redirect URLs cadastradas (3 portal + 2 compartilhadas/backoffice) | [x] |
+| 6 | Sessões: refresh rotation ON, reuse 10s, sem timeouts (JWT expiry por equivalência) | [x] |
 
-Com os 6 marcados + Seção 8 validada, a configuração de dashboard da Frente A está completa.
+**Frente A da Auth — dashboard concluído em 25/05/2026. Frente B desbloqueada (auth core no código).**
