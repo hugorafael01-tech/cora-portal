@@ -57,11 +57,8 @@ ${sub.total_paes} pão${sub.total_paes === 1 ? "" : "(ães)"} por semana
 ${detalharItens(sub.itens)}
 
 Pães:    ${fmtMoney(sub.valor_paes)}  (${sub.total_paes} × R$ 99,00)
-Entrega: ${fmtMoney(sub.valor_frete)} *
+Entrega: ${fmtMoney(sub.valor_frete)}
 Total:   ${fmtMoney(sub.valor_mensal)} / mês
-
-* Entrega gratuita a partir de 5 assinantes no mesmo prédio.
-  Verificar nº/complemento e aplicar desconto manualmente se aplicável.
 
 Status: aguardando criação de cobrança no Asaas.
 ${sub.coverage_unconfirmed ? "⚠ Cobertura não confirmada automaticamente. Verificar manualmente.\n\n" : ""}
