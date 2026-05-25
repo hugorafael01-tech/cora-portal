@@ -111,6 +111,20 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 ## Última sessão de trabalho
 
+- **Data:** 2026-05-25 (domingo)
+- **Tema:** Remoção do Cenário B2 (frete grátis em condomínio) — frete R$ 15 passa a universal
+- **Saída:**
+  - Branch `fix/remove-frete-gratis-condominio` (a partir de main). Fonte: `docs/CORA_Briefing_Remover_Cenario_B2.md` + `CORA_Decisoes_v2.md` v2.2 (22/05/2026).
+  - **Perfil read-only (Cobrança):** removida a detecção `valor_frete === 0`, o estilo `success-text`/weight 600 e a microcopy "frete grátis · programa condomínio". A linha Frete agora renderiza sempre `R$ 15,00` em estilo padrão, idêntica às linhas Assinatura/Extras. `valor_frete` segue como a fonte do valor exibido (B1).
+  - **Fluxo Assinatura (limpeza além do briefing, aprovada por Hugo):** removidos o `CondominioModal` ("Frete grátis em condomínio"), o card "Mora num condomínio?" e o estado/handlers (`condoModal`/`fecharCondo`) — promoviam a regra descartada direto na tela, antes do teste com usuários.
+  - **E-mail de admin (`api/subscriptions/index.js`):** removido o rodapé "Entrega gratuita a partir de 5 assinantes... aplicar desconto manualmente".
+  - **Backend:** `valor_frete` mantido no `GET /api/subscriptions/[id]` (rule 4 do briefing — é a fonte do R$ 15); só atualizado o comentário stale que citava o B2.
+  - **Banco:** discovery read-only (service-role) → **0 registros** com `valor_frete = 0` ou NULL (de 2 subscriptions). Nenhum UPDATE necessário. Schema intocado (governança no `cora-backoffice`).
+  - **Verificação:** `npm run build` limpo; `eslint` igual ao main (29 problems, todos pré-existentes — nenhum nos trechos tocados).
+  - **Pendente:** validação em Vercel Preview com os 5 prints do briefing + squash merge via GitHub UI.
+
+## Sessões anteriores
+
 - **Data:** 2026-05-23 (sábado)
 - **Tema:** Redesign da Tela 2 (Form) do PreCadastro `/interesse` — Variante A (Digital & Portal)
 - **Saída:**
@@ -131,15 +145,13 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 - **Pendência operacional:** check manual semanal de carrinhos abandonados toda terça 8h BRT continua.
 - **Próximo:** Frente C itens 2 e 5 (telas internas restantes) ou Frente D (whitelist de cobertura).
 
-## Sessões anteriores
-
 - **Data:** 2026-05-21 (quinta)
 - **Tema:** Frente C item 4 — Tela Perfil read-only + Modal de Recibo (+ follow-up de tipografia da Cobrança)
 - **Saída:**
   - Branch `feat/perfil-readonly-modal-recibo` mergeada em main (squash `e912675`, PR #8). Follow-up `chore/cobranca-typography-status-doc` na sequência.
   - **Tela Perfil reescrita 100% read-only**, 5 blocos: Header de perfil, Dados Pessoais (snapshot local, CPF com olho, sem chevrons), Histórico de pedidos, Cobrança (decomposição), Pausar/Cancelar (WhatsApp) + microcopy final sem `<strong>`. Saíram: chevrons, botão "Atualizar" do Cartão, "Sair da conta", "(estimado)" e o **bloco Cartão inteiro** (sem Asaas no MVP). Sino fora do topbar.
   - **Histórico real** com 3 estados (A1 idle 3 entregas / A2 vazio cliente novo / A3 parcial); "Ver todos →" só quando `entregas.length > 3`.
-  - **Cobrança real**: decomposição Assinatura + Extras (soma dos confirmados do mês) + Frete = Total; "Próxima fatura · 01/MM" derivada client-side; cenário B2 (frete grátis condomínio) detectado por `valor_frete === 0` com microcopy success-text. Sub-linha "Pago" omitida (não afirmar pagamento). Tipografia dos rótulos alinhada ao `.bk-row .k` do v4 no follow-up (League Gothic caixa-alta 11px; Total em Montagu Slab 16px brand-500).
+  - **Cobrança real**: decomposição Assinatura + Extras (soma dos confirmados do mês) + Frete = Total; "Próxima fatura · 01/MM" derivada client-side; cenário B2 (frete grátis condomínio) detectado por `valor_frete === 0` com microcopy success-text **(removido em 25/05/2026 — frete R$ 15 universal; ver Última sessão de trabalho)**. Sub-linha "Pago" omitida (não afirmar pagamento). Tipografia dos rótulos alinhada ao `.bk-row .k` do v4 no follow-up (League Gothic caixa-alta 11px; Total em Montagu Slab 16px brand-500).
   - **Modal de Recibo (bottom-sheet)** reusando o padrão do modal de confirmação da Assinatura v4 + `useModalA11y` (Esc, click fora, foco volta pra linha). 3 variantes: **C2** (sem extras) e **C3** (com extras) ativas; **C1** (futura) dormante porque o histórico é só passado. Seção "Assinatura" (gramatura como meta, sem preço) + "Extras" condicional (total da seção em brand-500 15px/700). Footnotes sem afirmar pagamento.
   - **Endpoints (sem schema novo):** modo `?history=true` em `GET /api/weekly-orders` (entregas passadas confirmadas; "entregue" inferido por `delivery_date < hoje && status='confirmado'`); `valor_paes` + `valor_frete` expostos no `GET /api/subscriptions/[id]`. Wrapper `getWeeklyOrders(id, {history})`.
   - **Smoke em Preview** (Hugo): A1×B1, A1×B2, A2×B1, A3×B1 + modal C2/C3 + a11y completa. Build validado no ambiente da Vercel (build local quebra porque o iCloud esvazia o binário nativo do rolldown — não é bug do código).
