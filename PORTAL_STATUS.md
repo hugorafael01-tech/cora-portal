@@ -93,7 +93,7 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 ## Gap spec × código (a reconciliar)
 - Spec v3.0 cita Stripe/Pagar.me como gateway → produto migrou pra Asaas. Atualizar seção 7.2 na próxima consolidação.
 - Bottom nav da spec v3.0 (Home, Demonstrativo, Cardápio, Perfil) substituída na v3.1 (Home, Sua Assinatura, Cardápio, Perfil). Código reflete v3.1.
-- Auth: spec ainda fala em magic link Supabase. Decisão atual (Fase 7): localStorage com `subscription_id` funciona como credencial durável no MVP. Auth real (OTP WhatsApp ou magic link via Supabase Auth) é v2, quando tiver assinantes ativos pagando.
+- Auth: spec ainda fala em magic link Supabase. Decisão atual (Fase 7): localStorage com `subscription_id` funciona como credencial durável no MVP. Auth real (OTP WhatsApp ou magic link via Supabase Auth) é v2, quando tiver assinantes ativos pagando. **(SUPERADA em 25/05/2026 — auth real iniciada antes do Alpha; ver bloco "Auth do Portal — Magic Link (SMS-ready)" abaixo. Auth — Frente A mergeada PR #17.)**
 
 ## Próximo foco acordado
 
@@ -109,9 +109,39 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 - **Frente D — Whitelist de cobertura** — pendência da Fase 8 (`admin.acora.com.br`): endpoint pra consultar `coverage_whitelist` no banco, refatorar `estaNaWhitelist` em `src/utils/coverage.js` pra async. Hoje retorna sempre false (lista local vazia em `WHITELIST_HARDCODED`).
 - **PreCadastro polimento v1 (Digital & Portal, não Frente C)** ✅ **Concluído em 23/05/2026.** Tela 2 (`/interesse`) redesenhada conforme a Variante A do Claude Design. Merge squash `0cd58c4` (PR #14). Detalhes na "Última sessão de trabalho". Task ClickUp: [86e1heqvg](https://app.clickup.com/t/86e1heqvg) (Complete).
 
+## Auth do Portal — Magic Link (SMS-ready)
+
+Iniciativa de auth real do portal, em 5 frentes. Fonte: `docs/CORA_Briefing_Auth_MagicLink_SMS_Ready.md`. Substitui o gate atual (localStorage `cora_subscription`) por autenticação Supabase com magic link por e-mail, deixando a arquitetura preparada pra ligar SMS OTP no futuro com flip de feature flag. Prazo de referência: antes do início das entregas Alpha (agosto/2026).
+
+- **Auth — Frente A — Schema e infra.** ✅ **Mergeada em 25/05/2026** (PR #17, squash `0d115fe`). Schema confirmado (sem migration), `.env.local.example` com scaffold das vars `VITE_` + distinção anon vs service_role, e checklist de configuração do dashboard em `docs/CORA_Auth_Frente_A_Checklist.md` (Hugo executa). **Pendência:** rodar o checklist no dashboard Supabase.
+- **Auth — Frente B — Auth core.** Pendente. `AuthProvider`, `useAuth`, `ProtectedRoute`, substituição do gate `cora_subscription`, telas `/login`, `/login-sent`, `/auth/callback`, logout no Perfil; adiciona `react-router-dom` e `@supabase/supabase-js` no front. Primeiro preview Vercel real da iniciativa.
+- **Auth — Frente C — Onboarding integration.** Pendente. Normalização E.164 no T1, helper `src/lib/phone.js`, criação do usuário Supabase no fim do onboarding, magic link automático pós-cadastro, Welcome screen atualizada.
+- **Auth — Frente D — SMS-ready dormante.** Pendente. Componentes `OTPInput`/`PhoneInput`, feature flag em `src/auth/methods.js`, UI condicional na tela de login, smoke tests em preview com `VITE_AUTH_METHODS=sms,email`.
+- **Auth — Frente E — Documentação e cleanup.** Pendente. `src/auth/adminRecovery.md`, `docs/CORA_Auth_Ligar_SMS.md`, atualização do PORTAL_STATUS e do `.env.local.example`.
+
+**Decisões estruturais:**
+- **Provedor SMS futuro:** Twilio. Configurado só no momento da virada da chave (sem custo no Alpha; em dev/preview o OTP aparece no log do console).
+- **Sender do magic link:** `oi@acora.com.br` (raiz já verificada no Resend), display "Cora". Override da §4.2 do briefing (que apontava `oi@send.acora.com.br`).
+
 ## Última sessão de trabalho
 
-- **Data:** 2026-05-25 (domingo)
+- **Data:** 2026-05-25 (segunda)
+- **Tema:** Auth — Frente A (schema + infra + scaffold de env)
+- **Saída:**
+  - Branch `feat/auth-frente-a` mergeada em main (squash `0d115fe`, PR #17). Primeira frente do briefing `docs/CORA_Briefing_Auth_MagicLink_SMS_Ready.md` (auth real via Supabase magic link, com arquitetura SMS-ready dormente).
+  - **A.1 — Schema (sem alteração):** smoke test read-only via SQL Editor confirmou `subscriptions.user_id` (uuid, nullable, FK→`auth.users(id)` ON DELETE CASCADE), RLS habilitada, 4 policies PERMISSIVE sem vazamento, e `whatsapp` presente. Nenhuma migration — schema é governado pelo `cora-backoffice` (coluna já aplicada na migration 0017 do backoffice, 23/05/2026).
+  - **A.3 — `.env.local.example`:** adicionadas `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_AUTH_METHODS=email`. Comentário reescrito pra distinguir SEGREDOS (service_role / API keys, NUNCA `VITE_`) de chaves públicas por design (anon, `VITE_` ok porque a RLS protege). Vars server-side intactas, com nota de que `SUPABASE_URL` (server) e `VITE_SUPABASE_URL` (front) carregam o mesmo valor com dois nomes.
+  - **A.2 — `docs/CORA_Auth_Frente_A_Checklist.md`:** checklist auditável passo a passo pra configuração do dashboard Supabase (providers Email/Phone, SMTP Resend, template de e-mail, redirect URLs, JWT, smoke test). CC não toca no dashboard — Hugo executa.
+  - **Decisão estrutural:** sender do magic link na raiz `oi@acora.com.br` (raiz já verificada no Resend), **override da §4.2 do briefing** que apontava `oi@send.acora.com.br`. Com o sender na raiz, o Reply-To fica redundante (resposta cai no inbox do Hugo via alias `oi@`).
+  - **Verificação:** sem preview Vercel necessário nesta frente (config de dashboard + scaffold de docs/env). Validação por checklist auditável; o primeiro preview real vem na Frente B.
+- **Pendente:** Hugo executar o checklist do dashboard Supabase (`docs/CORA_Auth_Frente_A_Checklist.md`) quando puder.
+- **Bloqueia:** Auth — Frente B (auth core) depende do dashboard estar configurado.
+- **Pendência operacional:** check manual semanal de carrinhos abandonados toda terça 8h BRT continua.
+- **Próximo:** Auth — Frente B (AuthProvider, ProtectedRoute, telas `/login`, `/login-sent`, `/auth/callback`, logout no Perfil) — ver bloco "Auth do Portal — Magic Link (SMS-ready)".
+
+## Sessões anteriores
+
+- **Data:** 2026-05-25 (segunda)
 - **Tema:** Remoção do Cenário B2 (frete grátis em condomínio) — frete R$ 15 passa a universal
 - **Saída:**
   - Branch `fix/remove-frete-gratis-condominio` (a partir de main). Fonte: `docs/CORA_Briefing_Remover_Cenario_B2.md` + `CORA_Decisoes_v2.md` v2.2 (22/05/2026).
@@ -121,9 +151,7 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
   - **Backend:** `valor_frete` mantido no `GET /api/subscriptions/[id]` (rule 4 do briefing — é a fonte do R$ 15); só atualizado o comentário stale que citava o B2.
   - **Banco:** discovery read-only (service-role) → **0 registros** com `valor_frete = 0` ou NULL (de 2 subscriptions). Nenhum UPDATE necessário. Schema intocado (governança no `cora-backoffice`).
   - **Verificação:** `npm run build` limpo; `eslint` igual ao main (29 problems, todos pré-existentes — nenhum nos trechos tocados).
-  - **Pendente:** validação em Vercel Preview com os 5 prints do briefing + squash merge via GitHub UI.
-
-## Sessões anteriores
+  - **Mergeado** via PR #16 (squash `57f2264`).
 
 - **Data:** 2026-05-23 (sábado)
 - **Tema:** Redesign da Tela 2 (Form) do PreCadastro `/interesse` — Variante A (Digital & Portal)
