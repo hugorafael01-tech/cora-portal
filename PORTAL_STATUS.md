@@ -65,8 +65,8 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 ## Spec vigente
 - **Portal:** v3.0 (mar/2026) + Adendo v3.1 (mar/2026)
-  - Backend (schema, endpoints, persistência) detalhado em `docs/CORA_Briefing_Fase7_Backend.md` e `docs/CORA_Prompt_Fase7_ClaudeCode.md`
-  - Continuação pós-Fase 7 (4 frentes mapeadas) em `docs/CORA_Briefing_PosFase7.md`
+  - Backend (schema, endpoints, persistência) detalhado em `docs/archive/briefings/CORA_Briefing_Fase7_Backend.md` e `docs/archive/briefings/CORA_Prompt_Fase7_ClaudeCode.md`
+  - Continuação pós-Fase 7 (4 frentes mapeadas) em `docs/archive/briefings/CORA_Briefing_PosFase7.md`
   - Feedbacks UXers + pendências nas 4 telas internas em `docs/CORA_Telas_Internas_Pendencias.md`
 - **Próxima consolidação prevista:** v4.0 (pós-testes de usabilidade)
 - **Local dos docs:** projeto do Claude (CORA_Portal_Assinante_Especificacao_v3.docx + CORA_Portal_Adendo_v3_1_Redesign.docx)
@@ -74,7 +74,7 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 ## Observações sobre este arquivo
 - `package.json` com version `0.0.0` — produto é v3.2.7, não há versionamento formal no código. A decidir: adotar semver no package.json ou tratar versão só como conceito de produto.
 - Listagem de rotas/componentes pode estar incompleta (top-level apenas). Ajustar prompt na próxima regeneração se for o caso.
-- Handoffs de design vivem em `docs/handoff/[escopo]-[mes-ano]/` (convenção a partir de mai/2026, ex.: `docs/handoff/precadastro-v1-mai2026/`). Próximos handoffs do Claude Design ou de outras frentes seguem o mesmo padrão.
+- Handoffs de design vivem em `docs/handoff/[escopo]-[mes-ano]/` (convenção a partir de mai/2026, ex.: `docs/archive/handoff/precadastro-v1-mai2026/`). Próximos handoffs do Claude Design ou de outras frentes seguem o mesmo padrão.
 
 ## Decisões de produto aguardando Hugo
 - [x] Preços unitários dos pães extras na cesta semanal — **resolvido** (CORA_Precos_e_Planos_v1.md)
@@ -97,7 +97,7 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 ## Próximo foco acordado
 
-4 frentes mapeadas em `docs/CORA_Briefing_PosFase7.md`, em ordem de prioridade:
+4 frentes mapeadas em `docs/archive/briefings/CORA_Briefing_PosFase7.md`, em ordem de prioridade:
 
 - **Frente A — Capacity gate antes do lançamento** (task ClickUp: [86e1a8q50](https://app.clickup.com/t/86e1a8q50), high). ✅ **Concluída em 11/05/2026.** Deployada em produção. Schema (`app_settings` + `capacity_waitlist`), endpoints (`/api/settings`, `/api/capacity-waitlist`, check 409 em `/api/subscriptions`), frontend (Splash modo fechado + CapacityWaitlist page + banner persistente pós-redirect) e email transacional via Resend. Validada pelos cenários C1, C2, C3, C4, C6, C7.
 - **Frente B — SPF/DKIM no domínio acora.com.br no Resend** (task ClickUp: [86e1a8q5t](https://app.clickup.com/t/86e1a8q5t), high). ✅ **Concluída em 09/05/2026.** Domínio verificado, EMAIL_FROM=portal@acora.com.br em Production (também em Preview a partir de 11/05).
@@ -111,7 +111,7 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 ## Auth do Portal — Magic Link (SMS-ready)
 
-Iniciativa de auth real do portal, em 5 frentes. Fonte: `docs/CORA_Briefing_Auth_MagicLink_SMS_Ready.md`. Substitui o gate atual (localStorage `cora_subscription`) por autenticação Supabase com magic link por e-mail, deixando a arquitetura preparada pra ligar SMS OTP no futuro com flip de feature flag. Prazo de referência: antes do início das entregas Alpha (agosto/2026).
+Iniciativa de auth real do portal, em 5 frentes. Fonte: `docs/archive/briefings/CORA_Briefing_Auth_MagicLink_SMS_Ready.md`. Substitui o gate atual (localStorage `cora_subscription`) por autenticação Supabase com magic link por e-mail, deixando a arquitetura preparada pra ligar SMS OTP no futuro com flip de feature flag. Prazo de referência: antes do início das entregas Alpha (agosto/2026).
 
 - **Auth — Frente A — Schema e infra.** ✅ **Mergeada em 25/05/2026** (PR #17, squash `0d115fe`). Schema confirmado (sem migration), `.env.local.example` com scaffold das vars `VITE_` + distinção anon vs service_role, e checklist de configuração do dashboard em `docs/CORA_Auth_Frente_A_Checklist.md` (Hugo executa). **Pendência:** rodar o checklist no dashboard Supabase.
 - **Auth — Frente B — Auth core.** Pendente. `AuthProvider`, `useAuth`, `ProtectedRoute`, substituição do gate `cora_subscription`, telas `/login`, `/login-sent`, `/auth/callback`, logout no Perfil; adiciona `react-router-dom` e `@supabase/supabase-js` no front. Primeiro preview Vercel real da iniciativa.
@@ -128,7 +128,7 @@ Iniciativa de auth real do portal, em 5 frentes. Fonte: `docs/CORA_Briefing_Auth
 - **Data:** 2026-05-25 (segunda)
 - **Tema:** Auth — Frente A (schema + infra + scaffold de env)
 - **Saída:**
-  - Branch `feat/auth-frente-a` mergeada em main (squash `0d115fe`, PR #17). Primeira frente do briefing `docs/CORA_Briefing_Auth_MagicLink_SMS_Ready.md` (auth real via Supabase magic link, com arquitetura SMS-ready dormente).
+  - Branch `feat/auth-frente-a` mergeada em main (squash `0d115fe`, PR #17). Primeira frente do briefing `docs/archive/briefings/CORA_Briefing_Auth_MagicLink_SMS_Ready.md` (auth real via Supabase magic link, com arquitetura SMS-ready dormente).
   - **A.1 — Schema (sem alteração):** smoke test read-only via SQL Editor confirmou `subscriptions.user_id` (uuid, nullable, FK→`auth.users(id)` ON DELETE CASCADE), RLS habilitada, 4 policies PERMISSIVE sem vazamento, e `whatsapp` presente. Nenhuma migration — schema é governado pelo `cora-backoffice` (coluna já aplicada na migration 0017 do backoffice, 23/05/2026).
   - **A.3 — `.env.local.example`:** adicionadas `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_AUTH_METHODS=email`. Comentário reescrito pra distinguir SEGREDOS (service_role / API keys, NUNCA `VITE_`) de chaves públicas por design (anon, `VITE_` ok porque a RLS protege). Vars server-side intactas, com nota de que `SUPABASE_URL` (server) e `VITE_SUPABASE_URL` (front) carregam o mesmo valor com dois nomes.
   - **A.2 — `docs/CORA_Auth_Frente_A_Checklist.md`:** checklist auditável passo a passo pra configuração do dashboard Supabase (providers Email/Phone, SMTP Resend, template de e-mail, redirect URLs, JWT, smoke test). CC não toca no dashboard — Hugo executa.
@@ -144,7 +144,7 @@ Iniciativa de auth real do portal, em 5 frentes. Fonte: `docs/CORA_Briefing_Auth
 - **Data:** 2026-05-25 (segunda)
 - **Tema:** Remoção do Cenário B2 (frete grátis em condomínio) — frete R$ 15 passa a universal
 - **Saída:**
-  - Branch `fix/remove-frete-gratis-condominio` (a partir de main). Fonte: `docs/CORA_Briefing_Remover_Cenario_B2.md` + `CORA_Decisoes_v2.md` v2.2 (22/05/2026).
+  - Branch `fix/remove-frete-gratis-condominio` (a partir de main). Fonte: `docs/archive/briefings/CORA_Briefing_Remover_Cenario_B2.md` + `CORA_Decisoes_v2.md` v2.2 (22/05/2026).
   - **Perfil read-only (Cobrança):** removida a detecção `valor_frete === 0`, o estilo `success-text`/weight 600 e a microcopy "frete grátis · programa condomínio". A linha Frete agora renderiza sempre `R$ 15,00` em estilo padrão, idêntica às linhas Assinatura/Extras. `valor_frete` segue como a fonte do valor exibido (B1).
   - **Fluxo Assinatura (limpeza além do briefing, aprovada por Hugo):** removidos o `CondominioModal` ("Frete grátis em condomínio"), o card "Mora num condomínio?" e o estado/handlers (`condoModal`/`fecharCondo`) — promoviam a regra descartada direto na tela, antes do teste com usuários.
   - **E-mail de admin (`api/subscriptions/index.js`):** removido o rodapé "Entrega gratuita a partir de 5 assinantes... aplicar desconto manualmente".
@@ -167,9 +167,9 @@ Iniciativa de auth real do portal, em 5 frentes. Fonte: `docs/CORA_Briefing_Auth
   - **Intocados (restrição §8 do briefing):** sanitização anti-XSS, honeypot `website`, máscara WhatsApp, webhook `POST /api/lead`, payload exato.
   - **Verificação:** `npm run build` + `eslint` limpos; verificação visual headless (Chrome CDP) em mobile 390 e desktop 1440 confirmou alinhamento do logo (logoLeft==contentLeft), heading 44px, CTA centralizado, chip curto verde em 2/2 e scroll-to-top no erro (scrollY 2486→0). Smoke test funcional do submit em Vercel Preview pelo Hugo.
   - **Smoke em produção:** validado em `app.acora.com.br/interesse` em 24/05/2026 (mobile + desktop) antes do push de captura na terça (26/05).
-  - **Fonte:** briefing `docs/handoff/precadastro-v1-mai2026/CORA_Briefing_CC_PreCadastro_v1.md` + referências do Claude Design (Variante A).
+  - **Fonte:** briefing `docs/archive/handoff/precadastro-v1-mai2026/CORA_Briefing_CC_PreCadastro_v1.md` + referências do Claude Design (Variante A).
 - **Refinamento Tela 3 (PR #15):** CTA padronizado com as demais telas, pequeno refinamento de texto, "Niterói" removido do copy de compartilhamento. Sem mexer em estrutura ou lógica da Confirm.
-- **Pendências pós-merge:** propagar a regra de nome de produto da DS (Montagu Slab sentence case, `docs/handoff/precadastro-v1-mai2026/DS-PATCH.md`) — tasks ClickUp: Portal [86e1heqw3](https://app.clickup.com/t/86e1heqw3), landing [86e1heqw8](https://app.clickup.com/t/86e1heqw8), Backoffice [86e1heqwb](https://app.clickup.com/t/86e1heqwb). Entrega registrada na lista Digital & Portal (`901712612053`): [86e1heqvg](https://app.clickup.com/t/86e1heqvg) (Complete).
+- **Pendências pós-merge:** propagar a regra de nome de produto da DS (Montagu Slab sentence case, `docs/archive/handoff/precadastro-v1-mai2026/DS-PATCH.md`) — tasks ClickUp: Portal [86e1heqw3](https://app.clickup.com/t/86e1heqw3), landing [86e1heqw8](https://app.clickup.com/t/86e1heqw8), Backoffice [86e1heqwb](https://app.clickup.com/t/86e1heqwb). Entrega registrada na lista Digital & Portal (`901712612053`): [86e1heqvg](https://app.clickup.com/t/86e1heqvg) (Complete).
 - **Pendência operacional:** check manual semanal de carrinhos abandonados toda terça 8h BRT continua.
 - **Próximo:** Frente C itens 2 e 5 (telas internas restantes) ou Frente D (whitelist de cobertura).
 
@@ -195,8 +195,8 @@ Iniciativa de auth real do portal, em 5 frentes. Fonte: `docs/CORA_Briefing_Auth
   - Branch `feat/drawer-assinatura-qtystepper` mergeada em main (commit `9e3cb9a`, squash de 3 commits internos).
   - **Origem:** durante validação visual da Frente C item 3 (15/05), descobriu-se confusão conceitual no Drawer com clientes de 2-3 pães: trocar tipos entre slots posicionais marcava como alteração mesmo quando a composição final era idêntica ao baseline. UI era posicional ("Pão 1", "Pão 2"), operação era de composição (quantos de cada).
   - **Decisão de produto:** substituir slots radio por **QtyStepper por tipo de pão** (mesma metáfora dos extras), com **swap atômico** quando capacity full (resolve deadlock no plano 1 pão).
-  - **Wireframes consolidados via Claude Design:** `docs/Assinatura no Drawer _standalone_.html` (v1, swap atômico + capacity hint) → `docs/Assinatura_no_Drawer v2__standalone_.html` (v2, reorganização do Drawer: colapsável + empty state). Decisão de manter ordem original "Sua Assinatura → Extras" reforçada após CD propor inversão.
-  - **11 mudanças incrementais aplicadas** (documentadas em `docs/CORA_Briefing_Drawer_v2_Reorganizacao_e_Polish.md`):
+  - **Wireframes consolidados via Claude Design:** `docs/archive/wireframes/Assinatura no Drawer _standalone_.html` (v1, swap atômico + capacity hint) → `docs/archive/wireframes/Assinatura_no_Drawer v2__standalone_.html` (v2, reorganização do Drawer: colapsável + empty state). Decisão de manter ordem original "Sua Assinatura → Extras" reforçada após CD propor inversão.
+  - **11 mudanças incrementais aplicadas** (documentadas em `docs/archive/briefings/CORA_Briefing_Drawer_v2_Reorganizacao_e_Polish.md`):
     - Seção Sua Assinatura colapsável (default colapsada quando `composition == baseline`)
     - Auto-expand handler-side (sem useEffect, evita lint `react-hooks/set-state-in-effect`) quando user faz alteração
     - Composição compacta dinâmica no header (linha clicável): "1× Original + 1× Integral", "2× Original", etc
@@ -234,7 +234,7 @@ Iniciativa de auth real do portal, em 5 frentes. Fonte: `docs/CORA_Briefing_Auth
   - **Bug fixes:**
     - Badge do Nav sempre ativo após confirmar (item 10 da task 86e1c2bnj): condição robusta + fallback em `confirmCurrentOrder` por `delivery_date` quando `saved.id` não bate no setState. Console.warn pra rastreamento.
     - Botão "Adicionar à cesta" grudando na foto quando descrição do ProductCard é curta: fix de CSS de respiro entre `.row` e `.cta-zone`.
-  - **Sources of truth adicionados:** `docs/CORA_FrenteC_Item3_Cardapio_Decisoes.md` (v3, final), `docs/CORA_Briefing_FrenteC_Item3_Cardapio.md` (briefing técnico), `docs/Cardapio Wireframe v2 _standalone_.html` (referência visual fonte primária), `docs/seed_test_assinante.sql` (SQL de seed reutilizável pra Preview deployments).
+  - **Sources of truth adicionados:** `docs/archive/briefings/CORA_FrenteC_Item3_Cardapio_Decisoes.md` (v3, final), `docs/archive/briefings/CORA_Briefing_FrenteC_Item3_Cardapio.md` (briefing técnico), `docs/archive/wireframes/Cardapio Wireframe v2 _standalone_.html` (referência visual fonte primária), `supabase/seeds/seed_test_assinante.sql` (SQL de seed reutilizável pra Preview deployments).
   - **Resíduos endereçados da task 86e1c2bnj (PR 2 anterior):** itens 1 (copy de cobrança), 3 (touch-target do `×` sublimite — `×` removido), 7 (branch `qty>0` inerte no Modal — Modal removido), 9 (peso/tamanho inconsistente nos extras no Drawer).
   - **Validações técnicas:** `npm run build` 271.76 kB / 81.04 kB gzip ✓; lint 18 problems (baseline mantido) ✓; `npm run test:cutoff` 6/6 ✓.
   - **Validação manual em Preview deployment:** 12 cenários do smoke test rodados pelos 3 commits da branch (Fase 1, Fase 2, Fase 3, mais 2 commits de fix do badge + polish do Hero).
@@ -273,7 +273,7 @@ Iniciativa de auth real do portal, em 5 frentes. Fonte: `docs/CORA_Briefing_Auth
   - Email transacional via Resend (subject "Recebemos seu contato", assinatura simplificada só "Hugo" — "Padeiro apaixonado" segue válido pros posts do Instagram).
   - Variável `EMAIL_FROM=portal@acora.com.br` criada em Preview via `npx vercel env add` (já existia em Production). Resolveu erro 403 do Resend em modo testing.
   - Validação manual: C1 (sanity fluxo normal), C2/C3 (gate fechado + lista de espera + email chegando), C4 (idempotência por email), C6 (race: T2 aberta + flip da flag → 409 + banner persistente), C7 (reabertura do gate). C5 (validação payload) e C8 (persistência) pulados — edge cases menores.
-  - 2 iterações de copy com brand voice; consolidação em `docs/CORA_Briefing_FrenteA_CapacityGate.md` (briefing original) e `docs/CORA_Briefing_FrenteA_Ajustes.md` (revisão de copy + banner C6).
+  - 2 iterações de copy com brand voice; consolidação em `docs/archive/briefings/CORA_Briefing_FrenteA_CapacityGate.md` (briefing original) e `docs/archive/briefings/CORA_Briefing_FrenteA_Ajustes.md` (revisão de copy + banner C6).
   - Deploy de produção via `vercel --prod`. Smoke test em app.acora.com.br confirmou Splash modo aberto (flag reposicionada antes do deploy).
   - PR `feat/capacity-gate` mergeado em main, branch deletada localmente e no remoto.
   - Task ClickUp 86e1a8q50 fechada com comentário detalhado.
@@ -290,7 +290,7 @@ Iniciativa de auth real do portal, em 5 frentes. Fonte: `docs/CORA_Briefing_Auth
   - `EMAIL_FROM=portal@acora.com.br` em Production, `EMAIL_FROM=onboarding@resend.dev` em Preview (corrigido posteriormente em 11/05 pra `portal@acora.com.br` também, ver Frente A).
   - Deploy de produção via `vercel --prod` (commit `e90a00f`).
   - Teste end-to-end: subscription criada em `app.acora.com.br`, e-mail chegou na inbox do Gmail com remetente `portal@acora.com.br` (não caiu em spam).
-  - Briefing de continuação `docs/CORA_Briefing_PosFase7.md` commitado (commit `257bc19`).
+  - Briefing de continuação `docs/archive/briefings/CORA_Briefing_PosFase7.md` commitado (commit `257bc19`).
   - Task ClickUp 86e1a8q5t fechada.
 - **Pendência registrada:** DMARC ainda não configurado (bonus opcional, `p=none` pra monitoring).
 
