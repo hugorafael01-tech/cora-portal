@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react"
 const CoraOnboarding = lazy(() => import("./Onboarding"));
 const PreCadastro = lazy(() => import("./pages/PreCadastro"));
 const CapacityWaitlist = lazy(() => import("./pages/CapacityWaitlist"));
+import { Routes, Route, Navigate, Outlet, useNavigate, useLocation } from "react-router-dom";
 import ProductCard from "./components/ProductCard";
 import PendingPaymentBanner from "./components/PendingPaymentBanner";
 import { isPastCutoff, nextEditableThursdayISO, nextSubscriptionChangeThursdayISO } from "./utils/cutoff";
@@ -1947,19 +1948,101 @@ const Perfil=({subscription,weeklyOrders=[],pendingPayment=false})=>{
   </div>;
 };
 
+// --- LAYOUT (shell autenticado: sticky header + Nav + Outlet) ---
+// Envolve as rotas autenticadas (/, /assinatura, /cardapio, /perfil).
+// PendingPaymentBanner + Nav ficam aqui pra persistirem entre trocas de aba.
+// Cross-dissolve preservado via key={location.pathname} no .tab-content.
+function Layout({pendingPayment,inicioBadge,onNav}){
+  const location=useLocation();
+  const mainRef=useRef(null);
+  // Reset scroll ao trocar de rota (cobre window + main com overflow interno).
+  useEffect(()=>{mainRef.current?.scrollTo({top:0});window.scrollTo({top:0});},[location.pathname]);
+  // Deriva aba ativa do pathname pra highlight do Nav.
+  const active=location.pathname==="/"?"home":location.pathname.slice(1);
+  return<div style={{fontFamily:fb,maxWidth:390,margin:"0 auto",background:W[50],minHeight:"100vh",display:"flex",flexDirection:"column",position:"relative"}}>
+    <a href="#main-content" className="skip-link">Pular para o conteúdo</a>
+    {/* Bloco sticky: logo + banner pendente. Banner integrado ao
+        sticky pra nao sair do viewport quando a Home faz scroll inicial. */}
+    <div style={{position:"sticky",top:0,zIndex:10}}>
+      <div style={{padding:"10px 16px",background:"#FFF",borderBottom:`1px solid ${W[200]}`}}>
+        <img src={IMG.logo} alt="Cora" style={{height:28}}/>
+      </div>
+      <PendingPaymentBanner pendingPayment={pendingPayment}/>
+    </div>
+    <main ref={mainRef} id="main-content" style={{flex:1,overflowY:"auto"}}>
+      <div key={location.pathname} className="tab-content">
+        <Outlet/>
+      </div>
+    </main>
+    {/* Footers fixos (OrderFooter/ConfirmedFooter) removidos no PR 2 Fase 1.
+        Confirmação do pedido vai pro botão "Confirmar pedido" no card da Home
+        e no EditarCarrinhoDrawer (Fase 2). */}
+    <Nav active={active} onNav={onNav} inicioBadge={inicioBadge}/>
+    <style>{`
+      *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+      body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+      img{max-width:100%}
+      input,button{font-size:16px}
+      @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+      @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+      @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+      @keyframes spin{to{transform:rotate(360deg)}}
+      /* Toast: fadeUp dedicado (280ms ease-out) — translateY 8px → 0 + fade */
+      @keyframes toastFadeUp{from{opacity:0;transform:translateY(8px) scale(1)}to{opacity:1;transform:translateY(0) scale(1)}}
+      /* Remoção de linha do Card de Cesta + Drawer: slide-out horizontal + fade + colapso vertical (450ms ease-out — abaixo disso o user não acompanha a transição). */
+      @keyframes slideOutFade{to{opacity:0;transform:translateX(40px);max-height:0;padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0;border-bottom-width:0}}
+      .cesta-row-removing{animation:slideOutFade 450ms ease-out forwards;overflow:hidden}
+      .bp:hover{background:${B[600]}!important}
+      .bw:hover{background:#1FAF54!important}
+      .bl:hover{background:${W[100]}!important}
+      .lk:hover{text-decoration:underline}
+      .qb:hover:not(:disabled){background:${W[100]}!important}
+      /* Page transitions cross-dissolve entre abas */
+      .tab-content{animation:tabIn 220ms ease-out}
+      @keyframes tabIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+      /* Press scale nos CTAs e botoes interativos */
+      .press-scale{transition:transform 120ms ease-out,background 150ms ease-out}
+      .press-scale:active:not(:disabled){transform:scale(0.97)}
+      /* Focus visible universal: botoes, links, e elementos com role=button ou tabindex */
+      button:focus-visible,
+      a:focus-visible,
+      [role="button"]:focus-visible,
+      [role="dialog"]:focus-visible,
+      [tabindex]:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible{outline:none;box-shadow:0 0 0 3px ${B[50]},0 0 0 5px ${B[500]}}
+      /* Skip link a11y */
+      .skip-link{position:absolute;top:-40px;left:0;background:${B[500]};color:#FFF;padding:8px 16px;z-index:100;text-decoration:none;font-family:${fb};font-size:14px;border-radius:0 0 8px 0}
+      .skip-link:focus{top:0}
+      /* Reduced motion: respeita preferencia do sistema */
+      @media (prefers-reduced-motion: reduce){
+        *,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}
+      }
+    `}</style>
+  </div>;
+}
+
+// --- REQUIRE SUBSCRIPTION (gate de rotas autenticadas) ---
+// Sem subscription persistida + sem ?dev=1 -> /interesse (PreCadastro).
+// Sem subscription + com ?dev=1 -> /onboarding (fluxo manual de teste).
+// Subscription presente -> renderiza children (rotas autenticadas).
+function RequireSubscription({subscription,children}){
+  const params=new URLSearchParams(window.location.search);
+  const dev=!!params.get("dev");
+  if(!subscription&&!dev) return <Navigate to="/interesse" replace/>;
+  if(!subscription&&dev) return <Navigate to="/onboarding" replace/>;
+  return children;
+}
+
 // ═══ APP (rodapé persistente aqui) ═══
 export default function CoraPortal(){
+  const navigate = useNavigate();
   // Subscription persistida (MVP via localStorage; Fase 7 troca por DB).
-  // Se existir, pula onboarding e vai direto pra Home.
   const initialSubscription = loadSubscription();
-  const skipOnboarding = window.location.search.includes("skip=true") || !!initialSubscription;
-  const [scr, setScr] = useState(skipOnboarding ? "home" : "onboarding");
   const [subscription, setSubscription] = useState(initialSubscription);
-  const mainRef=useRef(null);
-  // Reset scroll ao trocar de aba. Cobre os dois casos porque o root usa
-  // minHeight:100vh (nao height) — o scroll acaba caindo na window quando
-  // o conteudo passa do viewport, e no <main> quando ha overflow interno.
-  useEffect(()=>{mainRef.current?.scrollTo({top:0});window.scrollTo({top:0});},[scr]);
+  // Reset scroll ao trocar de rota: agora vive no Layout (dep [location.pathname])
+  // pra cobrir as 4 rotas autenticadas. Rotas standalone nao usam shell.
   // === Carrinho persistido no servidor (Frente C item 1, PR 2) ===
   // weeklyOrders vem do GET /api/weekly-orders e é mantido sincronizado por
   // cada handler de carrinho. Primeiro item = pedido da próxima entrega.
@@ -2023,7 +2106,7 @@ export default function CoraPortal(){
 
   const goToCapacityWaitlist = (reason = "splash") => {
     setWaitlistReason(reason);
-    setScr("lista-espera");
+    navigate("/lista-espera");
   };
 
   // Sincronizacao com onboarding (substitui a mutacao direta de D)
@@ -2052,7 +2135,7 @@ export default function CoraPortal(){
   // Ao navegar pra outra aba (Assinatura/Cardapio/Perfil), desativa primeiro acesso
   const handleNav=(tela)=>{
     if(tela!=="home") setEhPrimeiroAcesso(false);
-    setScr(tela);
+    navigate(tela==="home"?"/":`/${tela}`);
   };
 
   // Status de pagamento da subscription. Apenas pending_payment dispara
@@ -2165,8 +2248,6 @@ export default function CoraPortal(){
     }
   };
 
-  const isOnboarding=scr==="onboarding";
-
   const handleOnboardingComplete=(payload)=>{
     // POST do POST /api/subscriptions ja rodou no clique "Confirmar" da T2.
     // Aqui so persiste o resultado + payload no localStorage e navega pra Home.
@@ -2180,7 +2261,7 @@ export default function CoraPortal(){
       // Caso defensivo: sem id, nao faz sentido criar subscription local.
       // Loga e segue pra Home (onboarding ja foi).
       console.warn("[App] onboarding sem subscription_id, abortando persist");
-      setScr("home");
+      navigate("/",{replace:true});
       return;
     }
 
@@ -2210,7 +2291,7 @@ export default function CoraPortal(){
     if(Object.keys(assinatura).length>0){
       setOnboardingConfig({data,assinatura});
     }
-    setScr("home");
+    navigate("/",{replace:true});
   };
 
   // Aplica alteração da Assinatura (Frente C item 2, Cenário A — mês alinhado).
@@ -2227,88 +2308,31 @@ export default function CoraPortal(){
     saveSubscription(updated);
   };
 
-const params = new URLSearchParams(window.location.search);
   // Fallback minimo enquanto chunks lazy carregam. Usa grafismo da marca.
   const lazyFallback=<div style={{position:"fixed",inset:0,background:W[50],display:"flex",alignItems:"center",justifyContent:"center"}}><img src="/images/grafismo_coracao.svg" alt="Cora" style={{width:48,height:48,opacity:0.6}}/></div>;
-  if (window.location.pathname === "/interesse") return <Suspense fallback={lazyFallback}><PreCadastro /></Suspense>;
-  // Rota capacity waitlist (manual: setScr("lista-espera"))
-  // Banner persistente na propria pagina substitui o toast antigo de redirect.
-  if (scr === "lista-espera") return (
+  const inicioBadge=currentWeeklyOrder?.status==="rascunho"&&((currentWeeklyOrder?.extras?.length||0)>0||currentWeeklyOrder?.composition!=null);
+
+  return (
     <Suspense fallback={lazyFallback}>
-      <CapacityWaitlist reason={waitlistReason}/>
+      <Routes>
+        {/* Standalone (sem shell autenticado) */}
+        <Route path="/interesse" element={<PreCadastro/>}/>
+        <Route path="/lista-espera" element={<CapacityWaitlist reason={waitlistReason}/>}/>
+        <Route path="/onboarding" element={<CoraOnboarding onComplete={handleOnboardingComplete} subscriptionsOpen={subscriptionsOpen} onGoToCapacityWaitlist={goToCapacityWaitlist}/>}/>
+        {/* Autenticadas: gate de subscription + Layout compartilhado */}
+        <Route element={
+          <RequireSubscription subscription={subscription}>
+            <Layout pendingPayment={pendingPayment} inicioBadge={inicioBadge} onNav={handleNav}/>
+          </RequireSubscription>
+        }>
+          <Route path="/" element={<Home onNav={handleNav} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaAtual={cestaAtual} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} pendingPayment={pendingPayment} currentWeeklyOrder={currentWeeklyOrder} currentExtras={currentExtras} addExtraToCart={addExtraToCart} removeExtraFromCart={removeExtraFromCart} updateComposition={updateComposition} confirmCurrentOrder={confirmCurrentOrder}/>}/>
+          <Route path="/assinatura" element={<Assinatura hasPending={false} cutoff={cutoff} subscription={subscription} assinaturaQtds={assinaturaQtds} onAlterado={handleAlterarAssinatura}/>}/>
+          <Route path="/cardapio" element={<Cardapio addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment}/>}/>
+          <Route path="/perfil" element={<Perfil subscription={subscription} weeklyOrders={weeklyOrders} pendingPayment={pendingPayment}/>}/>
+        </Route>
+        {/* Catch-all defensivo: rota desconhecida -> / */}
+        <Route path="*" element={<Navigate to="/" replace/>}/>
+      </Routes>
     </Suspense>
   );
-  // Sem subscription persistida e sem ?dev=1: PreCadastro. Subscription
-  // existente destrava o portal direto (funciona como sessao do MVP).
-  if (!subscription && !params.get("dev")) return <Suspense fallback={lazyFallback}><PreCadastro /></Suspense>;
-  if(isOnboarding) return <Suspense fallback={lazyFallback}><CoraOnboarding onComplete={handleOnboardingComplete} subscriptionsOpen={subscriptionsOpen} onGoToCapacityWaitlist={goToCapacityWaitlist}/></Suspense>;
-
-  return<div style={{fontFamily:fb,maxWidth:390,margin:"0 auto",background:W[50],minHeight:"100vh",display:"flex",flexDirection:"column",position:"relative"}}>
-    <a href="#main-content" className="skip-link">Pular para o conteúdo</a>
-    {/* Bloco sticky: logo + banner pendente. Banner integrado ao
-        sticky pra nao sair do viewport quando a Home faz scroll inicial. */}
-    <div style={{position:"sticky",top:0,zIndex:10}}>
-      <div style={{padding:"10px 16px",background:"#FFF",borderBottom:`1px solid ${W[200]}`}}>
-        <img src={IMG.logo} alt="Cora" style={{height:28}}/>
-      </div>
-      <PendingPaymentBanner pendingPayment={pendingPayment}/>
-    </div>
-    <main ref={mainRef} id="main-content" style={{flex:1,overflowY:"auto"}}>
-      <div key={scr} className="tab-content">
-        {scr==="home"&&<Home onNav={handleNav} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaAtual={cestaAtual} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} pendingPayment={pendingPayment} currentWeeklyOrder={currentWeeklyOrder} currentExtras={currentExtras} addExtraToCart={addExtraToCart} removeExtraFromCart={removeExtraFromCart} updateComposition={updateComposition} confirmCurrentOrder={confirmCurrentOrder}/>}
-        {scr==="assinatura"&&<Assinatura hasPending={false} cutoff={cutoff} subscription={subscription} assinaturaQtds={assinaturaQtds} onAlterado={handleAlterarAssinatura}/>}
-        {scr==="cardapio"&&<Cardapio addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment}/>}
-        {scr==="perfil"&&<Perfil subscription={subscription} weeklyOrders={weeklyOrders} pendingPayment={pendingPayment}/>}
-      </div>
-    </main>
-    {/* Footers fixos (OrderFooter/ConfirmedFooter) removidos no PR 2 Fase 1.
-        Confirmação do pedido vai pro botão "Confirmar pedido" no card da Home
-        e no EditarCarrinhoDrawer (Fase 2). */}
-    <Nav active={scr} onNav={handleNav} inicioBadge={
-      currentWeeklyOrder?.status==="rascunho" &&
-      ((currentWeeklyOrder?.extras?.length||0)>0 || currentWeeklyOrder?.composition!=null)
-    }/>
-    <style>{`
-      *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
-      body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior:none}
-      img{max-width:100%}
-      input,button{font-size:16px}
-      @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-      @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-      @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-      @keyframes spin{to{transform:rotate(360deg)}}
-      /* Toast: fadeUp dedicado (280ms ease-out) — translateY 8px → 0 + fade */
-      @keyframes toastFadeUp{from{opacity:0;transform:translateY(8px) scale(1)}to{opacity:1;transform:translateY(0) scale(1)}}
-      /* Remoção de linha do Card de Cesta + Drawer: slide-out horizontal + fade + colapso vertical (450ms ease-out — abaixo disso o user não acompanha a transição). */
-      @keyframes slideOutFade{to{opacity:0;transform:translateX(40px);max-height:0;padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0;border-bottom-width:0}}
-      .cesta-row-removing{animation:slideOutFade 450ms ease-out forwards;overflow:hidden}
-      .bp:hover{background:${B[600]}!important}
-      .bw:hover{background:#1FAF54!important}
-      .bl:hover{background:${W[100]}!important}
-      .lk:hover{text-decoration:underline}
-      .qb:hover:not(:disabled){background:${W[100]}!important}
-      /* Page transitions cross-dissolve entre abas */
-      .tab-content{animation:tabIn 220ms ease-out}
-      @keyframes tabIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-      /* Press scale nos CTAs e botoes interativos */
-      .press-scale{transition:transform 120ms ease-out,background 150ms ease-out}
-      .press-scale:active:not(:disabled){transform:scale(0.97)}
-      /* Focus visible universal: botoes, links, e elementos com role=button ou tabindex */
-      button:focus-visible,
-      a:focus-visible,
-      [role="button"]:focus-visible,
-      [role="dialog"]:focus-visible,
-      [tabindex]:focus-visible,
-      input:focus-visible,
-      select:focus-visible,
-      textarea:focus-visible{outline:none;box-shadow:0 0 0 3px ${B[50]},0 0 0 5px ${B[500]}}
-      /* Skip link a11y */
-      .skip-link{position:absolute;top:-40px;left:0;background:${B[500]};color:#FFF;padding:8px 16px;z-index:100;text-decoration:none;font-family:${fb};font-size:14px;border-radius:0 0 8px 0}
-      .skip-link:focus{top:0}
-      /* Reduced motion: respeita preferencia do sistema */
-      @media (prefers-reduced-motion: reduce){
-        *,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}
-      }
-    `}</style>
-  </div>;
 }
