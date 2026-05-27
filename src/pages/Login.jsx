@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { B, W, fb, fd, radii } from "../tokens";
+import { useAuth } from "../auth/useAuth";
 
 /* ══════════════════════════════════════════
    CORA - Login (magic link)
    /login
 
-   Tela 1 do fluxo de entrada sem senha. Usuario digita email,
-   submit dispara signInWithMagicLink (wired no commit 2 desta frente)
-   e navega pra /login-sent passando o email via location.state.
+   Tela 1 do fluxo de entrada sem senha. Usuario digita email, submit
+   dispara signInWithMagicLink e navega pra /login-sent passando o email
+   via location.state. Rate-limit do Supabase vira banner warning com
+   countdown; demais erros viram banner danger e liberam nova tentativa.
    ══════════════════════════════════════════ */
 
 /* ── Icones SVG inline. stroke 1.5, viewBox 24x24. ── */
@@ -211,24 +214,71 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (v) => EMAIL_RE.test(v.trim());
 const INLINE_ERROR_MSG = "Confira o email. Falta o final, como .com ou .com.br.";
 
+/* ── Detecao de rate-limit do Supabase ──
+   Supabase retorna 429 + mensagens como "For security purposes, you can only
+   request this after X seconds" ou contendo "rate limit". Detecta ambos pra
+   resiliencia. extractCooldownSeconds parseia o N da mensagem; default 60s. */
+const RATE_LIMIT_REGEX = /rate.?limit|only request this after/i;
+const RATE_LIMIT_DEFAULT_SECONDS = 60;
+
+const isRateLimitError = (err) => {
+  if (!err) return false;
+  if (err.status === 429) return true;
+  if (typeof err.message === "string" && RATE_LIMIT_REGEX.test(err.message)) return true;
+  return false;
+};
+
+const extractCooldownSeconds = (msg) => {
+  if (typeof msg !== "string") return null;
+  const m = msg.match(/(\d+)\s*seconds?/i);
+  return m ? parseInt(m[1], 10) : null;
+};
+
 export default function Login() {
-  // Email armazenado como digitado (sem trim em tempo real).
+  const { signInWithMagicLink } = useAuth();
+  const navigate = useNavigate();
+
+  // Email armazenado como digitado (sem trim em tempo real; trim so no submit).
   const [email, setEmail] = useState("");
   // touched: primeiro blur marca; controla quando inputError aparece.
   const [touched, setTouched] = useState(false);
-  // ctaState: 'disabled' | 'enabled' | 'loading'
-  const [ctaState, setCtaState] = useState("disabled");
   const [inputError, setInputError] = useState(null);
-  // errorBanner: { kind: 'danger' | 'warning', body: ReactNode } | null
-  const [errorBanner, setErrorBanner] = useState(null);
+  // bannerKind: 'danger' | null. So o banner danger precisa de estado proprio.
+  // O banner warning (rate-limit) deriva direto de cooldownSeconds em render,
+  // evitando dois state updates acoplados (que disparariam cascading renders).
+  const [bannerKind, setBannerKind] = useState(null);
+  // cooldownSeconds: 0 = sem cooldown. Quando > 0, CTA fica disabled e banner
+  // warning renderiza com N dinamico. Decrementa a cada 1s via useEffect.
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  // submitting: request em flight. Bloqueia novo submit + mostra spinner.
+  const [submitting, setSubmitting] = useState(false);
+
+  // CTA state derivado: loading > disabled (cooldown ou email invalido) > enabled.
+  const emailValid = isValidEmail(email);
+  const effectiveCtaState = submitting
+    ? "loading"
+    : cooldownSeconds > 0 || !emailValid
+      ? "disabled"
+      : "enabled";
+
+  // Countdown do rate-limit. setTimeout em cascata (cada tick agenda o
+  // proximo via setState + re-execucao do effect) evita drift e simplifica
+  // cleanup. Quando chega em 0, o banner warning desaparece naturalmente
+  // (derivado em render).
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return undefined;
+    const id = setTimeout(() => {
+      setCooldownSeconds((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearTimeout(id);
+  }, [cooldownSeconds]);
 
   const onChange = (e) => {
     const v = e.target.value;
     setEmail(v);
     const valid = isValidEmail(v);
-    setCtaState(valid ? "enabled" : "disabled");
     // Erro de rede some ao digitar; warning de rate-limit fica ate countdown zerar.
-    if (errorBanner?.kind === "danger") setErrorBanner(null);
+    if (bannerKind === "danger") setBannerKind(null);
     // Erro inline so aparece depois do primeiro blur.
     setInputError(touched && !valid && v.length > 0 ? INLINE_ERROR_MSG : null);
   };
@@ -245,10 +295,29 @@ export default function Login() {
     e.target.style.borderColor = inputError ? "#DC2626" : B[500];
   };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (ctaState !== "enabled") return;
-    // Wiring com signInWithMagicLink vem no proximo commit desta frente.
+    if (effectiveCtaState !== "enabled") return;
+    const trimmed = email.trim();
+    setBannerKind(null);
+    setSubmitting(true);
+    try {
+      await signInWithMagicLink(trimmed);
+      // Sucesso: passa email via state pra /login-sent renderizar o destaque.
+      // replace:false mantem /login no historico (back button funciona).
+      navigate("/login-sent", { state: { email: trimmed }, replace: false });
+      // Sem setSubmitting(false): componente desmonta no navigate.
+    } catch (err) {
+      setSubmitting(false);
+      if (isRateLimitError(err)) {
+        const n = extractCooldownSeconds(err?.message) ?? RATE_LIMIT_DEFAULT_SECONDS;
+        // Banner warning eh derivado de cooldownSeconds em render; nao seta bannerKind.
+        setCooldownSeconds(n);
+      } else {
+        // Erro generico (rede, dashboard offline, etc). Deixa tentar de novo.
+        setBannerKind("danger");
+      }
+    }
   };
 
   return (
@@ -257,7 +326,28 @@ export default function Login() {
         <h1 style={h1Style}>Entrar</h1>
         <p style={subStyle}>Sem senha. Um link no seu email destrava a entrada.</p>
 
-        {errorBanner && <Banner kind={errorBanner.kind} body={errorBanner.body} />}
+        {bannerKind === "danger" && (
+          <Banner
+            kind="danger"
+            body={
+              <>
+                <b>Não conseguimos enviar o link.</b> Verifique sua conexão e tente novamente em
+                instantes.
+              </>
+            }
+          />
+        )}
+        {cooldownSeconds > 0 && (
+          <Banner
+            kind="warning"
+            body={
+              <>
+                <b>Espera um instante pra pedir outro link.</b> Tenta de novo em {cooldownSeconds}{" "}
+                segundos.
+              </>
+            }
+          />
+        )}
 
         <form onSubmit={onSubmit} noValidate>
           <div style={{ marginBottom: 20 }}>
@@ -288,17 +378,17 @@ export default function Login() {
 
           <button
             type="submit"
-            disabled={ctaState !== "enabled"}
-            aria-busy={ctaState === "loading"}
-            style={{ ...ctaBaseStyle, ...ctaVisualByState(ctaState) }}
+            disabled={effectiveCtaState !== "enabled"}
+            aria-busy={effectiveCtaState === "loading"}
+            style={{ ...ctaBaseStyle, ...ctaVisualByState(effectiveCtaState) }}
             onMouseOver={(e) => {
-              if (ctaState === "enabled") e.currentTarget.style.background = B[600];
+              if (effectiveCtaState === "enabled") e.currentTarget.style.background = B[600];
             }}
             onMouseOut={(e) => {
-              if (ctaState === "enabled") e.currentTarget.style.background = B[500];
+              if (effectiveCtaState === "enabled") e.currentTarget.style.background = B[500];
             }}
           >
-            {ctaState === "loading" ? (
+            {effectiveCtaState === "loading" ? (
               <>
                 <Spinner size={18} color="#FFF" />
                 Enviando...
