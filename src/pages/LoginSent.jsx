@@ -1,13 +1,18 @@
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { B, W, fb, fd, radii } from "../tokens";
+import { useAuth } from "../auth/useAuth";
 
 /* ══════════════════════════════════════════
    CORA - Login Sent (apos disparar magic link)
    /login-sent
 
    Tela 2 do fluxo de entrada. Recebe email via location.state e
-   oferece reenviar (com cooldown de 60s) ou voltar pra /login.
-   Logica de countdown + reenvio entra no proximo commit desta frente.
+   oferece reenviar (com cooldown automatico de 60s) ou voltar pra /login.
+   Sem location.state.email (acesso direto, F5 perdendo state), redireciona
+   pra /login. Rate-limit do Supabase reinicia o cooldown com o N retornado
+   pela mensagem (ou 60s default); erros genericos so logam (banner de erro
+   pro reenvio fica como follow-up, fora do escopo de B.2.2/2.3).
    ══════════════════════════════════════════ */
 
 /* ── Icones SVG inline. stroke 1.5, viewBox 24x24. ── */
@@ -264,6 +269,28 @@ const ctaLabel = (state) => {
   return "Reenviar link";
 };
 
+/* ── Detecao de rate-limit do Supabase ──
+   Duplicado de Login.jsx pra zero acoplamento entre as duas telas. Se uma
+   terceira tela precisar destes helpers, extrair pra util compartilhado. */
+const RATE_LIMIT_REGEX = /rate.?limit|only request this after/i;
+const RATE_LIMIT_DEFAULT_SECONDS = 60;
+
+const isRateLimitError = (err) => {
+  if (!err) return false;
+  if (err.status === 429) return true;
+  if (typeof err.message === "string" && RATE_LIMIT_REGEX.test(err.message)) return true;
+  return false;
+};
+
+const extractCooldownSeconds = (msg) => {
+  if (typeof msg !== "string") return null;
+  const m = msg.match(/(\d+)\s*seconds?/i);
+  return m ? parseInt(m[1], 10) : null;
+};
+
+const INITIAL_COOLDOWN_SECONDS = 60;
+const JUST_RESENT_TTL_MS = 4000;
+
 /* ══════════════════════════════════════════
    COMPONENTE PRINCIPAL
    ══════════════════════════════════════════ */
@@ -271,30 +298,87 @@ const ctaLabel = (state) => {
 export default function LoginSent() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { signInWithMagicLink } = useAuth();
 
-  // Email vem do location.state setado por Login.jsx no submit. No commit 1
-  // (scaffold), renderiza vazio se ausente. Guard de redirect entra no
-  // proximo commit desta frente, junto com o useEffect de countdown.
-  const email = location.state?.email || "";
+  // Email vem do location.state setado por Login.jsx no submit. Acesso direto
+  // a /login-sent ou F5 (que zera o history state) cai no guard de redirect.
+  const email = location.state?.email;
 
-  // resendState: 'idle' | 'loading' | 'cooldown:N'.
-  // No commit 1 (scaffold), valor estatico 'idle' renderiza o caminho feliz.
-  // useState + countdown + setters entram no proximo commit desta frente.
-  const resendState = "idle";
-  // justResent: controla banner success inline (auto-hide 4s no proximo commit).
-  const justResent = false;
+  // Cooldown inicia em 60s automaticamente: usuario acabou de receber o
+  // primeiro link, faz pouco sentido reenviar imediato (a tela existe pra
+  // dar feedback do envio, nao pra disparar reenvios em rajada).
+  const [cooldownSeconds, setCooldownSeconds] = useState(INITIAL_COOLDOWN_SECONDS);
+  const [submitting, setSubmitting] = useState(false);
+  // justResent: controla banner success "Link reenviado" com auto-hide 4s.
+  const [justResent, setJustResent] = useState(false);
 
-  const onClickResend = () => {
-    if (resendState !== "idle") return;
-    // Wiring com signInWithMagicLink + countdown entra no proximo commit.
+  // Guard onMount: sem email vindo de location.state, vai pra /login.
+  // replace:true pra nao deixar /login-sent no historico (back button do
+  // browser nao traz o usuario de volta a uma tela quebrada).
+  useEffect(() => {
+    if (!email) navigate("/login", { replace: true });
+  }, [email, navigate]);
+
+  // Countdown do cooldown. setTimeout em cascata - mesmo padrao do Login.jsx
+  // pra coerencia entre as duas telas. Cada tick re-executa o effect com o
+  // novo cooldownSeconds; cleanup cancela o timer anterior; ao chegar em 0,
+  // effect retorna undefined e o ciclo para.
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return undefined;
+    const id = setTimeout(() => {
+      setCooldownSeconds((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearTimeout(id);
+  }, [cooldownSeconds]);
+
+  // Auto-hide do banner success apos 4s. Cleanup cobre tanto unmount quanto
+  // novo reenvio (que re-dispara justResent=true antes do 4s anterior expirar).
+  useEffect(() => {
+    if (!justResent) return undefined;
+    const id = setTimeout(() => setJustResent(false), JUST_RESENT_TTL_MS);
+    return () => clearTimeout(id);
+  }, [justResent]);
+
+  const onClickResend = async () => {
+    if (submitting || cooldownSeconds > 0) return;
+    setSubmitting(true);
+    try {
+      await signInWithMagicLink(email);
+      // Os 3 setStates batcham num so commit no React 19, evitando flash
+      // visual entre loading -> idle -> cooldown.
+      setSubmitting(false);
+      setCooldownSeconds(INITIAL_COOLDOWN_SECONDS);
+      setJustResent(true);
+    } catch (err) {
+      setSubmitting(false);
+      if (isRateLimitError(err)) {
+        const n = extractCooldownSeconds(err?.message) ?? RATE_LIMIT_DEFAULT_SECONDS;
+        // Sem banner adicional aqui: o proprio cooldown ja comunica que
+        // o usuario precisa esperar (briefing 3.2 / decisao item 3).
+        setCooldownSeconds(n);
+      } else {
+        // Banner de erro pro reenvio fica como follow-up explicito.
+        // Por ora, log e libera nova tentativa.
+        console.error("[LoginSent] resend error:", err);
+      }
+    }
   };
 
   const onClickBack = () => {
     navigate("/login", { replace: true });
   };
 
-  const isCooldown = parseCooldownSeconds(resendState) > 0;
-  const ctaDisabled = isCooldown || resendState === "loading";
+  // Se nao tem email, esconde a render enquanto navigate dispara (evita
+  // flash de tela com email vazio). Order matters: hooks acima, return abaixo.
+  if (!email) return null;
+
+  // resendState derivado: alimenta ctaLabel + ctaSecondaryByState helpers.
+  const resendState = submitting
+    ? "loading"
+    : cooldownSeconds > 0
+      ? `cooldown:${cooldownSeconds}`
+      : "idle";
+  const ctaDisabled = submitting || cooldownSeconds > 0;
 
   return (
     <div style={pageStyle}>
