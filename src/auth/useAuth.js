@@ -1,16 +1,53 @@
 import { useContext } from "react";
 import { AuthContext } from "./AuthProvider";
+import { supabase } from "../lib/supabase";
 
-// Stubs B.1 - module-level pra ter referencia estavel entre renders.
-// B.2 substitui por implementacao real via supabase.auth.signInWithOtp e
-// supabase.auth.signOut. Assinaturas (args e Promise) ja sao as finais
-// pra que consumidores nao precisem mudar quando a versao real chegar.
-async function signInWithMagicLink(_email) {
-  console.warn("[useAuth] signInWithMagicLink: stub B.1, implementacao real vem na B.2");
+// Helpers em escopo de modulo: referencia estavel entre renders, sem
+// precisar de useCallback no consumidor.
+//
+// Contrato: throw em erro, resolve void em sucesso. Alinhado com o
+// padrao das funcoes em src/utils/api.js (postSubscription, etc.) e
+// com o try/catch idiomatico ja usado em Onboarding.jsx. Nao vazam o
+// shape { data, error } do SDK Supabase pros callers.
+
+/**
+ * Dispara magic link de acesso pro email informado.
+ *
+ * Em sucesso, resolve void (o `data` retornado pelo SDK em
+ * signInWithOtp e {user: null, session: null} ate o usuario clicar no
+ * link e o /auth/callback rodar verifyOtp). Em erro real do SDK
+ * (rede, dashboard offline, etc), throw o objeto error original.
+ *
+ * Por design do Supabase, email desconhecido NAO eh erro: o SDK
+ * resolve com sucesso silencioso (anti-enumeracao). A UI da /login
+ * sempre redireciona pra /login-sent sem revelar se o email existe.
+ */
+async function signInWithMagicLink(email) {
+  // shouldCreateUser fica em default (true) ate Frente C implementar signUp
+  // explicito no T2 do PreCadastro. Anti-enumeracao ja eh fornecida pelo
+  // Supabase (silent-success pra email desconhecido). Endurecer pra false
+  // quando signUp explicito existir.
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: `${window.location.origin}/auth/callback`,
+    },
+  });
+  if (error) throw error;
 }
 
+/**
+ * Encerra a sessao do usuario corrente.
+ *
+ * Em sucesso, resolve void. Em erro real do SDK, throw.
+ *
+ * Cleanup de localStorage relacionado a dados do app (subscription
+ * cache, etc.) eh responsabilidade do caller (B.2.5 - botao "Sair"
+ * no Perfil). Este helper so encerra a sessao Supabase.
+ */
 async function signOut() {
-  console.warn("[useAuth] signOut: stub B.1, implementacao real vem na B.2");
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
 }
 
 /**
@@ -20,8 +57,11 @@ async function signOut() {
  *   - session: Session | null      (objeto Supabase, ou null se deslogado)
  *   - user:    User | null         (atalho pra session?.user)
  *   - loading: boolean             (true ate getSession resolver no mount)
- *   - signInWithMagicLink(email):  stub na B.1, real na B.2
- *   - signOut():                   stub na B.1, real na B.2
+ *   - signInWithMagicLink(email):  dispara magic link; throw em erro,
+ *                                  resolve void em sucesso (inclui o
+ *                                  caso de email desconhecido)
+ *   - signOut():                   encerra sessao; throw em erro,
+ *                                  resolve void em sucesso
  *
  * Lanca Error se usado fora de <AuthProvider>.
  */
