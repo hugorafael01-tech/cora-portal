@@ -6,6 +6,7 @@ const PreCadastro = lazy(() => import("./pages/PreCadastro"));
 const CapacityWaitlist = lazy(() => import("./pages/CapacityWaitlist"));
 const Login = lazy(() => import("./pages/Login"));
 const LoginSent = lazy(() => import("./pages/LoginSent"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 import { Routes, Route, Navigate, Outlet, useNavigate, useLocation } from "react-router-dom";
 import ProductCard from "./components/ProductCard";
 import PendingPaymentBanner from "./components/PendingPaymentBanner";
@@ -2322,6 +2323,7 @@ export default function CoraPortal(){
         <Route path="/lista-espera" element={<CapacityWaitlist reason={waitlistReason}/>}/>
         <Route path="/login" element={<Login/>}/>
         <Route path="/login-sent" element={<LoginSent/>}/>
+        <Route path="/auth/callback" element={<AuthCallback/>}/>
         <Route path="/onboarding" element={<CoraOnboarding onComplete={handleOnboardingComplete} subscriptionsOpen={subscriptionsOpen} onGoToCapacityWaitlist={goToCapacityWaitlist}/>}/>
         {/* Autenticadas: gate de subscription + Layout compartilhado */}
         <Route element={
