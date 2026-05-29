@@ -408,24 +408,6 @@ export default function Login() {
           </button>
         </form>
 
-        {/* Link discreto pra quem chegou achando que era cadastro novo (links
-            de pre-cadastro do site institucional caem aqui pos-Auth-B). */}
-        <p
-          style={{
-            marginTop: 24,
-            textAlign: "center",
-            fontFamily: fb,
-            fontSize: 13,
-            color: W[500],
-            lineHeight: 1.5,
-          }}
-        >
-          Ainda não é assinante?{" "}
-          <a href="/interesse" style={{ color: B[500], textDecoration: "underline" }}>
-            Entre na lista de espera
-          </a>
-        </p>
-
         <div
           style={{
             marginTop: 28,
