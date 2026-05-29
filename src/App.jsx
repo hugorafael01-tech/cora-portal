@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react"
 const CoraOnboarding = lazy(() => import("./Onboarding"));
 const PreCadastro = lazy(() => import("./pages/PreCadastro"));
 const CapacityWaitlist = lazy(() => import("./pages/CapacityWaitlist"));
+const Login = lazy(() => import("./pages/Login"));
+const LoginSent = lazy(() => import("./pages/LoginSent"));
 import { Routes, Route, Navigate, Outlet, useNavigate, useLocation } from "react-router-dom";
 import ProductCard from "./components/ProductCard";
 import PendingPaymentBanner from "./components/PendingPaymentBanner";
@@ -2318,6 +2320,8 @@ export default function CoraPortal(){
         {/* Standalone (sem shell autenticado) */}
         <Route path="/interesse" element={<PreCadastro/>}/>
         <Route path="/lista-espera" element={<CapacityWaitlist reason={waitlistReason}/>}/>
+        <Route path="/login" element={<Login/>}/>
+        <Route path="/login-sent" element={<LoginSent/>}/>
         <Route path="/onboarding" element={<CoraOnboarding onComplete={handleOnboardingComplete} subscriptionsOpen={subscriptionsOpen} onGoToCapacityWaitlist={goToCapacityWaitlist}/>}/>
         {/* Autenticadas: gate de subscription + Layout compartilhado */}
         <Route element={
