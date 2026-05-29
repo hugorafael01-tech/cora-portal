@@ -234,6 +234,31 @@ function readUrlError() {
 // O caminho feliz resolve em 1-2s; isto so cobre a cauda.
 const FALLBACK_MS = 10000;
 
+// TTL do intent de deep link, alinhado com a validade do magic link (1h).
+// Link expirado expira o intent junto: se o usuario pediu o link ha 2h e
+// clica agora, vai pra / em vez de seguir um destino obsoleto.
+const INTENT_TTL_MS = 60 * 60 * 1000;
+
+/* -- Resolve o destino pos-login a partir do cora_auth_intent gravado pelo
+   Login (deep link). Consome (remove) o intent sempre, e cai em "/" se
+   ausente, expirado ou corrompido. -- */
+function resolveAuthIntent() {
+  let destination = "/";
+  try {
+    const raw = localStorage.getItem("cora_auth_intent");
+    if (raw) {
+      const { path, ts } = JSON.parse(raw);
+      if (path && typeof ts === "number" && Date.now() - ts < INTENT_TTL_MS) {
+        destination = path;
+      }
+    }
+  } catch { /* json invalido ou storage indisponivel -- usa default */ }
+  try {
+    localStorage.removeItem("cora_auth_intent");
+  } catch { /* storage indisponivel -- ignora */ }
+  return destination;
+}
+
 /* ==========================================
    COMPONENTE PRINCIPAL
 
@@ -264,7 +289,7 @@ export default function AuthCallback() {
   // link expirado/usado (errorKind ja nasce setado via lazy initializer).
   useEffect(() => {
     if (errorKind) return;
-    if (session) navigate("/", { replace: true });
+    if (session) navigate(resolveAuthIntent(), { replace: true });
   }, [errorKind, session, navigate]);
 
   if (errorKind) {

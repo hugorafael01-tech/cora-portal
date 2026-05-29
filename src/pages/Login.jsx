@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { B, W, fb, fd, radii } from "../tokens";
 import { useAuth } from "../auth/useAuth";
 
@@ -237,6 +237,7 @@ const extractCooldownSeconds = (msg) => {
 export default function Login() {
   const { signInWithMagicLink } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Email armazenado como digitado (sem trim em tempo real; trim so no submit).
   const [email, setEmail] = useState("");
@@ -301,6 +302,14 @@ export default function Login() {
     const trimmed = email.trim();
     setBannerKind(null);
     setSubmitting(true);
+    // Deep link: persiste o destino pretendido. location.state se perderia
+    // quando o usuario sai do browser pra abrir o email; localStorage
+    // sobrevive entre tabs. Sem deep link, from cai em "/". Sempre grava ->
+    // sobrescreve qualquer intent obsoleto a cada novo login.
+    const from = location.state?.from || "/";
+    try {
+      localStorage.setItem("cora_auth_intent", JSON.stringify({ path: from, ts: Date.now() }));
+    } catch { /* storage indisponivel (private mode/quota) -- ignora */ }
     try {
       await signInWithMagicLink(trimmed);
       // Sucesso: passa email via state pra /login-sent renderizar o destaque.
