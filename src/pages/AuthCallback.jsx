@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { B, W, fb, fd, radii } from "../tokens";
 import { useAuth } from "../auth/useAuth";
 
-/* ══════════════════════════════════════════
+/* ==========================================
    CORA - Auth callback (magic link)
    /auth/callback
 
@@ -21,10 +21,10 @@ import { useAuth } from "../auth/useAuth";
        de erro correspondente.
 
    Wiring (leitura do hash + navegacao) entra no commit seguinte.
-   ══════════════════════════════════════════ */
+   ========================================== */
 
-/* ── Icones SVG inline. stroke 1.5, viewBox 24x24. Duplicados do Login
-   (mesma decisao de B.2.2: sem extrair pra util). ── */
+/* -- Icones SVG inline. stroke 1.5, viewBox 24x24. Duplicados do Login
+   (mesma decisao de B.2.2: sem extrair pra util). -- */
 const IconAlert = ({ size = 18, color = "currentColor" }) => (
   <svg
     width={size}
@@ -60,9 +60,9 @@ const IconClock = ({ size = 18, color = "currentColor" }) => (
   </svg>
 );
 
-/* ── Variantes de erro. Supabase devolve o MESMO otp_expired pra link
+/* -- Variantes de erro. Supabase devolve o MESMO otp_expired pra link
    expirado e pra link ja usado (nao ha sinal client-side pra separar),
-   entao colapsamos em 'known'. 'generic' cobre o resto. ── */
+   entao colapsamos em 'known'. 'generic' cobre o resto. -- */
 const ERROR_VARIANTS = {
   known: {
     Icon: IconClock,
@@ -76,7 +76,7 @@ const ERROR_VARIANTS = {
   },
 };
 
-/* ── Estilos compartilhados (mesma base do Login). ── */
+/* -- Estilos compartilhados (mesma base do Login). -- */
 const pageStyle = {
   minHeight: "100dvh",
   background: W[50],
@@ -124,8 +124,8 @@ const ctaStyle = {
   transition: "background 150ms",
 };
 
-/* ── Spinner de 32px. Borda transparente com topo brand-500, girando via
-   keyframe lg-spin injetado (mesma tecnica do Login). ── */
+/* -- Spinner de 32px. Borda transparente com topo brand-500, girando via
+   keyframe lg-spin injetado (mesma tecnica do Login). -- */
 const Spinner = () => (
   <span
     className="lg-spin-ring"
@@ -195,9 +195,9 @@ const ErrorScreen = ({ kind, onBack }) => {
   );
 };
 
-/* ── Classificacao do erro. otp_expired e access_denied (link expirado ou
+/* -- Classificacao do erro. otp_expired e access_denied (link expirado ou
    ja usado) caem em 'known'; o resto em 'generic'. Opera sobre um objeto
-   { code, error, message } que montamos a partir dos params da URL. ── */
+   { code, error, message } que montamos a partir dos params da URL. -- */
 function classifyAuthError(err) {
   const code = err?.code || err?.error;
   const msg = (err?.message || "").toLowerCase();
@@ -206,11 +206,11 @@ function classifyAuthError(err) {
   return "generic";
 }
 
-/* ── Le params de erro do hash E da query (query tem precedencia, igual ao
+/* -- Le params de erro do hash E da query (query tem precedencia, igual ao
    parseParametersFromURL do supabase-js). No flow implicit o erro chega no
    hash: #error=...&error_code=...&error_description=...  O SDK engole esse
    erro no _initialize (nao lanca, nao expoe via getSession) e NAO limpa o
-   hash, entao lemos dali. Retorna null se nao houver erro na URL. ── */
+   hash, entao lemos dali. Retorna null se nao houver erro na URL. -- */
 function readUrlError() {
   if (typeof window === "undefined") return null;
   const params = {};
@@ -234,13 +234,13 @@ function readUrlError() {
 // O caminho feliz resolve em 1-2s; isto so cobre a cauda.
 const FALLBACK_MS = 10000;
 
-/* ══════════════════════════════════════════
+/* ==========================================
    COMPONENTE PRINCIPAL
 
    Observa a sessao (auto-processada pelo SDK via detectSessionInUrl) e
    navega pra /. Erro vem dos params da URL, nao de exception. errorKind
    null = loading.
-   ══════════════════════════════════════════ */
+   ========================================== */
 export default function AuthCallback() {
   const { session } = useAuth();
   const navigate = useNavigate();
