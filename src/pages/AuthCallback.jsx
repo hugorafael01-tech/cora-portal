@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { B, W, fb, fd, radii } from "../tokens";
+import { useAuth } from "../auth/useAuth";
 
 /* ══════════════════════════════════════════
    CORA - Auth callback (magic link)
@@ -193,10 +195,77 @@ const ErrorScreen = ({ kind, onBack }) => {
   );
 };
 
+/* ── Classificacao do erro. otp_expired e access_denied (link expirado ou
+   ja usado) caem em 'known'; o resto em 'generic'. Opera sobre um objeto
+   { code, error, message } que montamos a partir dos params da URL. ── */
+function classifyAuthError(err) {
+  const code = err?.code || err?.error;
+  const msg = (err?.message || "").toLowerCase();
+  if (code === "otp_expired" || code === "access_denied") return "known";
+  if (/expir|invalid|used|consumed/.test(msg)) return "known";
+  return "generic";
+}
+
+/* ── Le params de erro do hash E da query (query tem precedencia, igual ao
+   parseParametersFromURL do supabase-js). No flow implicit o erro chega no
+   hash: #error=...&error_code=...&error_description=...  O SDK engole esse
+   erro no _initialize (nao lanca, nao expoe via getSession) e NAO limpa o
+   hash, entao lemos dali. Retorna null se nao houver erro na URL. ── */
+function readUrlError() {
+  if (typeof window === "undefined") return null;
+  const params = {};
+  const { hash, search } = window.location;
+  if (hash && hash[0] === "#") {
+    new URLSearchParams(hash.substring(1)).forEach((value, key) => {
+      params[key] = value;
+    });
+  }
+  new URLSearchParams(search).forEach((value, key) => {
+    params[key] = value;
+  });
+  if (params.error || params.error_code || params.error_description) {
+    return { error: params.error, code: params.error_code, message: params.error_description };
+  }
+  return null;
+}
+
+// Limite pra desistir da espera quando nao ha erro na URL mas a sessao nao
+// aparece (token malformado, falha de rede no getUser interno do SDK, etc).
+// O caminho feliz resolve em 1-2s; isto so cobre a cauda.
+const FALLBACK_MS = 10000;
+
 /* ══════════════════════════════════════════
    COMPONENTE PRINCIPAL
-   Wiring (hash/sessao) entra no proximo commit; por ora renderiza loading.
+
+   Observa a sessao (auto-processada pelo SDK via detectSessionInUrl) e
+   navega pra /. Erro vem dos params da URL, nao de exception. errorKind
+   null = loading.
    ══════════════════════════════════════════ */
 export default function AuthCallback() {
+  const { session } = useAuth();
+  const navigate = useNavigate();
+  // Erro explicito na URL ja decide a tela na hora (lazy initializer le o
+  // hash uma vez no mount). null = loading.
+  const [errorKind, setErrorKind] = useState(() => {
+    const urlErr = readUrlError();
+    return urlErr ? classifyAuthError(urlErr) : null;
+  });
+
+  // Sem erro na URL, esperamos a sessao; um fallback evita loading infinito.
+  useEffect(() => {
+    if (errorKind) return undefined;
+    const timer = setTimeout(() => setErrorKind("generic"), FALLBACK_MS);
+    return () => clearTimeout(timer);
+  }, [errorKind]);
+
+  // Sessao criada (SIGNED_IN auto-processado) -> entra. replace pra nao
+  // deixar /auth/callback no historico.
+  useEffect(() => {
+    if (session) navigate("/", { replace: true });
+  }, [session, navigate]);
+
+  if (errorKind) {
+    return <ErrorScreen kind={errorKind} onBack={() => navigate("/login", { replace: true })} />;
+  }
   return <LoadingScreen />;
 }
