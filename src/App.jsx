@@ -10,6 +10,7 @@ const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 import { Routes, Route, Navigate, Outlet, useNavigate, useLocation } from "react-router-dom";
 import ProductCard from "./components/ProductCard";
 import PendingPaymentBanner from "./components/PendingPaymentBanner";
+import ProtectedRoute from "./auth/ProtectedRoute";
 import { isPastCutoff, nextEditableThursdayISO, nextSubscriptionChangeThursdayISO } from "./utils/cutoff";
 import { haptic } from "./utils/haptic";
 import { loadSubscription, saveSubscription, clearSubscription, reconcileSubscription } from "./utils/subscription";
@@ -2027,16 +2028,9 @@ function Layout({pendingPayment,inicioBadge,onNav}){
 }
 
 // --- REQUIRE SUBSCRIPTION (gate de rotas autenticadas) ---
-// Sem subscription persistida + sem ?dev=1 -> /interesse (PreCadastro).
-// Sem subscription + com ?dev=1 -> /onboarding (fluxo manual de teste).
-// Subscription presente -> renderiza children (rotas autenticadas).
-function RequireSubscription({subscription,children}){
-  const params=new URLSearchParams(window.location.search);
-  const dev=!!params.get("dev");
-  if(!subscription&&!dev) return <Navigate to="/interesse" replace/>;
-  if(!subscription&&dev) return <Navigate to="/onboarding" replace/>;
-  return children;
-}
+// Gate das rotas autenticadas: ProtectedRoute (src/auth/ProtectedRoute.jsx).
+// Substituiu o antigo RequireSubscription (gate so por localStorage); agora
+// considera a sessao real do Supabase alem da assinatura persistida.
 
 // ═══ APP (rodapé persistente aqui) ═══
 export default function CoraPortal(){
@@ -2325,16 +2319,16 @@ export default function CoraPortal(){
         <Route path="/login-sent" element={<LoginSent/>}/>
         <Route path="/auth/callback" element={<AuthCallback/>}/>
         <Route path="/onboarding" element={<CoraOnboarding onComplete={handleOnboardingComplete} subscriptionsOpen={subscriptionsOpen} onGoToCapacityWaitlist={goToCapacityWaitlist}/>}/>
-        {/* Autenticadas: gate de subscription + Layout compartilhado */}
-        <Route element={
-          <RequireSubscription subscription={subscription}>
-            <Layout pendingPayment={pendingPayment} inicioBadge={inicioBadge} onNav={handleNav}/>
-          </RequireSubscription>
-        }>
-          <Route path="/" element={<Home onNav={handleNav} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaAtual={cestaAtual} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} pendingPayment={pendingPayment} currentWeeklyOrder={currentWeeklyOrder} currentExtras={currentExtras} addExtraToCart={addExtraToCart} removeExtraFromCart={removeExtraFromCart} updateComposition={updateComposition} confirmCurrentOrder={confirmCurrentOrder}/>}/>
-          <Route path="/assinatura" element={<Assinatura hasPending={false} cutoff={cutoff} subscription={subscription} assinaturaQtds={assinaturaQtds} onAlterado={handleAlterarAssinatura}/>}/>
-          <Route path="/cardapio" element={<Cardapio addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment}/>}/>
-          <Route path="/perfil" element={<Perfil subscription={subscription} weeklyOrders={weeklyOrders} pendingPayment={pendingPayment}/>}/>
+        {/* Autenticadas: ProtectedRoute (sessao + assinatura) -> Layout compartilhado.
+            ProtectedRoute retorna <Outlet/>; o Layout fica aninhado e renderiza o
+            proprio <Outlet/> com a pagina da rota. */}
+        <Route element={<ProtectedRoute/>}>
+          <Route element={<Layout pendingPayment={pendingPayment} inicioBadge={inicioBadge} onNav={handleNav}/>}>
+            <Route path="/" element={<Home onNav={handleNav} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaAtual={cestaAtual} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} pendingPayment={pendingPayment} currentWeeklyOrder={currentWeeklyOrder} currentExtras={currentExtras} addExtraToCart={addExtraToCart} removeExtraFromCart={removeExtraFromCart} updateComposition={updateComposition} confirmCurrentOrder={confirmCurrentOrder}/>}/>
+            <Route path="/assinatura" element={<Assinatura hasPending={false} cutoff={cutoff} subscription={subscription} assinaturaQtds={assinaturaQtds} onAlterado={handleAlterarAssinatura}/>}/>
+            <Route path="/cardapio" element={<Cardapio addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment}/>}/>
+            <Route path="/perfil" element={<Perfil subscription={subscription} weeklyOrders={weeklyOrders} pendingPayment={pendingPayment}/>}/>
+          </Route>
         </Route>
         {/* Catch-all defensivo: rota desconhecida -> / */}
         <Route path="*" element={<Navigate to="/" replace/>}/>
