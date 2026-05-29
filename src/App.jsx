@@ -11,6 +11,7 @@ import { Routes, Route, Navigate, Outlet, useNavigate, useLocation } from "react
 import ProductCard from "./components/ProductCard";
 import PendingPaymentBanner from "./components/PendingPaymentBanner";
 import ProtectedRoute from "./auth/ProtectedRoute";
+import { useAuth } from "./auth/useAuth";
 import { isPastCutoff, nextEditableThursdayISO, nextSubscriptionChangeThursdayISO } from "./utils/cutoff";
 import { haptic } from "./utils/haptic";
 import { loadSubscription, saveSubscription, clearSubscription, reconcileSubscription } from "./utils/subscription";
@@ -1796,7 +1797,33 @@ const ReciboModal=({order,subscriptionItens,onClose})=>{
 };
 
 const Perfil=({subscription,weeklyOrders=[],pendingPayment=false})=>{
+  const{signOut}=useAuth();
+  const navigate=useNavigate();
+  // signingOut: request de logout em flight (bloqueia re-clique + troca label).
+  // sairHover: escurece o link no hover (W700 -> W800).
+  const[signingOut,setSigningOut]=useState(false);
+  const[sairHover,setSairHover]=useState(false);
   const[cpfVisivel,setCpfVisivel]=useState(false);
+
+  // Logout. Ordem importa: signOut primeiro (Supabase limpa sb-* do
+  // localStorage e dispara onAuthStateChange), depois remove o estado local
+  // do app, depois navega com replace pra back-button nao voltar pra tela
+  // autenticada. signOut do Supabase eh local (raramente falha); em erro,
+  // loga e volta pra idle, sem estado de erro visual (mesma decisao do
+  // reenvio de magic link no LoginSent).
+  async function handleSignOut(){
+    if(signingOut) return;
+    setSigningOut(true);
+    try{
+      await signOut();
+      localStorage.removeItem("cora_subscription");
+      localStorage.removeItem("cora_auth_intent");
+      navigate("/login",{replace:true});
+    }catch(err){
+      console.error("signOut error",err);
+      setSigningOut(false);
+    }
+  }
   // billing = GET subscription (valor_paes/valor_frete/next_billing_*).
   // entregas: null = carregando, [] = sem entregas, [...] = histórico real.
   const[billing,setBilling]=useState(null);
@@ -1947,6 +1974,27 @@ const Perfil=({subscription,weeklyOrders=[],pendingPayment=false})=>{
 
     {/* Microcopy final — sem <strong> */}
     <p style={{fontFamily:fb,fontSize:12,color:W[500],textAlign:"center",lineHeight:1.6,borderTop:`1px dashed ${W[300]}`,paddingTop:16,margin:"4px 4px 0"}}>Pra atualizar seus dados, mudar endereço, pausar ou cancelar, fale com a gente pelo WhatsApp.</p>
+
+    {/* Sair -- link textual neutro (sem bg/borda, sem cor de alerta).
+        Idle: "Sair" W700; hover W800; loading: "Saindo..." disabled W500. */}
+    <div style={{textAlign:"center",marginTop:32}}>
+      <button
+        type="button"
+        onClick={handleSignOut}
+        disabled={signingOut}
+        onMouseEnter={()=>setSairHover(true)}
+        onMouseLeave={()=>setSairHover(false)}
+        style={{
+          background:"none",border:"none",padding:8,
+          fontFamily:fb,fontWeight:400,fontSize:15,
+          color:signingOut?W[500]:(sairHover?W[800]:W[700]),
+          cursor:signingOut?"wait":"pointer",
+          minHeight:44,
+        }}
+      >
+        {signingOut?"Saindo...":"Sair"}
+      </button>
+    </div>
 
     {recibo&&<ReciboModal order={recibo} subscriptionItens={subItens} onClose={fecharRecibo}/>}
   </div>;
