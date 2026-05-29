@@ -157,19 +157,27 @@ Iniciativa de auth real do portal, em 5 frentes. Fonte: `docs/archive/briefings/
 
 ## Última sessão de trabalho
 
-- **Data:** 2026-05-25 (segunda)
-- **Tema:** Auth — Frente A (schema + infra + scaffold de env)
-- **Saída:**
-  - Branch `feat/auth-frente-a` mergeada em main (squash `0d115fe`, PR #17). Primeira frente do briefing `docs/archive/briefings/CORA_Briefing_Auth_MagicLink_SMS_Ready.md` (auth real via Supabase magic link, com arquitetura SMS-ready dormente).
-  - **A.1 — Schema (sem alteração):** smoke test read-only via SQL Editor confirmou `subscriptions.user_id` (uuid, nullable, FK→`auth.users(id)` ON DELETE CASCADE), RLS habilitada, 4 policies PERMISSIVE sem vazamento, e `whatsapp` presente. Nenhuma migration — schema é governado pelo `cora-backoffice` (coluna já aplicada na migration 0017 do backoffice, 23/05/2026).
-  - **A.3 — `.env.local.example`:** adicionadas `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_AUTH_METHODS=email`. Comentário reescrito pra distinguir SEGREDOS (service_role / API keys, NUNCA `VITE_`) de chaves públicas por design (anon, `VITE_` ok porque a RLS protege). Vars server-side intactas, com nota de que `SUPABASE_URL` (server) e `VITE_SUPABASE_URL` (front) carregam o mesmo valor com dois nomes.
-  - **A.2 — `docs/CORA_Auth_Frente_A_Checklist.md`:** checklist auditável passo a passo pra configuração do dashboard Supabase (providers Email/Phone, SMTP Resend, template de e-mail, redirect URLs, JWT, smoke test). CC não toca no dashboard — Hugo executa.
-  - **Decisão estrutural:** sender do magic link na raiz `oi@acora.com.br` (raiz já verificada no Resend), **override da §4.2 do briefing** que apontava `oi@send.acora.com.br`. Com o sender na raiz, o Reply-To fica redundante (resposta cai no inbox do Hugo via alias `oi@`).
-  - **Verificação:** sem preview Vercel necessário nesta frente (config de dashboard + scaffold de docs/env). Validação por checklist auditável; o primeiro preview real vem na Frente B.
-- **Pendente:** Hugo executar o checklist do dashboard Supabase (`docs/CORA_Auth_Frente_A_Checklist.md`) quando puder.
-- **Bloqueia:** Auth — Frente B (auth core) depende do dashboard estar configurado.
-- **Pendência operacional:** check manual semanal de carrinhos abandonados toda terça 8h BRT continua.
-- **Próximo:** Auth — Frente B (AuthProvider, ProtectedRoute, telas `/login`, `/login-sent`, `/auth/callback`, logout no Perfil) — ver bloco "Auth do Portal — Magic Link (SMS-ready)".
+**27-29/mai/2026 — Frente B.2.1, B.2.2 e B.2.3 fechadas**
+
+Sessao de 3 dias concluindo o fluxo de envio do magic link.
+
+- 27/mai (qua): pre-investigacao do CC descobriu que o repo nao tem CSS modular (PreCadastro usa inline styles via tokens.js). Briefing original assumia CSS modular — foi corrigido pra "Caminho A" (inline styles). Commits 1 e 2 (scaffold + wire signInWithMagicLink).
+- 28/mai (qui): noite, CC entregou commit 3 (LoginSent cooldown/resend).
+- 29/mai (sex): commit 4 (rotas) + smoke test no Vercel Preview + squash merge PR #21 em main.
+
+Decisoes UX:
+- F5 em /login-sent reinicia countdown (browser preserva location.state, useState reinicializa). Aceito como trade-off low-impact.
+- Email nao cadastrado nao da erro visivel (anti-enumeracao do Supabase). Hoje com shouldCreateUser=true cria usuario orfao no Auth. Quando virar false na Frente C, link simplesmente nao chega.
+- Microcopy "nao recebeu o link" em /login-sent vai precisar de pensamento antes do lancamento (direcionar nao-assinante pra acora.com.br sem confirmar enumeracao). Ponto registrado pra B.2.4 ou posterior.
+
+Convencoes consolidadas:
+- CSS via inline styles + tokens.js (nao criar arquivos .css novos)
+- ASCII strict em comentarios, identifiers e commit messages
+- Acentos preservados em copy visivel ao usuario e em documentacao interna
+- Reticencias sempre "..." ASCII, nunca o caracter unicode
+- Estado derivado em render > useState ortogonal quando faz sentido (ex.: warning derivado de cooldownSeconds > 0)
+
+Proximo: B.2.4 (/auth/callback).
 
 ## Sessões anteriores
 
