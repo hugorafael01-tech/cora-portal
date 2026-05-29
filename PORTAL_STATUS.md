@@ -123,61 +123,58 @@ Iniciativa de auth real do portal, em 5 frentes. Fonte: `docs/archive/briefings/
 - **Provedor SMS futuro:** Twilio. Configurado só no momento da virada da chave (sem custo no Alpha; em dev/preview o OTP aparece no log do console).
 - **Sender do magic link:** `oi@acora.com.br` (raiz já verificada no Resend), display "Cora". Override da §4.2 do briefing (que apontava `oi@send.acora.com.br`).
 
-## Auth — Frente B aproximadamente 50% (29/mai/2026)
+## Auth — Frente B fechada (29/mai/2026)
 
-**Mergeado em main** via PR #21 squash:
-- B.2.1 helpers (signInWithMagicLink + signOut em useAuth.js)
-- B.2.2 tela /login (form, validação, rate-limit detection, banners danger/warning)
-- B.2.3 tela /login-sent (cooldown 60s, reenvio com banner success, guard de location.state)
+Ciclo completo de autenticação mergeado em main em uma única sessão de 3 dias.
 
-**Próximas sub-etapas:**
-- B.2.4 /auth/callback — handler do magic link clicado, faz exchange do code/token com Supabase
-- B.2.5 ProtectedRoute — gate baseado em session real (substitui RequireSubscription do localStorage)
-- B.2.6 Logout no Perfil — botão Sair chamando signOut
+**PRs mergeadas:**
+- PR #21 (B.2.1 + B.2.2 + B.2.3): helpers `signInWithMagicLink`/`signOut` + telas `/login` + `/login-sent`
+- PR #22 (B.2.4): handler `/auth/callback` (implicit flow + detectSessionInUrl)
+- PR #23 (B.2.5): `ProtectedRoute` com gate session+subscription + deep linking via `cora_auth_intent`
+- PR #24 (B.2.6): logout no Perfil ("Sair") com cleanup de `cora_subscription` e `cora_auth_intent`
 
-**Em produção agora:** /login e /login-sent acessíveis via URL direta. Não linkadas em lugar nenhum público (botão "Entrar" no site institucional é task 86e1k8dxw, ainda não feito). Magic link clicado cai no catch-all → /interesse até B.2.4 fechar.
+**Estado funcional end-to-end:**
+1. Usuário acessa rota protegida sem nada → ProtectedRoute manda pra `/login` (preservando intent em `cora_auth_intent` com TTL 1h)
+2. Digita email em `/login` → magic link via Supabase OTP → `/login-sent` (cooldown 60s, reenvio com banner success)
+3. Clica no link recebido → `/auth/callback` (Supabase auto-processa via `detectSessionInUrl`) → navega pro destino do intent
+4. ProtectedRoute valida session + subscription:
+   - Sem nenhum → `/login`
+   - Session sem subscription → `/interesse` (pré-Alpha; vai virar `/onboarding` pós-Alpha)
+   - Tem subscription (modo dev OR real) → entra
+5. No Perfil, click em "Sair" → `signOut` do Supabase + remoção explícita de `cora_subscription` e `cora_auth_intent` → `navigate("/login", { replace: true })`
 
-**Decisões UX consolidadas:**
-- F5 em /login-sent reinicia countdown (trade-off aceito, low impact)
-- Email não cadastrado não dá erro visível (anti-enumeração do Supabase)
-- Hoje shouldCreateUser=true cria usuário órfão no Auth se email é novo. Vira false na Frente C
-- Microcopy de "não recebeu o link" em /login-sent vai precisar ser pensada antes do lançamento (direcionar não-assinante pra acora.com.br sem confirmar enumeração)
-
-**Follow-ups técnicos registrados:**
-- 86e1k923r LoginSent banner de erro pra reenvio não-rate-limit (low)
-- Helpers isRateLimitError + extractCooldownSeconds duplicados entre Login.jsx e LoginSent.jsx — extrair pra src/auth/rateLimit.js quando 3ª tela precisar
-- 3 warnings ESLint pré-existentes em App.jsx (linhas 449, 2118, 2133) — limpar em pass futuro
-
-**Convenções consolidadas:**
-- CSS via inline styles + tokens.js (não criar arquivos .css novos)
+**Convenções consolidadas neste ciclo:**
+- CSS via inline styles + `tokens.js` (não criar arquivos `.css` novos)
 - ASCII strict em comentários, identifiers, commit messages
-- Acentos preservados em copy visível ao usuário e em documentação interna (este arquivo)
-- Reticências sempre `...` ASCII
-- Estado derivado em render > useState ortogonal quando faz sentido
+- Acentos preservados em copy visível ao usuário e documentação interna
+- Reticências sempre `...` ASCII, nunca o caractere unicode
+- Estado derivado em render > useState ortogonal quando faz sentido (ex.: `effectiveCtaState`, banner warning derivado de `cooldownSeconds > 0`)
+- Helpers de erro (`isRateLimitError`, `extractCooldownSeconds`) duplicados entre `Login.jsx`, `LoginSent.jsx`, `AuthCallback.jsx` — extrair pra util quando uma 4ª tela precisar
+
+**Tasks de follow-up registradas:**
+- `86e1m4um5` — ProtectedRoute trocar redirect `/interesse` pra `/onboarding` pós-Alpha (low)
+- `86e1m4upa` — Dev mode `?dev=1` não bypassa gate com session ativa (normal, investigar)
+- `86e1m4uem` — Refatorar box-drawing chars em `Login.jsx` + `LoginSent.jsx` pra ASCII puro (low)
+- `86e1k923r` — Banner de erro inline pra falha de reenvio não-rate-limit em LoginSent (low, criada 27/mai)
+
+**Próximas frentes (fora do escopo de B):**
+- Frente C: `shouldCreateUser: false` no `signInWithMagicLink` (evitar usuários órfãos no Auth) + microcopy de anti-enumeração em `/login-sent`
+- Substituir `cora_subscription` localStorage por registro real de `subscriptions` no DB (Backoffice)
+- Onboarding integrado ao auth real (criar user Supabase no fim do fluxo de cadastro)
 
 ## Última sessão de trabalho
 
-**27-29/mai/2026 — Frente B.2.1, B.2.2 e B.2.3 fechadas**
+**29/mai/2026 — Frente B fechada end-to-end**
 
-Sessao de 3 dias concluindo o fluxo de envio do magic link.
+Sessão maratona consolidando B.2.4 + B.2.5 + B.2.6 num único dia, após B.2.1-B.2.3 terem fechado em 27/mai.
 
-- 27/mai (qua): pre-investigacao do CC descobriu que o repo nao tem CSS modular (PreCadastro usa inline styles via tokens.js). Briefing original assumia CSS modular — foi corrigido pra "Caminho A" (inline styles). Commits 1 e 2 (scaffold + wire signInWithMagicLink).
-- 28/mai (qui): noite, CC entregou commit 3 (LoginSent cooldown/resend).
-- 29/mai (sex): commit 4 (rotas) + smoke test no Vercel Preview + squash merge PR #21 em main.
+- B.2.4 (`/auth/callback`): pré-investigação descobriu que o Supabase client usa implicit flow com `detectSessionInUrl`, então o magic link é auto-processado e o componente só observa a sessão. Bug pego no smoke (tela de erro piscando antes de redirect) corrigido com guarda `if (errorKind) return` no effect que observa session.
+- B.2.5 (`ProtectedRoute`): 3 fixes no briefing pegos pelo CC antes de codar — `=== "true"` quebrava o gate inteiro (subscription é JSON, não string), `?dev=1` precisava ser replicado da `RequireSubscription`, Layout precisava ser aninhado como layout-route sob ProtectedRoute. Deep linking implementado via `cora_auth_intent` em localStorage com TTL 1h.
+- B.2.6 (logout): 1 commit cirúrgico — link textual "Sair" no rodapé do Perfil, `handleSignOut` com cleanup de `cora_subscription` + `cora_auth_intent` + redirect.
 
-Decisoes UX:
-- F5 em /login-sent reinicia countdown (browser preserva location.state, useState reinicializa). Aceito como trade-off low-impact.
-- Email nao cadastrado nao da erro visivel (anti-enumeracao do Supabase). Hoje com shouldCreateUser=true cria usuario orfao no Auth. Quando virar false na Frente C, link simplesmente nao chega.
-- Microcopy "nao recebeu o link" em /login-sent vai precisar de pensamento antes do lancamento (direcionar nao-assinante pra acora.com.br sem confirmar enumeracao). Ponto registrado pra B.2.4 ou posterior.
+Decisão de produto consolidada: `/interesse` é tela temporária pré-Alpha. Pós-Alpha (fechar 30+20 ou operação estabilizar), aquisição vira `/onboarding`, e o ProtectedRoute precisa apontar pra lá — registrado em task `86e1m4um5`.
 
-Convencoes consolidadas:
-- CSS via inline styles + tokens.js (nao criar arquivos .css novos)
-- ASCII strict em comentarios, identifiers e commit messages
-- Acentos preservados em copy visivel ao usuario e em documentacao interna
-- Reticencias sempre "..." ASCII, nunca o caracter unicode
-- Estado derivado em render > useState ortogonal quando faz sentido (ex.: warning derivado de cooldownSeconds > 0)
-
-Proximo: B.2.4 (/auth/callback).
+Próximo: pausa nesta frente. Frente C (auth hardening) e migração de subscription pro DB são as próximas peças, sem urgência imediata.
 
 ## Sessões anteriores
 
