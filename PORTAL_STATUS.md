@@ -123,6 +123,38 @@ Iniciativa de auth real do portal, em 5 frentes. Fonte: `docs/archive/briefings/
 - **Provedor SMS futuro:** Twilio. Configurado só no momento da virada da chave (sem custo no Alpha; em dev/preview o OTP aparece no log do console).
 - **Sender do magic link:** `oi@acora.com.br` (raiz já verificada no Resend), display "Cora". Override da §4.2 do briefing (que apontava `oi@send.acora.com.br`).
 
+## Auth — Frente B aproximadamente 50% (29/mai/2026)
+
+**Mergeado em main** via PR #21 squash:
+- B.2.1 helpers (signInWithMagicLink + signOut em useAuth.js)
+- B.2.2 tela /login (form, validação, rate-limit detection, banners danger/warning)
+- B.2.3 tela /login-sent (cooldown 60s, reenvio com banner success, guard de location.state)
+
+**Próximas sub-etapas:**
+- B.2.4 /auth/callback — handler do magic link clicado, faz exchange do code/token com Supabase
+- B.2.5 ProtectedRoute — gate baseado em session real (substitui RequireSubscription do localStorage)
+- B.2.6 Logout no Perfil — botão Sair chamando signOut
+
+**Em produção agora:** /login e /login-sent acessíveis via URL direta. Não linkadas em lugar nenhum público (botão "Entrar" no site institucional é task 86e1k8dxw, ainda não feito). Magic link clicado cai no catch-all → /interesse até B.2.4 fechar.
+
+**Decisões UX consolidadas:**
+- F5 em /login-sent reinicia countdown (trade-off aceito, low impact)
+- Email não cadastrado não dá erro visível (anti-enumeração do Supabase)
+- Hoje shouldCreateUser=true cria usuário órfão no Auth se email é novo. Vira false na Frente C
+- Microcopy de "não recebeu o link" em /login-sent vai precisar ser pensada antes do lançamento (direcionar não-assinante pra acora.com.br sem confirmar enumeração)
+
+**Follow-ups técnicos registrados:**
+- 86e1k923r LoginSent banner de erro pra reenvio não-rate-limit (low)
+- Helpers isRateLimitError + extractCooldownSeconds duplicados entre Login.jsx e LoginSent.jsx — extrair pra src/auth/rateLimit.js quando 3ª tela precisar
+- 3 warnings ESLint pré-existentes em App.jsx (linhas 449, 2118, 2133) — limpar em pass futuro
+
+**Convenções consolidadas:**
+- CSS via inline styles + tokens.js (não criar arquivos .css novos)
+- ASCII strict em comentários, identifiers, commit messages
+- Acentos preservados em copy visível ao usuário e em documentação interna (este arquivo)
+- Reticências sempre `...` ASCII
+- Estado derivado em render > useState ortogonal quando faz sentido
+
 ## Última sessão de trabalho
 
 - **Data:** 2026-05-25 (segunda)
