@@ -7,6 +7,12 @@ const CapacityWaitlist = lazy(() => import("./pages/CapacityWaitlist"));
 const Login = lazy(() => import("./pages/Login"));
 const LoginSent = lazy(() => import("./pages/LoginSent"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+// Dev tools (Frente D / D.2 debug panel). DEV local OU flag de Preview Vercel
+// (VITE_ENABLE_DEV_TOOLS=true). Em Production o flag fica off e DEV e false,
+// entao o chunk nem e importado e a rota /dev/frente-d nem e registrada.
+const DEV_TOOLS_ENABLED =
+  import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_TOOLS === "true";
+const DevFrenteD = DEV_TOOLS_ENABLED ? lazy(() => import("./pages/DevFrenteD")) : null;
 import { Routes, Route, Navigate, Outlet, useNavigate, useLocation } from "react-router-dom";
 import ProductCard from "./components/ProductCard";
 import PendingPaymentBanner from "./components/PendingPaymentBanner";
@@ -2367,6 +2373,11 @@ export default function CoraPortal(){
         <Route path="/login-sent" element={<LoginSent/>}/>
         <Route path="/auth/callback" element={<AuthCallback/>}/>
         <Route path="/onboarding" element={<CoraOnboarding onComplete={handleOnboardingComplete} subscriptionsOpen={subscriptionsOpen} onGoToCapacityWaitlist={goToCapacityWaitlist}/>}/>
+        {/* Frente D / D.2: painel de debug dos hooks de leitura. So registrado
+            quando DEV_TOOLS_ENABLED (dev local ou Preview com flag). Nunca em prod. */}
+        {DEV_TOOLS_ENABLED && (
+          <Route path="/dev/frente-d" element={<DevFrenteD/>}/>
+        )}
         {/* Autenticadas: ProtectedRoute (sessao + assinatura) -> Layout compartilhado.
             ProtectedRoute retorna <Outlet/>; o Layout fica aninhado e renderiza o
             proprio <Outlet/> com a pagina da rota. */}
