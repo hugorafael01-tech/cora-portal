@@ -259,10 +259,13 @@ export default function AuthCallback() {
   }, [errorKind]);
 
   // Sessao criada (SIGNED_IN auto-processado) -> entra. replace pra nao
-  // deixar /auth/callback no historico.
+  // deixar /auth/callback no historico. Guard de errorKind: uma sessao
+  // antiga em localStorage nao pode navegar por cima da tela de erro de um
+  // link expirado/usado (errorKind ja nasce setado via lazy initializer).
   useEffect(() => {
+    if (errorKind) return;
     if (session) navigate("/", { replace: true });
-  }, [session, navigate]);
+  }, [errorKind, session, navigate]);
 
   if (errorKind) {
     return <ErrorScreen kind={errorKind} onBack={() => navigate("/login", { replace: true })} />;
