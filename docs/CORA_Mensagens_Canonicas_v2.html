@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cora — Mensagens canônicas v2.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=League+Gothic&family=Montagu+Slab:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --brand-50: #EBEEFB;
+  --brand-100: #C4CDF4;
+  --brand-500: #2E55CD;
+  --brand-600: #2545A8;
+  --brand-800: #172E6E;
+  --brand-900: #0F1E49;
+  --warm-50: #FAF8F2;
+  --warm-100: #F4EFE3;
+  --warm-200: #E8DFC9;
+  --warm-300: #D8CBAE;
+  --warm-400: #B5A687;
+  --warm-600: #8A7B5E;
+  --warm-800: #4A4234;
+  --warm-900: #2F2A20;
+  --success-50: #E1F5EE;
+  --success-700: #0F6E56;
+  --email-50: #FAECE7;
+  --email-100: #F5C4B3;
+  --email-800: #712B13;
+  --amber-50: #FAEEDA;
+  --amber-800: #633806;
+  --font-display: 'League Gothic', Impact, sans-serif;
+  --font-body: 'Montagu Slab', Georgia, serif;
+  --font-mono: ui-monospace, 'SF Mono', Consolas, Menlo, monospace;
+  --sidebar-w: 260px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--warm-900);
+  background: var(--warm-50);
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  min-height: 100vh;
+}
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--warm-100);
+  border-right: 1px solid var(--warm-200);
+  padding: 28px 22px;
+  overflow-y: auto;
+}
+.sidebar-logo {
+  font-family: var(--font-display);
+  font-size: 32px;
+  color: var(--brand-500);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.sidebar-subtitle {
+  font-size: 11px;
+  color: var(--warm-600);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+}
+.sidebar-section { margin-bottom: 24px; }
+.sidebar-section-title {
+  font-size: 10px;
+  color: var(--warm-600);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.sidebar-link {
+  display: block;
+  padding: 7px 10px;
+  font-size: 13px;
+  color: var(--warm-800);
+  text-decoration: none;
+  border-radius: 5px;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+.sidebar-link:hover {
+  background: var(--brand-50);
+  color: var(--brand-800);
+}
+.sidebar-link strong {
+  font-weight: 600;
+  color: var(--brand-800);
+}
+main {
+  grid-column: 2;
+  padding: 40px 56px 100px;
+  max-width: 960px;
+}
+.doc-header {
+  margin-bottom: 36px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid var(--brand-500);
+}
+.doc-title {
+  font-family: var(--font-display);
+  font-size: 56px;
+  color: var(--brand-500);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 0.95;
+  margin-bottom: 12px;
+}
+.doc-meta {
+  font-size: 13px;
+  color: var(--warm-600);
+  line-height: 1.7;
+}
+.doc-meta strong { color: var(--warm-800); font-weight: 600; }
+.utility-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+.utility-btn {
+  font-family: var(--font-body);
+  font-size: 12px;
+  background: white;
+  border: 1px solid var(--warm-300);
+  color: var(--warm-800);
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.utility-btn:hover {
+  background: var(--warm-100);
+  border-color: var(--warm-400);
+}
+section { margin-bottom: 48px; }
+h2.section-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  color: var(--brand-500);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--warm-200);
+}
+.principios-list { list-style: none; }
+.principios-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--warm-100);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.principios-list li:last-child { border-bottom: none; }
+.principios-list strong {
+  color: var(--brand-800);
+  font-weight: 600;
+}
+.vars-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.vars-table th {
+  text-align: left;
+  padding: 10px 14px;
+  background: var(--warm-100);
+  font-weight: 600;
+  color: var(--warm-800);
+  border-bottom: 2px solid var(--warm-200);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.vars-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--warm-100);
+}
+.vars-table code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--brand-50);
+  color: var(--brand-800);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+details.fluxo {
+  margin-bottom: 18px;
+  background: white;
+  border: 1px solid var(--warm-200);
+  border-radius: 12px;
+  overflow: hidden;
+}
+details.fluxo[open] {
+  box-shadow: 0 2px 12px rgba(15, 30, 73, 0.05);
+}
+summary.fluxo-header {
+  padding: 22px 28px;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+summary.fluxo-header::-webkit-details-marker { display: none; }
+summary.fluxo-header:hover { background: var(--warm-50); }
+.fluxo-title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  color: var(--brand-500);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+.fluxo-chevron {
+  font-size: 18px;
+  color: var(--warm-600);
+  transition: transform 0.2s;
+  user-select: none;
+}
+details[open] .fluxo-chevron { transform: rotate(180deg); }
+.fluxo-body { padding: 0 28px 28px; }
+.fluxo-desc {
+  font-size: 14px;
+  color: var(--warm-600);
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--warm-100);
+  line-height: 1.6;
+}
+.diagrama {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 28px;
+  padding: 18px;
+  background: var(--warm-50);
+  border-radius: 8px;
+}
+.passo {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  min-width: 86px;
+  text-align: center;
+}
+.passo-codigo {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 2px;
+  letter-spacing: 0.02em;
+}
+.passo-meta {
+  font-size: 10px;
+  opacity: 0.75;
+  line-height: 1.3;
+}
+.passo.wa {
+  background: var(--brand-50);
+  color: var(--brand-800);
+  border: 1px solid var(--brand-100);
+}
+.passo.banner {
+  background: var(--warm-100);
+  color: var(--warm-800);
+  border: 1px solid var(--warm-200);
+}
+.passo.email {
+  background: var(--email-50);
+  color: var(--email-800);
+  border: 1px solid var(--email-100);
+}
+.seta {
+  color: var(--warm-400);
+  font-size: 18px;
+  font-weight: 600;
+  padding: 0 4px;
+}
+.legenda {
+  display: flex;
+  gap: 18px;
+  font-size: 11px;
+  color: var(--warm-600);
+  margin-top: 12px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+.legenda-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legenda-cor {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+}
+.msg-card {
+  background: white;
+  border: 1px solid var(--warm-200);
+  border-left: 4px solid var(--brand-500);
+  border-radius: 0 8px 8px 0;
+  padding: 22px 22px 22px 22px;
+  margin-bottom: 18px;
+}
+.msg-card.email { border-left-color: #C97A4A; }
+.msg-card.banner { border-left-color: var(--warm-600); }
+.msg-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.msg-title {
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--brand-500);
+  line-height: 1.3;
+}
+.msg-meta {
+  font-size: 12px;
+  color: var(--warm-600);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+.msg-meta strong { color: var(--warm-800); font-weight: 600; }
+.msg-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.msg-badge.recorrente {
+  background: var(--brand-50);
+  color: var(--brand-800);
+}
+.msg-badge.event {
+  background: var(--warm-100);
+  color: var(--warm-800);
+}
+.msg-badge.auto {
+  background: var(--success-50);
+  color: var(--success-700);
+}
+.msg-badge.fase1 {
+  background: var(--amber-50);
+  color: var(--amber-800);
+}
+.template-block {
+  background: var(--warm-50);
+  border-radius: 6px;
+  padding: 16px 18px;
+  padding-right: 90px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  margin: 14px 0;
+  color: var(--warm-900);
+  border-left: 2px solid var(--warm-200);
+  position: relative;
+}
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: white;
+  border: 1px solid var(--warm-200);
+  color: var(--warm-600);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 9px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.55;
+  transition: opacity 0.15s, background 0.15s, color 0.15s, border-color 0.15s;
+  z-index: 2;
+  line-height: 1;
+  white-space: nowrap;
+}
+.template-block:hover .copy-btn { opacity: 1; }
+.copy-btn:hover {
+  background: var(--brand-500);
+  color: white;
+  border-color: var(--brand-500);
+}
+.copy-btn.copied {
+  opacity: 1;
+  background: var(--success-50);
+  color: var(--success-700);
+  border-color: var(--success-700);
+}
+.copy-btn svg {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+}
+@media print {
+  .copy-btn { display: none; }
+  .template-block { padding-right: 18px; }
+}
+.template-block .ph {
+  color: var(--brand-500);
+  font-weight: 500;
+}
+.template-block .assunto {
+  font-weight: 600;
+  color: var(--warm-800);
+  display: block;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--warm-200);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.msg-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 14px;
+  font-size: 12px;
+}
+.msg-detail-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--warm-600);
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+.msg-detail-content {
+  color: var(--warm-800);
+  line-height: 1.5;
+}
+.msg-detail-content code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--brand-50);
+  color: var(--brand-800);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.tom-block {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--warm-100);
+  font-size: 13px;
+  color: var(--warm-800);
+  line-height: 1.6;
+}
+.tom-block .tom-label {
+  color: var(--warm-600);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 6px;
+}
+.setup-box {
+  background: var(--brand-50);
+  border: 1px solid var(--brand-100);
+  border-radius: 10px;
+  padding: 22px 24px;
+  margin: 24px 0;
+}
+.setup-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--brand-500);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 14px;
+}
+.setup-box h4 {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brand-800);
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+.setup-box ol, .setup-box ul {
+  padding-left: 22px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--warm-800);
+}
+.setup-box ol li, .setup-box ul li { margin-bottom: 4px; }
+.setup-box code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: white;
+  color: var(--brand-800);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--brand-100);
+}
+.rotinas-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: white;
+  border: 1px solid var(--warm-200);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.rotinas-table th {
+  text-align: left;
+  padding: 12px 14px;
+  background: var(--brand-50);
+  font-weight: 600;
+  color: var(--brand-800);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.rotinas-table td {
+  padding: 12px 14px;
+  border-top: 1px solid var(--warm-100);
+  vertical-align: top;
+}
+.rotinas-table tr:hover td { background: var(--warm-50); }
+.rotinas-table .cad {
+  font-weight: 600;
+  color: var(--warm-900);
+  white-space: nowrap;
+}
+.rotinas-table code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--brand-700);
+}
+.callout {
+  background: var(--amber-50);
+  border-left: 4px solid #BA7517;
+  border-radius: 0 8px 8px 0;
+  padding: 16px 20px;
+  margin: 16px 0;
+  font-size: 13px;
+  color: var(--amber-800);
+  line-height: 1.6;
+}
+.callout strong { font-weight: 700; }
+.notes-final {
+  background: white;
+  border: 1px solid var(--warm-200);
+  border-radius: 10px;
+  padding: 24px 28px;
+}
+.notes-final h3 {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--brand-800);
+  margin-top: 18px;
+  margin-bottom: 8px;
+}
+.notes-final h3:first-child { margin-top: 0; }
+.notes-final p, .notes-final ul {
+  font-size: 14px;
+  color: var(--warm-800);
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+.notes-final ul { padding-left: 22px; }
+.notes-final li { margin-bottom: 4px; }
+.fluxo-anchor { scroll-margin-top: 20px; }
+@media (max-width: 920px) {
+  body { grid-template-columns: 1fr; }
+  .sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--warm-200);
+    padding: 20px;
+  }
+  main { grid-column: 1; padding: 24px 20px 80px; }
+  .msg-details { grid-template-columns: 1fr; }
+  .doc-title { font-size: 40px; }
+}
+@media print {
+  body {
+    grid-template-columns: 1fr;
+    background: white;
+    font-size: 11pt;
+  }
+  .sidebar, .utility-bar { display: none; }
+  main { grid-column: 1; max-width: 100%; padding: 0; }
+  .doc-title { font-size: 32pt; }
+  details.fluxo {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
+    margin-bottom: 12pt;
+  }
+  details.fluxo > .fluxo-body { display: block !important; }
+  summary.fluxo-header { cursor: default; }
+  .fluxo-chevron { display: none; }
+  .msg-card { page-break-inside: avoid; break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">Cora</div>
+  <div class="sidebar-subtitle">Mensagens canônicas v2.0</div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Referência</div>
+    <a class="sidebar-link" href="#principios">Princípios</a>
+    <a class="sidebar-link" href="#variaveis">Variáveis padrão</a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">8 Fluxos</div>
+    <a class="sidebar-link" href="#fluxo-1">1. Pré-cadastro</a>
+    <a class="sidebar-link" href="#fluxo-2">2. 1ª compra</a>
+    <a class="sidebar-link" href="#fluxo-3">3. Entrega da semana</a>
+    <a class="sidebar-link" href="#fluxo-4">4. Cobrança mensal</a>
+    <a class="sidebar-link" href="#fluxo-5">5. Pausa</a>
+    <a class="sidebar-link" href="#fluxo-6">6. Cancelamento</a>
+    <a class="sidebar-link" href="#fluxo-7">7. Imprevisto</a>
+    <a class="sidebar-link" href="#fluxo-8">8. Reconexão</a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Operação</div>
+    <a class="sidebar-link" href="#rotinas">Rotinas ClickUp</a>
+    <a class="sidebar-link" href="#notas">Notas finais</a>
+  </div>
+</aside>
+
+<main>
+
+<header class="doc-header">
+  <h1 class="doc-title">Mensagens<br>canônicas</h1>
+  <div class="doc-meta">
+    <strong>Versão:</strong> 2.0 &middot; <strong>Data:</strong> maio/2026 &middot; <strong>Escopo:</strong> MVP-0 (lançamento agosto/2026)<br>
+    <strong>Autoria:</strong> Hugo + Claude &middot; <strong>Status:</strong> documento vivo
+  </div>
+</header>
+
+<div class="utility-bar">
+  <button class="utility-btn" onclick="toggleAll(true)">Expandir todos</button>
+  <button class="utility-btn" onclick="toggleAll(false)">Colapsar todos</button>
+  <button class="utility-btn" onclick="window.print()">Imprimir / PDF</button>
+</div>
+
+<!-- PRINCÍPIOS -->
+<section id="principios">
+  <h2 class="section-title">Princípios transversais</h2>
+  <p style="margin-bottom: 14px; color: var(--warm-800);">A voz Cora aplicada a mensagens 1:1:</p>
+  <ul class="principios-list">
+    <li><strong>A gente, não nós.</strong> Conversa entre vizinhos.</li>
+    <li><strong>Direto.</strong> Informação prática primeiro, afeto depois.</li>
+    <li><strong>Honesto.</strong> Se é limitação, diz. Se é problema, assume.</li>
+    <li><strong>Calmo.</strong> Não tem urgência artificial. As coisas boas podem esperar.</li>
+    <li><strong>Sem travessão.</strong> Vírgula, ponto ou reescreve.</li>
+    <li><strong>Sem rule of three.</strong> Não enfileirar três coisas em sequência só pelo ritmo.</li>
+    <li><strong>Sem motivacional.</strong> Nada de "viva a fermentação natural" ou "abrace o ritual do bom pão".</li>
+    <li><strong>Sem promocional.</strong> Não tem "imperdível", "oferta", "aproveite". Cobrança é cobrança, não venda.</li>
+  </ul>
+
+  <h3 style="font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--brand-800); margin-top: 20px; margin-bottom: 10px;">Assinatura por canal</h3>
+  <ul class="principios-list">
+    <li><strong>WhatsApp:</strong> assina só "Hugo" no fim, quando a mensagem precisa. Mensagens enviadas via lista de transmissão também assinam Hugo.</li>
+    <li><strong>Email Resend:</strong> assina "Hugo" + linha de marca "Cora — Padaria por assinatura" abaixo.</li>
+    <li><strong>Banner contextual no portal:</strong> sem assinatura (voz de sistema).</li>
+    <li><strong>Mensagens da entrega:</strong> remetente "Cora está a caminho" — persona-marca, não pessoa.</li>
+  </ul>
+
+  <h3 style="font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--brand-800); margin-top: 20px; margin-bottom: 10px;">Identidade da conta WhatsApp</h3>
+  <ul class="principios-list">
+    <li><strong>Número da Cora:</strong> (21) 97105-9962</li>
+    <li><strong>Nome do perfil comercial:</strong> Cora</li>
+    <li><strong>Descrição:</strong> Padaria por assinatura. Fermentação natural longa e levain autoral.</li>
+    <li><strong>Foto de perfil:</strong> logo Cora em cor (cora_logo_cor.svg renderizado em PNG quadrado)</li>
+    <li><strong>Endereço:</strong> Niterói, RJ</li>
+    <li><strong>Link:</strong> https://acora.com.br</li>
+  </ul>
+
+  <div class="callout">
+    <strong>Pré-requisito do canal:</strong> lista de transmissão do WhatsApp só funciona se o cliente tiver o número da Cora salvo nos contatos. Sem isso a mensagem cai em silêncio. Esse pedido está incluso no Welcome e no email B1b (Fluxo 2).
+  </div>
+</section>
+
+<!-- VARIÁVEIS -->
+<section id="variaveis">
+  <h2 class="section-title">Variáveis padrão</h2>
+  <p style="margin-bottom: 14px; color: var(--warm-800);">Substitua sempre antes de mandar. Nunca deixe chave aparente no texto final.</p>
+  <table class="vars-table">
+    <thead>
+      <tr><th>Variável</th><th>Exemplo</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>{primeiro_nome}</code></td><td>Beatriz</td></tr>
+      <tr><td><code>{bairro}</code></td><td>Icaraí</td></tr>
+      <tr><td><code>{data_quinta}</code></td><td>quinta, 05/06</td></tr>
+      <tr><td><code>{data_corte}</code></td><td>terça, 03/06</td></tr>
+      <tr><td><code>{data_ultima_quinta}</code></td><td>quinta, 26/06</td></tr>
+      <tr><td><code>{valor_total}</code></td><td>R$ 213,00</td></tr>
+      <tr><td><code>{valor_paes}</code></td><td>R$ 198,00</td></tr>
+      <tr><td><code>{final_cartao}</code></td><td>4421</td></tr>
+      <tr><td><code>{composicao_cesta}</code></td><td>1 Pão Original + 1 Pão Integral</td></tr>
+      <tr><td><code>{especial_da_semana}</code></td><td>Focaccia Genovesa</td></tr>
+      <tr><td><code>{descricao_curta}</code></td><td>430g, azeite extravirgem</td></tr>
+      <tr><td><code>{link_portal}</code></td><td>https://app.acora.com.br</td></tr>
+      <tr><td><code>{link_asaas}</code></td><td>link único do Asaas por assinatura</td></tr>
+      <tr><td><code>{link_form_pesquisa}</code></td><td>Google Form da pesquisa semanal</td></tr>
+      <tr><td><code>{duracao}</code></td><td>4 meses</td></tr>
+      <tr><td><code>{motivo}</code></td><td>texto livre, escrito conforme o caso</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- FLUXO 1 -->
+<section id="fluxo-1" class="fluxo-anchor">
+<details class="fluxo" open>
+  <summary class="fluxo-header">
+    <span class="fluxo-title">Fluxo 1 — Pré-cadastro</span>
+    <span class="fluxo-chevron">&#9662;</span>
+  </summary>
+  <div class="fluxo-body">
+    <p class="fluxo-desc">Lead deixou contato no <code>/interesse</code>. Tudo aqui é automático via Resend, fire-and-forget. Hugo não precisa intervir.</p>
+
+    <div class="diagrama">
+      <div class="passo email">
+        <span class="passo-codigo">A1</span>
+        <span class="passo-meta">recebido<br>(dentro da área)</span>
+      </div>
+      <span class="seta">→</span>
+      <div class="passo email">
+        <span class="passo-codigo">A2</span>
+        <span class="passo-meta">fora cobertura<br>(geografia)</span>
+      </div>
+      <span class="seta">→</span>
+      <div class="passo email">
+        <span class="passo-codigo">A3</span>
+        <span class="passo-meta">lista de espera<br>(capacidade)</span>
+      </div>
+      <div class="legenda">
+        <div class="legenda-item"><span class="legenda-cor" style="background: #C97A4A;"></span>Email transacional</div>
+      </div>
+    </div>
+
+    <!-- A1 -->
+    <article class="msg-card email">
+      <div class="msg-card-header">
+        <h3 class="msg-title">A1 — Contato recebido</h3>
+        <span class="msg-badge auto">Auto / Resend</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> envio do formulário <code>/interesse</code> (webhook Make confirma)</p>
+      <div class="template-block"><span class="assunto">Assunto: Recebi seu contato.</span>Oi, <span class="ph">{primeiro_nome}</span>.
+
+Seu contato chegou aqui na Cora. A gente tá em pré-lançamento, abrindo assinaturas aos poucos.
+
+Assim que tiver vaga na sua região, eu te aviso pelo WhatsApp ((21) 97105-9962).
+
+Se quiser acompanhar como o forno tá ficando, tô postando no @cora.padaria.
+
+Hugo
+Cora — Padaria por assinatura</div>
+      <div class="msg-details">
+        <div>
+          <div class="msg-detail-label">Variáveis</div>
+          <div class="msg-detail-content"><code>{primeiro_nome}</code></div>
+        </div>
+        <div>
+          <div class="msg-detail-label">Quem manda</div>
+          <div class="msg-detail-content">Sistema (Resend), imediato</div>
+        </div>
+      </div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Primeiro contato da pessoa com a Cora por escrito. Não promete prazo, não pede ação imediata. Convite do Instagram como ponte. "Tô" e "tá" intencionais. Não use "estamos em pré-lançamento" — soa institucional.
+      </div>
+    </article>
+
+    <!-- A2 -->
+    <article class="msg-card email">
+      <div class="msg-card-header">
+        <h3 class="msg-title">A2 — Fora da área de cobertura</h3>
+        <span class="msg-badge auto">Auto / Resend</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> CEP fora dos polígonos Niterói/Botafogo no pré-cadastro ou onboarding</p>
+      <div class="template-block"><span class="assunto">Assunto: Ainda não chego até você.</span>Oi, <span class="ph">{primeiro_nome}</span>.
+
+Seu endereço tá fora da área que a Cora cobre hoje. A gente começou pequeno em Niterói e em parte da zona sul do Rio, e vai abrindo bairro por bairro conforme consigo entregar bem.
+
+Anotei seu interesse. Quando a Cora chegar em <span class="ph">{bairro}</span>, te aviso.
+
+Hugo
+Cora — Padaria por assinatura</div>
+      <div class="msg-details">
+        <div>
+          <div class="msg-detail-label">Variáveis</div>
+          <div class="msg-detail-content"><code>{primeiro_nome}</code>, <code>{bairro}</code></div>
+        </div>
+        <div>
+          <div class="msg-detail-label">Quem manda</div>
+          <div class="msg-detail-content">Sistema (Resend), imediato</div>
+        </div>
+      </div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Honestidade sobre o limite operacional. "Chego até você" em primeira pessoa. O motivo (entregar bem, escala pequena) precisa aparecer pra não soar como rejeição arbitrária. Não promete data.
+      </div>
+    </article>
+
+    <!-- A3 -->
+    <article class="msg-card email">
+      <div class="msg-card-header">
+        <h3 class="msg-title">A3 — Lista de espera por vagas</h3>
+        <span class="msg-badge auto">Auto / Resend</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> capacity gate fechado (<code>app_settings.subscriptions_open = false</code>)</p>
+      <div class="template-block"><span class="assunto">Assunto: Você entrou na lista.</span>Oi, <span class="ph">{primeiro_nome}</span>.
+
+Você entrou na lista de espera da Cora. Agora as vagas tão todas ocupadas, e abro novas conforme consigo manter a qualidade.
+
+Quando abrir vaga, eu te aviso por aqui.
+
+Hugo
+Cora — Padaria por assinatura</div>
+      <div class="msg-details">
+        <div>
+          <div class="msg-detail-label">Variáveis</div>
+          <div class="msg-detail-content"><code>{primeiro_nome}</code></div>
+        </div>
+        <div>
+          <div class="msg-detail-label">Quem manda</div>
+          <div class="msg-detail-content">Sistema (Resend), imediato</div>
+        </div>
+      </div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Diferente do A2 (geografia), aqui o motivo é capacidade. "Vagas todas ocupadas" em vez de "lotados" (jargão de restaurante). Conexão direta com o motivo: fazer bem em escala pequena.
+      </div>
+    </article>
+
+  </div>
+</details>
+</section>
+
+<!-- FLUXO 2 -->
+<section id="fluxo-2" class="fluxo-anchor">
+<details class="fluxo">
+  <summary class="fluxo-header">
+    <span class="fluxo-title">Fluxo 2 — 1ª compra</span>
+    <span class="fluxo-chevron">&#9662;</span>
+  </summary>
+  <div class="fluxo-body">
+    <p class="fluxo-desc">Cadastro → pagamento → ativação → primeira entrega → acolhimento. Combo automático + 1:1 manual. C3 só pros primeiros 10–20 assinantes.</p>
+
+    <div class="diagrama">
+      <div class="passo banner"><span class="passo-codigo">B1a</span><span class="passo-meta">banner</span></div>
+      <span class="seta">→</span>
+      <div class="passo email"><span class="passo-codigo">B1b</span><span class="passo-meta">email auto</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">B1c</span><span class="passo-meta">link Asaas</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">B2</span><span class="passo-meta">follow-up 24h</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">B3</span><span class="passo-meta">ativado</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">C2</span><span class="passo-meta">quinta manhã</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">C3</span><span class="passo-meta">acolhimento</span></div>
+      <div class="legenda">
+        <div class="legenda-item"><span class="legenda-cor" style="background: #2E55CD;"></span>WhatsApp</div>
+        <div class="legenda-item"><span class="legenda-cor" style="background: #C97A4A;"></span>Email</div>
+        <div class="legenda-item"><span class="legenda-cor" style="background: #888780;"></span>Banner / app</div>
+      </div>
+    </div>
+
+    <!-- B1a -->
+    <article class="msg-card banner">
+      <div class="msg-card-header">
+        <h3 class="msg-title">B1a — Banner pending_payment</h3>
+        <span class="msg-badge auto">Sistema / app</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> <code>subscription.status === 'pending_payment'</code> &middot; <strong>Já implementado</strong></p>
+      <div class="template-block">Recebemos sua assinatura. Em breve enviamos o link de pagamento pelo WhatsApp.</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Voz de sistema (banner do app), curta e factual. Banner some quando status muda pra <code>active</code>. <strong>Nota:</strong> o texto em produção usa "Recebemos/enviamos" (plural), divergindo do princípio de 1ª pessoa singular do Hugo — se quiser alinhar à voz, trocar no código para "Recebi/envio".
+      </div>
+    </article>
+
+    <!-- B1b -->
+    <article class="msg-card email">
+      <div class="msg-card-header">
+        <h3 class="msg-title">B1b — Email de confirmação de cadastro</h3>
+        <span class="msg-badge auto">Auto / Resend</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> finalização do T2 do onboarding</p>
+      <div class="template-block"><span class="assunto">Assunto: Recebi sua assinatura.</span>Oi, <span class="ph">{primeiro_nome}</span>.
+
+Sua assinatura chegou aqui. Em alguns minutos te mando pelo WhatsApp o link pra confirmar o pagamento.
+
+Depois que o pagamento entrar, sua primeira entrega já entra na próxima quinta.
+
+Quando receber a mensagem, salva o número como Cora ((21) 97105-9962) — é por ali que mando os avisos das entregas, e sem o contato salvo as mensagens podem não chegar.
+
+Hugo
+Cora — Padaria por assinatura</div>
+      <div class="msg-details">
+        <div>
+          <div class="msg-detail-label">Variáveis</div>
+          <div class="msg-detail-content"><code>{primeiro_nome}</code></div>
+        </div>
+        <div>
+          <div class="msg-detail-label">Quem manda</div>
+          <div class="msg-detail-content">Sistema (Resend), imediato</div>
+        </div>
+      </div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Não promete instantaneidade ("em alguns minutos" cobre o tempo do Hugo gerar o link). Não detalha valores aqui — vai detalhar no WhatsApp. O pedido de salvar contato é funcional, não simpático — explica por quê.
+      </div>
+    </article>
+
+    <!-- B1c -->
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">B1c — WhatsApp com link de pagamento</h3>
+        <span class="msg-badge event">1:1 manual</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> Hugo gera link no Asaas e envia individualmente</p>
+      <div class="template-block">Oi, <span class="ph">{primeiro_nome}</span>, é o Hugo da Cora.
+
+Aqui o link pra confirmar o pagamento: <span class="ph">{link_asaas}</span>
+
+Cobrança mensal de <span class="ph">{valor_total}</span> (<span class="ph">{valor_paes}</span> dos pães + R$ 15 de frete). No próprio link você escolhe entre cartão, PIX ou boleto. Pode pausar ou cancelar quando quiser, sem multa.
+
+Qualquer dúvida me chama por aqui.</div>
+      <div class="msg-details">
+        <div>
+          <div class="msg-detail-label">Variáveis</div>
+          <div class="msg-detail-content"><code>{primeiro_nome}</code>, <code>{link_asaas}</code>, <code>{valor_total}</code>, <code>{valor_paes}</code></div>
+        </div>
+        <div>
+          <div class="msg-detail-label">Quem manda</div>
+          <div class="msg-detail-content">Hugo, manual</div>
+        </div>
+      </div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Aqui sim, valores explícitos. Linha de pausa/cancelamento reduz fricção do "e se eu não gostar". "Me chama por aqui" reforça que o canal é o WhatsApp 1:1, não bot. Asaas oferece cartão, PIX e boleto — não amarrar ao cartão.
+      </div>
+    </article>
+
+    <!-- B2 -->
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">B2 — Follow-up se não pagou em 24h</h3>
+        <span class="msg-badge event">1:1 manual</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> subscription continua <code>pending_payment</code> 24h depois do envio do link &middot; <strong>Hugo monitora manualmente no Asaas/Supabase</strong></p>
+      <div class="template-block">Oi, <span class="ph">{primeiro_nome}</span>. Só pra confirmar se o link de pagamento chegou direitinho. Se tiver alguma dúvida ou se preferir que eu te explique algo antes de fechar, me fala.</div>
+      <div class="msg-details">
+        <div>
+          <div class="msg-detail-label">Variáveis</div>
+          <div class="msg-detail-content"><code>{primeiro_nome}</code></div>
+        </div>
+        <div>
+          <div class="msg-detail-label">Quem manda</div>
+          <div class="msg-detail-content">Hugo, manual</div>
+        </div>
+      </div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Não cobra. Pergunta se chegou (cria pretexto pra resposta). Abre porta pra dúvida. Não menciona "decisão", "compromisso", "garantia".
+      </div>
+    </article>
+
+    <!-- B3 -->
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">B3 — Pagamento confirmado, assinatura ativada</h3>
+        <span class="msg-badge event">1:1 manual</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> Hugo confirma pagamento no Asaas e flipa <code>status = active</code> no Supabase</p>
+      <div class="template-block"><span class="ph">{primeiro_nome}</span>, pagamento confirmado. Sua primeira entrega é <span class="ph">{data_quinta}</span>.
+
+As entregas acontecem entre 12h e 18h. Qualquer imprevisto no dia, te aviso por aqui.</div>
+      <div class="msg-details">
+        <div>
+          <div class="msg-detail-label">Variáveis</div>
+          <div class="msg-detail-content"><code>{primeiro_nome}</code>, <code>{data_quinta}</code></div>
+        </div>
+        <div>
+          <div class="msg-detail-label">Quem manda</div>
+          <div class="msg-detail-content">Hugo, manual</div>
+        </div>
+      </div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Curto, factual. Já dá a janela de entrega (12–18h) pra cliente não ficar esperando o dia inteiro. Não tem "bem-vindo à comunidade Cora" — fica pra C3, depois do produto na mão.
+      </div>
+    </article>
+
+    <!-- C2 -->
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">C2 — Estimativa da primeira entrega</h3>
+        <span class="msg-badge event">1:1 manual</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> manhã da quinta da primeira entrega &middot; <strong>Remetente:</strong> Cora está a caminho</p>
+      <div class="template-block">Bom dia, <span class="ph">{primeiro_nome}</span>. Hoje é sua primeira entrega da Cora.
+
+A entrega passa aí entre <span class="ph">{horario_inicio}</span> e <span class="ph">{horario_fim}</span>. Te aviso aqui quando estiver a caminho.
+
+Hugo</div>
+      <div class="msg-details">
+        <div>
+          <div class="msg-detail-label">Variáveis</div>
+          <div class="msg-detail-content"><code>{primeiro_nome}</code>, <code>{horario_inicio}</code>, <code>{horario_fim}</code></div>
+        </div>
+        <div>
+          <div class="msg-detail-label">Quem manda</div>
+          <div class="msg-detail-content">Hugo, manual, individual</div>
+        </div>
+      </div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        "A entrega" genérico — o parceiro logístico opera como persona-marca "Cora está a caminho", sem nome próprio. Janela de 2h padrão; se for mais apertada, ajusta. C2 é a versão personalizada da primeira entrega; nas semanas seguintes, vira lista de transmissão (D4).
+      </div>
+    </article>
+
+    <!-- C3 -->
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">C3 — Acolhimento pós-primeira-entrega</h3>
+        <span class="msg-badge event">1:1 manual / até ~20 assinantes</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> algumas horas depois da entrega de quinta confirmada &middot; <strong>Limite:</strong> só pros primeiros 10–20 assinantes; depois vira pergunta na D5</p>
+      <div class="template-block"><span class="ph">{primeiro_nome}</span>, o pão chegou bem? Quero saber o que você achou.</div>
+      <div class="msg-details">
+        <div>
+          <div class="msg-detail-label">Variáveis</div>
+          <div class="msg-detail-content"><code>{primeiro_nome}</code></div>
+        </div>
+        <div>
+          <div class="msg-detail-label">Quem manda</div>
+          <div class="msg-detail-content">Hugo, manual</div>
+        </div>
+      </div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Mensagem curta, pergunta aberta. Coletar primeira impressão sem questionário — abre conversa, não enquete. Se a resposta for muito positiva, pode evoluir naturalmente pra pedido de indicação.
+      </div>
+    </article>
+
+  </div>
+</details>
+</section>
+
+<!-- FLUXO 3 -->
+<section id="fluxo-3" class="fluxo-anchor">
+<details class="fluxo">
+  <summary class="fluxo-header">
+    <span class="fluxo-title">Fluxo 3 — Entrega da semana</span>
+    <span class="fluxo-chevron">&#9662;</span>
+  </summary>
+  <div class="fluxo-body">
+    <p class="fluxo-desc">Rotina semanal recorrente. Maior parte via lista de transmissão. Cinco momentos amarrados a tasks recorrentes no ClickUp.</p>
+
+    <div class="diagrama">
+      <div class="passo wa"><span class="passo-codigo">D1</span><span class="passo-meta">ter 9h<br>cardápio</span></div>
+      <span class="seta">→</span>
+      <div class="passo banner"><span class="passo-codigo">D2</span><span class="passo-meta">app<br>confirmação</span></div>
+      <span class="seta">→</span>
+      <div class="passo banner"><span class="passo-codigo">D3</span><span class="passo-meta">ter 12h<br>pós-cutoff</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">D4</span><span class="passo-meta">qui 8h<br>dia da entrega</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">D5</span><span class="passo-meta">sex 11h<br>pesquisa</span></div>
+      <div class="legenda">
+        <div class="legenda-item"><span class="legenda-cor" style="background: #2E55CD;"></span>WhatsApp (lista de transmissão)</div>
+        <div class="legenda-item"><span class="legenda-cor" style="background: #888780;"></span>Banner / app</div>
+      </div>
+    </div>
+
+    <!-- D1 -->
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">D1 — Cardápio da semana + lembrete de cutoff</h3>
+        <span class="msg-badge recorrente">Recorrente / ter 9h</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> task ClickUp recorrente, toda terça 9h &middot; <strong>Canal:</strong> lista de transmissão WhatsApp</p>
+      <div class="template-block">Bom dia. Cardápio dessa semana:
+
+Pão Original, Pão Integral e <span class="ph">{especial_da_semana}</span> (<span class="ph">{descricao_curta}</span>).
+
+Pedidos extras e ajustes na cesta até <strong>hoje às 12h</strong>. Depois disso a produção começa.
+
+<span class="ph">{link_portal}</span>
+
+Hugo</div>
+      <div class="msg-details">
+        <div>
+          <div class="msg-detail-label">Variáveis</div>
+          <div class="msg-detail-content"><code>{especial_da_semana}</code>, <code>{descricao_curta}</code>, <code>{link_portal}</code></div>
+        </div>
+        <div>
+          <div class="msg-detail-label">Task ClickUp</div>
+          <div class="msg-detail-content">Comunicação &middot; semanal terça 9h</div>
+        </div>
+      </div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Lista de transmissão não personaliza nome. Foco no especial pra criar desejo. Lembrete do cutoff sem dramatizar ("hoje às 12h", não "última chance").
+      </div>
+    </article>
+
+    <!-- D2 -->
+    <article class="msg-card banner">
+      <div class="msg-card-header">
+        <h3 class="msg-title">D2 — Confirmação pós-edição da cesta</h3>
+        <span class="msg-badge auto">Sistema / app</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> assinante confirma alterações no Drawer ou adiciona extra &middot; <strong>Já implementado</strong></p>
+      <div class="template-block"><strong style="font-family: var(--font-body); font-weight: 600;">Toast:</strong> Cesta confirmada. Entrega <span class="ph">{data_quinta}</span>.
+
+<strong style="font-family: var(--font-body); font-weight: 600;">Modal Recibo (header):</strong> Recibo da semana <span class="ph">{data_quinta}</span></div>
+      <div class="msg-details">
+        <div>
+          <div class="msg-detail-label">Variáveis</div>
+          <div class="msg-detail-content"><code>{data_quinta}</code></div>
+        </div>
+        <div>
+          <div class="msg-detail-label">Quem manda</div>
+          <div class="msg-detail-content">Sistema, imediato</div>
+        </div>
+      </div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Curto, factual. Sem "Pedido confirmado com sucesso!". A confirmação é o ato, não o discurso. No MVP-0 não há email automático após confirmar edição.
+      </div>
+    </article>
+
+    <!-- D3 -->
+    <article class="msg-card banner">
+      <div class="msg-card-header">
+        <h3 class="msg-title">D3 — Banner pós-cutoff</h3>
+        <span class="msg-badge auto">Sistema / app</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> terça 12h passou &middot; <strong>Já implementado</strong></p>
+      <div class="template-block">Prazo encerrado. Você poderá editar a próxima cesta.</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Fato seco. Não tem "infelizmente", não tem "tente novamente". Botões de edição disabled, visual com opacity reduzida. No MVP-0 não há WhatsApp aqui — quem perdeu o cutoff, perdeu.
+      </div>
+    </article>
+
+    <!-- D4 -->
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">D4 — Aviso geral do dia da entrega</h3>
+        <span class="msg-badge recorrente">Recorrente / qui 8h</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> task ClickUp recorrente, toda quinta 8h &middot; <strong>Canal:</strong> lista de transmissão</p>
+      <div class="template-block">Bom dia. Hoje é dia de entrega.
+
+As saídas começam às 12h. Sua entrega chega ao longo da tarde, até as 18h. Tô acompanhando a rota. Qualquer imprevisto te aviso direto.
+
+Hugo</div>
+      <div class="msg-details">
+        <div>
+          <div class="msg-detail-label">Variáveis</div>
+          <div class="msg-detail-content">nenhuma (mensagem padrão pra lista)</div>
+        </div>
+        <div>
+          <div class="msg-detail-label">Task ClickUp</div>
+          <div class="msg-detail-content">Comunicação &middot; semanal quinta 8h</div>
+        </div>
+      </div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Aviso geral pra todo mundo, sem janela individual. Se acontecer atraso específico, vira H4 (1:1 manual). Resolve o "não vou conseguir mandar pra cada um".
+      </div>
+    </article>
+
+    <!-- D5 -->
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">D5 — Pesquisa de satisfação pós-entrega</h3>
+        <span class="msg-badge recorrente">Recorrente / sex 11h</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> task ClickUp recorrente, toda sexta 11h &middot; <strong>Canal:</strong> lista de transmissão com link do Google Form</p>
+      <div class="template-block">O pão dessa semana chegou bem?
+
+Pergunta rápida, 30 segundos: <span class="ph">{link_form_pesquisa}</span>
+
+A nota me ajuda a ir afinando a Cora. Obrigado.
+
+Hugo</div>
+      <div class="msg-details">
+        <div>
+          <div class="msg-detail-label">Variáveis</div>
+          <div class="msg-detail-content"><code>{link_form_pesquisa}</code> &middot; link único do form</div>
+        </div>
+        <div>
+          <div class="msg-detail-label">Task ClickUp</div>
+          <div class="msg-detail-content">Comunicação &middot; semanal sexta 11h</div>
+        </div>
+      </div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        "30 segundos" diminui barreira. A frase de motivo ("me ajuda a ir afinando a Cora") justifica o pedido sem virar discurso. Resposta direto no Sheets, não no zap.
+      </div>
+    </article>
+
+    <!-- Setup Google Form -->
+    <div class="setup-box">
+      <h3 class="setup-title">Setup — Google Form da pesquisa semanal</h3>
+      <p style="font-size: 14px; color: var(--brand-800); margin-bottom: 6px;">Estrutura do form (criar no Google Forms, vinculado ao Sheets pra coleta):</p>
+
+      <h4>Pergunta 1 (obrigatória)</h4>
+      <ul>
+        <li><strong>Texto:</strong> "De 1 a 5, que nota você daria pra entrega dessa semana?"</li>
+        <li><strong>Tipo:</strong> múltipla escolha &middot; valores 1, 2, 3, 4, 5</li>
+        <li><strong>Comportamento:</strong> nota ≤ 3 ativa Seção 2 (lógica condicional). Nota ≥ 4 vai direto pra confirmação.</li>
+      </ul>
+
+      <h4>Pergunta 2 (condicional, só aparece se nota ≤ 3)</h4>
+      <ul>
+        <li><strong>Texto:</strong> "O que aconteceu?"</li>
+        <li><strong>Tipo:</strong> resposta longa, opcional</li>
+      </ul>
+
+      <h4>Pergunta 3 (opcional, sempre visível)</h4>
+      <ul>
+        <li><strong>Texto:</strong> "Seu nome ou WhatsApp, se quiser que eu te responda." </li>
+        <li><strong>Tipo:</strong> resposta curta, opcional</li>
+      </ul>
+
+      <h4>Tela de confirmação</h4>
+      <p>"Recebi. Obrigado. — Hugo"</p>
+
+      <h4>Configurações</h4>
+      <ul>
+        <li>Resposta vai pra planilha vinculada (botão verde "Respostas" → "Vincular ao Sheets")</li>
+        <li>Não exigir login (anônimo, sem captura de email)</li>
+        <li>Permitir 1 resposta por dispositivo? <strong>Não</strong> — algumas pessoas usam o link várias vezes ao longo do dia</li>
+        <li>Link curto via <code>forms.gle</code> pra caber bem na mensagem</li>
+      </ul>
+
+      <h4>Leitura semanal</h4>
+      <p>Task ClickUp "Revisão D5 + I1" toda domingo. Hugo abre o Sheets, lê notas baixas e responde individualmente quem deixou contato. Notas altas viram tendência (média semanal anotada no briefing de segunda).</p>
+    </div>
+
+  </div>
+</details>
+</section>
+
+<!-- FLUXO 4 -->
+<section id="fluxo-4" class="fluxo-anchor">
+<details class="fluxo">
+  <summary class="fluxo-header">
+    <span class="fluxo-title">Fluxo 4 — Cobrança mensal</span>
+    <span class="fluxo-chevron">&#9662;</span>
+  </summary>
+  <div class="fluxo-body">
+    <p class="fluxo-desc">Pré-aviso → confirmação ou falha → retry → reativação. Pré-cobrança via lista de transmissão; resto 1:1 conforme o caso.</p>
+
+    <div class="diagrama">
+      <div class="passo wa"><span class="passo-codigo">E1</span><span class="passo-meta">dia 28<br>pré-cobrança</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">E2</span><span class="passo-meta">dia 1<br>confirmada</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">E3</span><span class="passo-meta">falhou 1x</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">E4</span><span class="passo-meta">falhou 2x</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">E5</span><span class="passo-meta">bloqueada</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">E6</span><span class="passo-meta">reativada</span></div>
+    </div>
+
+    <!-- E1 -->
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">E1 — Pré-cobrança (2 dias antes do dia 1)</h3>
+        <span class="msg-badge recorrente">Recorrente / dia 28</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> task ClickUp mensal, dia 28 &middot; <strong>Canal:</strong> lista de transmissão</p>
+      <div class="template-block">Daqui a 2 dias entra a cobrança mensal da Cora. Se precisar trocar de cartão ou método de pagamento, me avisa antes.
+
+Hugo</div>
+      <div class="msg-details">
+        <div>
+          <div class="msg-detail-label">Variáveis</div>
+          <div class="msg-detail-content">nenhuma (mensagem padrão pra lista)</div>
+        </div>
+        <div>
+          <div class="msg-detail-label">Task ClickUp</div>
+          <div class="msg-detail-content">Comunicação &middot; mensal dia 28</div>
+        </div>
+      </div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Aviso, não venda. Lista de transmissão não personaliza valor (cada cliente tem o seu) — só sinaliza o evento. Quem quiser detalhe pergunta. Não tem agradecimento ("obrigado pela confiança"), não tem reforço de valor.
+      </div>
+    </article>
+
+    <!-- E2 -->
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">E2 — Cobrança confirmada</h3>
+        <span class="msg-badge event">1:1 manual</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> Hugo confere cobranças no painel Asaas (task mensal dia 2) e responde individualmente quem perguntar</p>
+      <div class="template-block"><span class="ph">{primeiro_nome}</span>, cobrança de <span class="ph">{valor_total}</span> confirmada. Próxima entrega: <span class="ph">{data_quinta}</span>.</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Confirmação seca. Termina com a próxima entrega pra ancorar o ciclo. Hugo só responde quem perguntar — não dispara confirmação pra todo mundo no dia 1 (vira ruído).
+      </div>
+    </article>
+
+    <!-- E3 -->
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">E3 — Cobrança falhou (1ª tentativa)</h3>
+        <span class="msg-badge event">1:1 manual</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> Asaas retorna falha na cobrança</p>
+      <div class="template-block">Oi, <span class="ph">{primeiro_nome}</span>. A cobrança no seu cartão não passou hoje. O sistema tenta de novo automaticamente daqui a 2 dias.
+
+Pode ser limite, validade ou alguma coisa do banco. Se quiser ajustar agora, me fala que te mando o link.
+
+Hugo</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Não acusa, não dramatiza. Oferece ajuda sem cobrar urgência. Funciona mesmo quando o método não é cartão — adapte ("a cobrança no PIX recorrente não passou", etc).
+      </div>
+    </article>
+
+    <!-- E4 -->
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">E4 — Reforço de inadimplência</h3>
+        <span class="msg-badge event">1:1 manual</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> 2ª tentativa também falhou (2 dias após E3)</p>
+      <div class="template-block"><span class="ph">{primeiro_nome}</span>, a segunda tentativa também não passou. Pra manter sua próxima entrega, preciso que você atualize o pagamento.
+
+Posso te mandar o link agora?
+
+Hugo</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Conexão direta entre pagamento e entrega. Pergunta no fim deixa a próxima ação na mão do cliente. Não ameaça com "vamos suspender", mas a consequência fica implícita.
+      </div>
+    </article>
+
+    <!-- E5 -->
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">E5 — Bloqueio após 3 falhas</h3>
+        <span class="msg-badge event">1:1 manual</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> 3ª tentativa falhou &middot; status muda pra <code>paused</code> &middot; entregas suspensas</p>
+      <div class="template-block"><span class="ph">{primeiro_nome}</span>, sem conseguir confirmar o pagamento, suspendi as entregas por enquanto. Sua assinatura tá pausada até atualizar o pagamento.
+
+Quando resolver, é só me chamar e a gente retoma na quinta seguinte.
+
+Hugo</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Honesto sobre o que aconteceu. Não cancela ("suspendi", "pausada", "até resolver"). Porta aberta no fim. Tom de quem entende que pode ser temporário, sem cobrança moral.
+      </div>
+    </article>
+
+    <!-- E6 -->
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">E6 — Reativação após atualização</h3>
+        <span class="msg-badge event">1:1 manual</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> novo pagamento entra, status volta pra <code>active</code></p>
+      <div class="template-block"><span class="ph">{primeiro_nome}</span>, pagamento entrou. Sua assinatura voltou. Próxima entrega: <span class="ph">{data_quinta}</span>.</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Curto. Sem "que bom que você resolveu" — é só constatação.
+      </div>
+    </article>
+
+  </div>
+</details>
+</section>
+
+<!-- FLUXO 5 -->
+<section id="fluxo-5" class="fluxo-anchor">
+<details class="fluxo">
+  <summary class="fluxo-header">
+    <span class="fluxo-title">Fluxo 5 — Pausa</span>
+    <span class="fluxo-chevron">&#9662;</span>
+  </summary>
+  <div class="fluxo-body">
+    <p class="fluxo-desc">Pedido → confirmação → retorno. Sempre 1:1 manual no MVP-0. Pause/cancel não é self-service.</p>
+
+    <div class="diagrama">
+      <div class="passo wa"><span class="passo-codigo">F1</span><span class="passo-meta">pessoa pede</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">F2</span><span class="passo-meta">confirmação</span></div>
+      <span class="seta">→</span>
+      <div class="passo banner"><span class="passo-codigo">F4</span><span class="passo-meta">retorno (app)</span></div>
+    </div>
+
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">F1 — Resposta ao pedido de pausa</h3>
+        <span class="msg-badge event">1:1 manual</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> cliente manda mensagem pedindo pra pausar</p>
+      <div class="template-block">Beleza, <span class="ph">{primeiro_nome}</span>. Quantas semanas você quer pausar? Pode ser 1 ou 2 semanas seguidas no mês.</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Aceitar sem fricção. Pergunta funcional pra coletar info. Lembrete da regra (1 ou 2 semanas) entra naturalmente. Não pergunta o motivo na primeira resposta.
+      </div>
+    </article>
+
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">F2 — Pausa confirmada</h3>
+        <span class="msg-badge event">1:1 manual + banner</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> Hugo registrou a pausa no Supabase</p>
+      <div class="template-block"><strong style="font-family: var(--font-body); font-weight: 600;">WhatsApp:</strong>
+
+Tá feito, <span class="ph">{primeiro_nome}</span>. Sua assinatura tá pausada entre <span class="ph">{data_a}</span> e <span class="ph">{data_b}</span>. Próxima entrega: <span class="ph">{data_retorno}</span>. Se quiser cancelar ou estender, me chama.
+
+Hugo
+
+<strong style="font-family: var(--font-body); font-weight: 600;">Banner (Home, dismissível 1x):</strong>
+
+Sua assinatura tá pausada. Sem entregas até <span class="ph">{data_b}</span>. Retorno em <span class="ph">{data_retorno}</span>.</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Confirmação clara das datas. "Se quiser cancelar ou estender" deixa porta aberta sem cobrar decisão. Banner repete a info pra quem entrar no app e tiver esquecido.
+      </div>
+    </article>
+
+    <article class="msg-card banner">
+      <div class="msg-card-header">
+        <h3 class="msg-title">F4 — Retorno da pausa</h3>
+        <span class="msg-badge auto">Sistema / app</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> cliente abre o app na primeira quinta de volta</p>
+      <div class="template-block">Sua assinatura voltou. Próxima entrega: <span class="ph">{data_quinta}</span>.</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Discreto. Sem "bem-vindo de volta!" (efusivo demais pra quem pausou só uma semana). Fato seco.
+      </div>
+    </article>
+
+  </div>
+</details>
+</section>
+
+<!-- FLUXO 6 -->
+<section id="fluxo-6" class="fluxo-anchor">
+<details class="fluxo">
+  <summary class="fluxo-header">
+    <span class="fluxo-title">Fluxo 6 — Cancelamento</span>
+    <span class="fluxo-chevron">&#9662;</span>
+  </summary>
+  <div class="fluxo-body">
+    <p class="fluxo-desc">Pedido → confirmação → última entrega → reconexão eventual. Sempre 1:1 manual.</p>
+
+    <div class="diagrama">
+      <div class="passo wa"><span class="passo-codigo">G1</span><span class="passo-meta">pede cancelar</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">G2</span><span class="passo-meta">confirmado</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">G3</span><span class="passo-meta">revertido?</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">G4</span><span class="passo-meta">porta aberta</span></div>
+    </div>
+
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">G1 — Resposta ao pedido de cancelamento</h3>
+        <span class="msg-badge event">1:1 manual</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> cliente manda mensagem pedindo pra cancelar</p>
+      <div class="template-block">Sem problema, <span class="ph">{primeiro_nome}</span>. Posso te perguntar o motivo? Não é pra te convencer a ficar, é pra eu entender se tem algo que dá pra ajustar pra outras pessoas ou pra você no futuro.</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Aceitar antes de perguntar. A pergunta vem com justificativa explícita pra desarmar a defensiva. Esse texto só funciona se for dito por alguém que de fato não vai pressionar — Hugo precisa estar genuinamente disposto a ouvir.
+      </div>
+    </article>
+
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">G2 — Cancelamento confirmado</h3>
+        <span class="msg-badge event">1:1 manual + banner</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> Hugo registrou o cancelamento &middot; status: <code>cancelled</code></p>
+      <div class="template-block"><strong style="font-family: var(--font-body); font-weight: 600;">WhatsApp:</strong>
+
+Tá feito, <span class="ph">{primeiro_nome}</span>. Sua última entrega é <span class="ph">{data_ultima_quinta}</span>. Depois dela não há nova cobrança.
+
+Se em algum momento quiser voltar, é só me chamar por aqui.
+
+Hugo
+
+<strong style="font-family: var(--font-body); font-weight: 600;">Banner (persistente até fim do ciclo):</strong>
+
+Cancelamento registrado. Última entrega em <span class="ph">{data_ultima_quinta}</span>. Você pode reverter até essa data.</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Clareza no que acontece. Porta aberta sem "esperamos te ver de novo" (genérico). Banner mantém o "você pode reverter" pra reforçar a janela de saída.
+      </div>
+    </article>
+
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">G3 — Cancelamento revertido</h3>
+        <span class="msg-badge event">1:1 manual + banner</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> cliente em <code>cancelled</code> (dentro da janela de reversão) pede pra voltar atrás</p>
+      <div class="template-block"><strong style="font-family: var(--font-body); font-weight: 600;">WhatsApp:</strong>
+
+Reverti aqui, <span class="ph">{primeiro_nome}</span>. Sua assinatura continua ativa. Próxima entrega: <span class="ph">{data_quinta}</span>.
+
+<strong style="font-family: var(--font-body); font-weight: 600;">Banner (dismissível 1x):</strong>
+
+Sua assinatura continua. Próxima entrega: <span class="ph">{data_quinta}</span>.</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Sem celebração. A pessoa desfez uma ação, não voltou de uma viagem longa.
+      </div>
+    </article>
+
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">G4 — Porta aberta pós-última-entrega</h3>
+        <span class="msg-badge event">1:1 manual</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> entrega da última quinta concluída &middot; algumas horas depois</p>
+      <div class="template-block"><span class="ph">{primeiro_nome}</span>, essa foi sua última cesta. Obrigado por ter assinado a Cora nesses <span class="ph">{duracao}</span>. Se em algum momento quiser voltar, é só me chamar por aqui.
+
+Hugo</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Único momento que cabe "obrigado". O agradecimento aqui é específico (pela duração, por ter sido assinante), não genérico.
+      </div>
+    </article>
+
+  </div>
+</details>
+</section>
+
+<!-- FLUXO 7 -->
+<section id="fluxo-7" class="fluxo-anchor">
+<details class="fluxo">
+  <summary class="fluxo-header">
+    <span class="fluxo-title">Fluxo 7 — Imprevisto</span>
+    <span class="fluxo-chevron">&#9662;</span>
+  </summary>
+  <div class="fluxo-body">
+    <p class="fluxo-desc">Substituição, atraso, falha total, feriado. Sempre situacional — Hugo decide quando aciona.</p>
+
+    <div class="diagrama">
+      <div class="passo banner"><span class="passo-codigo">H1</span><span class="passo-meta">feriado /<br>calendário</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">H2</span><span class="passo-meta">substituição<br>de produto</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">H3</span><span class="passo-meta">novidade<br>cardápio</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">H4</span><span class="passo-meta">problema<br>entrega</span></div>
+    </div>
+
+    <article class="msg-card banner">
+      <div class="msg-card-header">
+        <h3 class="msg-title">H1 — Feriado ou mudança no calendário</h3>
+        <span class="msg-badge event">Banner + WhatsApp</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> feriado afeta quinta ou terça (cutoff) &middot; Hugo decide ajuste com 1 semana de antecedência</p>
+      <div class="template-block"><strong style="font-family: var(--font-body); font-weight: 600;">Banner (topo da Home, dismissível):</strong>
+
+Por causa do feriado de <span class="ph">{feriado}</span>, a entrega da semana sai em <span class="ph">{data_alterada}</span>. Cesta fecha <span class="ph">{data_corte}</span> às 12h.
+
+<strong style="font-family: var(--font-body); font-weight: 600;">Lista de transmissão:</strong>
+
+Aviso operacional. Por causa do feriado de <span class="ph">{feriado}</span>, a entrega da semana sai em <span class="ph">{data_alterada}</span> em vez da quinta. O prazo pra ajustar a cesta também muda: <span class="ph">{data_corte}</span> às 12h.
+
+Hugo</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Aviso prático com motivo. Sempre indica o cutoff novo. Lista de transmissão começa com "Aviso operacional" pra distinguir da rotina (D1, D4).
+      </div>
+    </article>
+
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">H2 — Substituição de produto na semana</h3>
+        <span class="msg-badge event">1:1 manual / só afetados</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> item da cesta não vai sair (farinha, fermentação, decisão de qualidade)</p>
+      <div class="template-block"><span class="ph">{primeiro_nome}</span>, essa semana o <span class="ph">{produto_substituido}</span> não vai sair. Motivo: <span class="ph">{motivo}</span>.
+
+No lugar, vou mandar <span class="ph">{produto_substituto}</span>. Se isso não te servir, me fala que a gente combina outra coisa.
+
+Hugo</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Honestidade sobre o motivo. Substituição vem com porta aberta pra recusa.<br><br>
+        <strong>Exemplos de motivo aceitáveis:</strong> "a fornada não ficou no ponto que eu queria", "a farinha nova chegou diferente do esperado", "tive um problema com o forno na quarta".<br><br>
+        <strong>Evitar:</strong> "imprevisto operacional" (jargão vazio), "questões logísticas" (desculpa genérica).
+      </div>
+    </article>
+
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">H3 — Novidade no cardápio</h3>
+        <span class="msg-badge event">Lista de transmissão / situacional</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> especial sazonal ou primeira aparição de produto &middot; <strong>Canal:</strong> lista de transmissão ou Stories @cora.padaria</p>
+      <div class="template-block">Essa semana tem <span class="ph">{produto_novo}</span> no cardápio: <span class="ph">{descricao_curta}</span>.
+
+Dá pra adicionar como extra até terça às 12h.
+
+<span class="ph">{link_portal}</span>
+
+Hugo</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Anúncio, não venda. "Dá pra adicionar" em vez de "garanta o seu". Descrição curta (uma frase, no máximo duas). Se Hugo tá empolgado, deixa transparecer numa linha sem virar pitch.<br><br>
+        <strong>Exemplos de descrição:</strong> "focaccia genovesa, 430g, com azeite extravirgem", "pão de azeitona preta, 580g, primeiro teste em produção".
+      </div>
+    </article>
+
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">H4 — Problema na entrega</h3>
+        <span class="msg-badge event">1:1 manual</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> atraso ou falha logística &middot; Hugo manda mesmo quando a rota não é dele</p>
+      <div class="template-block"><strong style="font-family: var(--font-body); font-weight: 600;">Atraso:</strong>
+
+Oi, <span class="ph">{primeiro_nome}</span>. Tô com um atraso na entrega de hoje. Motivo: <span class="ph">{motivo}</span>. Devo chegar até <span class="ph">{nova_estimativa}</span>. Me desculpa pela espera.
+
+Hugo
+
+<strong style="font-family: var(--font-body); font-weight: 600;">Falha total (sem entrega na semana):</strong>
+
+<span class="ph">{primeiro_nome}</span>, preciso te dar uma notícia chata. <span class="ph">{motivo}</span>. Não vou conseguir entregar essa semana.
+
+Vou compensar com <span class="ph">{compensacao}</span>. Te peço desculpa.
+
+Hugo</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Direto e responsabilizado. "Me desculpa", "preciso te dar uma notícia chata" — linguagem honesta de quem assume o erro. Compensação específica (entrega extra, crédito, pão de presente), não vaga.<br><br>
+        <strong>Exemplos de compensação:</strong> "uma entrega extra na semana que vem, sem custo", "crédito de uma semana na próxima cobrança", "um pão a mais na próxima entrega".
+      </div>
+    </article>
+
+  </div>
+</details>
+</section>
+
+<!-- FLUXO 8 -->
+<section id="fluxo-8" class="fluxo-anchor">
+<details class="fluxo">
+  <summary class="fluxo-header">
+    <span class="fluxo-title">Fluxo 8 — Reconexão</span>
+    <span class="fluxo-chevron">&#9662;</span>
+  </summary>
+  <div class="fluxo-body">
+    <p class="fluxo-desc">Pulse mensal, pesquisa pós-cancelamento, aviso de nova rota. Cadência baixa, alto valor pra entender e expandir.</p>
+
+    <div class="diagrama">
+      <div class="passo wa"><span class="passo-codigo">I1</span><span class="passo-meta">dia 5<br>pulse mensal</span></div>
+      <span class="seta">→</span>
+      <div class="passo wa"><span class="passo-codigo">I2</span><span class="passo-meta">pós-cancel<br>(5-10 dias)</span></div>
+      <span class="seta">→</span>
+      <div class="passo email"><span class="passo-codigo">I3</span><span class="passo-meta">nova rota<br>aberta</span></div>
+    </div>
+
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">I1 — Pulse mensal NPS</h3>
+        <span class="msg-badge recorrente">Recorrente / dia 5</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> task ClickUp mensal, dia 5 &middot; <strong>Canal:</strong> lista de transmissão</p>
+      <div class="template-block">Pergunta rápida do mês:
+
+1. O que você mais gosta na Cora?
+2. O que faria você comprar mais (novos pães, especiais, frequência diferente)?
+3. De 0 a 10, o quanto você indicaria a Cora pra alguém?
+
+Pode responder na ordem ou só o que tiver vontade.
+
+Hugo</div>
+      <div class="msg-details">
+        <div>
+          <div class="msg-detail-label">Variáveis</div>
+          <div class="msg-detail-content">nenhuma (mensagem padrão pra lista)</div>
+        </div>
+        <div>
+          <div class="msg-detail-label">Task ClickUp</div>
+          <div class="msg-detail-content">Comunicação &middot; mensal dia 5</div>
+        </div>
+      </div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Não é pesquisa formal. Tom de quem pergunta, não de quem aplica questionário. "Pode responder na ordem ou só o que tiver vontade" desarma obrigatoriedade. Resposta parcial vale.<br><br>
+        Hugo consolida respostas semanalmente (task "Revisão D5 + I1" no domingo) na mesma planilha do D5, em aba separada.
+      </div>
+    </article>
+
+    <article class="msg-card">
+      <div class="msg-card-header">
+        <h3 class="msg-title">I2 — Pesquisa pós-cancelamento</h3>
+        <span class="msg-badge event">1:1 manual</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> 5 a 10 dias depois da última entrega &middot; <strong>Cuidado:</strong> se G1 foi conversa difícil (problema na entrega, frustração), espera mais ou pula</p>
+      <div class="template-block"><span class="ph">{primeiro_nome}</span>, queria te fazer uma pergunta sobre seu cancelamento. Foi alguma coisa específica (preço, sabor, entrega, tempo, outra coisa) ou um conjunto?
+
+Tô tentando aprender com cada saída pra fazer melhor.
+
+Hugo</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        Categorias ajudam a pessoa a responder rápido sem formular do zero. "Tô tentando aprender com cada saída" assume vulnerabilidade — quem cancelou já tá fora, não tem motivo pra defender ego.
+      </div>
+    </article>
+
+    <article class="msg-card email">
+      <div class="msg-card-header">
+        <h3 class="msg-title">I3 — Nova rota aberta (waitlist geográfica)</h3>
+        <span class="msg-badge event">Email + filtro por bairro</span>
+      </div>
+      <p class="msg-meta"><strong>Gatilho:</strong> Cora começa a entregar em bairro que tem gente na lista A2</p>
+      <div class="template-block"><span class="assunto">Assunto: A Cora chegou em {bairro}.</span>Oi, <span class="ph">{primeiro_nome}</span>.
+
+Demorou, mas a Cora começou a entregar em <span class="ph">{bairro}</span>. Você entrou na lista quando ainda não dava pra te atender. Agora dá.
+
+Se quiser assinar, dá pra começar o cadastro aqui: <span class="ph">{link_portal}</span>
+
+As vagas abrem por ordem de inscrição.
+
+Hugo
+Cora — Padaria por assinatura</div>
+      <div class="tom-block">
+        <span class="tom-label">Tom</span>
+        "Demorou, mas" reconhece o tempo de espera sem se desculpar excessivamente. "Agora dá" é fato. "As vagas abrem por ordem de inscrição" reforça que a lista importa.
+      </div>
+    </article>
+
+  </div>
+</details>
+</section>
+
+<!-- ROTINAS CLICKUP -->
+<section id="rotinas">
+  <h2 class="section-title">Rotinas ClickUp</h2>
+  <p style="margin-bottom: 18px; color: var(--warm-800);">Lista nova <strong>"Comunicação — Rotinas"</strong> no folder Cora — Pré-Lançamento. Cada task recorrente tem o template anexo na descrição. Quando dispara: abrir → copiar → personalizar variáveis → enviar → fechar task.</p>
+
+  <table class="rotinas-table">
+    <thead>
+      <tr>
+        <th>Task</th>
+        <th>Cadência</th>
+        <th>Disparo</th>
+        <th>Conteúdo</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="cad">D1 — Cardápio da semana</td>
+        <td>Semanal, terça 9h</td>
+        <td>Lista de transmissão</td>
+        <td>Especial + lembrete de cutoff</td>
+      </tr>
+      <tr>
+        <td class="cad">D4 — Aviso dia de entrega</td>
+        <td>Semanal, quinta 8h</td>
+        <td>Lista de transmissão</td>
+        <td>Saídas começam 12h, chegam até 18h</td>
+      </tr>
+      <tr>
+        <td class="cad">D5 — Pesquisa pós-entrega</td>
+        <td>Semanal, sexta 11h</td>
+        <td>Lista de transmissão</td>
+        <td>Link do Google Form</td>
+      </tr>
+      <tr>
+        <td class="cad">E1 — Pré-cobrança</td>
+        <td>Mensal, dia 28</td>
+        <td>Lista de transmissão</td>
+        <td>Aviso cobrança em 2 dias</td>
+      </tr>
+      <tr>
+        <td class="cad">E2 — Conferir Asaas</td>
+        <td>Mensal, dia 2</td>
+        <td>Painel Asaas (interno)</td>
+        <td>Conferir confirmações + flagar falhas</td>
+      </tr>
+      <tr>
+        <td class="cad">I1 — Pulse mensal NPS</td>
+        <td>Mensal, dia 5</td>
+        <td>Lista de transmissão</td>
+        <td>3 perguntas curtas</td>
+      </tr>
+      <tr>
+        <td class="cad">Revisão D5 + I1</td>
+        <td>Semanal, domingo</td>
+        <td>Google Sheets (interno)</td>
+        <td>Ler respostas, responder notas baixas, anotar tendências no briefing de segunda</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p style="margin-top: 18px; font-size: 13px; color: var(--warm-600); line-height: 1.6;">Tasks 1:1 (B1c, B2, B3, C2, C3, F, G, H4) não viram task recorrente — são event-driven. Disparam quando acontece o evento. Mas o template fica aqui pra copiar.</p>
+</section>
+
+<!-- NOTAS FINAIS -->
+<section id="notas">
+  <h2 class="section-title">Notas finais</h2>
+  <div class="notes-final">
+
+    <h3>O que ficou fora do MVP-0 (entra na Fase 1+)</h3>
+    <ul>
+      <li><strong>A4 — Follow-up de lead que não finalizou cadastro.</strong> Sem automação no MVP-0, exigiria monitoramento manual. Adiar até webhook Asaas existir.</li>
+      <li><strong>F3 — Lembrete 2 dias antes do retorno da pausa.</strong> Com poucos assinantes em pausa, Hugo lembra. Quando virar volume, vira task ClickUp gatilhada por data.</li>
+      <li><strong>I4 — Reativação proativa de ex-assinantes.</strong> Sem base acumulada no MVP-0. Só faz sentido depois de 6m+ de operação.</li>
+    </ul>
+
+    <h3>Limites de comunicação</h3>
+    <p>Mensagem do Hugo pra cliente acontece em vários momentos. Se acumular tudo numa semana intensa, fica saturante:</p>
+    <ul>
+      <li><strong>Terça:</strong> D1 cardápio (lista)</li>
+      <li><strong>Quinta:</strong> D4 aviso entrega (lista)</li>
+      <li><strong>Sexta:</strong> D5 pesquisa (lista)</li>
+      <li><strong>Fim de mês:</strong> E1 pré-cobrança (lista)</li>
+      <li><strong>Dia 5:</strong> I1 pulse (lista)</li>
+    </ul>
+    <p>Lista de transmissão (5 dos 7 disparos recorrentes) reduz drasticamente o overhead. Mensagens 1:1 acontecem apenas em eventos (cobrança falha, pausa, cancelamento, problema na entrega).</p>
+
+    <h3>Risco operacional</h3>
+    <p>Hugo é canal único do WhatsApp no MVP-0:</p>
+    <ul>
+      <li>Se Hugo ficar doente, ninguém responde mensagens.</li>
+      <li>Volume de mensagens pode crescer mais rápido que a capacidade de responder.</li>
+    </ul>
+    <p>Gatilho pra investir em ajuda nesse canal: quando o tempo gasto respondendo passar de ~1h/dia em média. Solução de longo prazo: WhatsApp Business API via plataforma (Z-API, gupshup) na Fase 1+.</p>
+
+    <h3>Pré-requisito do canal: cliente salvar contato</h3>
+    <p>Lista de transmissão só funciona se o cliente tiver o número da Cora salvo. Esse pedido está incluso no email B1b. Monitorar nos primeiros assinantes: se as mensagens da lista não estiverem chegando, reforçar o pedido na primeira conversa 1:1.</p>
+
+    <h3>Próxima revisão</h3>
+    <p>Esse documento é vivo. Próxima revisão prevista: depois do teste pré-Alpha em junho/2026, com base no feedback dos primeiros assinantes reais e em quanto tempo cada rotina realmente consome.</p>
+
+  </div>
+</section>
+
+</main>
+
+<script>
+function toggleAll(open) {
+  document.querySelectorAll('details.fluxo').forEach(d => d.open = open);
+}
+
+// Copiar texto do template-block.
+// Extrai o texto preservando quebras de linha e substituindo as variáveis
+// pelas chaves cruas (sem formatação HTML). Ignora linhas do "Assunto:"
+// quando o usuário pode preferir copiar só o corpo.
+function copyTemplate(btn) {
+  const block = btn.closest('.template-block');
+  // Clone pra extrair texto sem afetar o DOM original
+  const clone = block.cloneNode(true);
+  // Remove o próprio botão do clone
+  const btnInClone = clone.querySelector('.copy-btn');
+  if (btnInClone) btnInClone.remove();
+  // Pega o texto preservando quebras de linha
+  const text = clone.innerText.trim();
+
+  navigator.clipboard.writeText(text).then(() => {
+    const original = btn.innerHTML;
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 8 6.5 11.5 13 5"/></svg> Copiado';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = original;
+    }, 2000);
+  }).catch(err => {
+    btn.textContent = 'Erro ao copiar';
+    setTimeout(() => { btn.innerHTML = btnIconHTML(); }, 2000);
+  });
+}
+
+function btnIconHTML() {
+  return '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/></svg> Copiar';
+}
+
+// Injeta um botão de copiar em todo .template-block na carga da página
+document.querySelectorAll('.template-block').forEach(block => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.type = 'button';
+  btn.setAttribute('aria-label', 'Copiar mensagem');
+  btn.innerHTML = btnIconHTML();
+  btn.onclick = () => copyTemplate(btn);
+  block.appendChild(btn);
+});
+</script>
+
+</body>
+</html>
