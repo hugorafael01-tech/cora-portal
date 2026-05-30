@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import ProductCard from "./components/ProductCard";
 import CEPField from "./components/CEPField";
 import CoverageBlocker from "./components/CoverageBlocker";
 import { B, W, fd, fb, fmt, radii } from "./tokens";
 import { formatWhatsApp, formatCPF, isValidWhatsApp, isValidEmail, isValidCPF, isValidCEP, isValidNome, isValidNumero } from "./utils/validators";
 import { estaCoberto, estaNaWhitelist } from "./utils/coverage";
-import { buildHugoCoverageLink } from "./config/contact";
+import { buildHugoCoverageLink, buildHugoContactLink } from "./config/contact";
 import { postWaitlist, postSubscription } from "./utils/api";
 import { calcularPrimeiraEntrega, formatarPrimeiraEntrega } from "./utils/firstDelivery";
 
@@ -386,6 +387,7 @@ const Welcome=({data,assinatura,onComplete})=>{
 
 /* ═══ APP ═══ */
 export default function CoraOnboarding({onComplete, subscriptionsOpen=true, onGoToCapacityWaitlist}){
+  const navigate=useNavigate();
   const[screen,setScreen]=useState("splash");
   const[step,setStep]=useState(1);
   const[data,setData]=useState({
@@ -570,10 +572,22 @@ export default function CoraOnboarding({onComplete, subscriptionsOpen=true, onGo
         setScreen("welcome");
       }catch(err){
         console.error("[onboarding] falha ao criar Assinatura", err);
+        // E-mail ja tem conta: a pessoa se recupera sozinha via login (magic link).
+        if(err?.code==="email_exists"){
+          setSubmitError({kind:"email_exists"});
+          return;
+        }
+        // E-mail novo mas CPF ja cadastrado: o magic link nao resolve (pode nao
+        // lembrar o e-mail usado). Caminho de contato manual com o Hugo.
+        if(err?.code==="cpf_exists"){
+          setSubmitError({kind:"cpf_exists"});
+          return;
+        }
         // Capacity gate fechou enquanto user navegava (condicao de corrida).
         // Redirect pra lista de espera com reason='closed-during-flow' — a
-        // CapacityWaitlist renderiza banner persistente nesse caso.
-        if(err?.code==="subscriptions_closed" || err?.status===409){
+        // CapacityWaitlist renderiza banner persistente nesse caso. Checa o code
+        // (nao o status 409, que agora tambem cobre email_exists/cpf_exists).
+        if(err?.code==="subscriptions_closed"){
           if(onGoToCapacityWaitlist){
             onGoToCapacityWaitlist("closed-during-flow");
             return;
@@ -686,7 +700,33 @@ export default function CoraOnboarding({onComplete, subscriptionsOpen=true, onGo
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
             {submitError && (
               <div role="alert" style={{fontFamily:fb,fontSize:13,color:"#9A3412",background:"#FFEDD5",border:"1px solid #FED7AA",borderRadius:radii.md,padding:"10px 12px",lineHeight:1.5}}>
-                {submitError}
+                {typeof submitError==="string" ? (
+                  submitError
+                ) : submitError.kind==="email_exists" ? (
+                  <>
+                    {/* Texto sujeito a revisao pela skill de tom de voz da Cora. */}
+                    <div>Esse e-mail já tem conta na Cora. É só entrar.</div>
+                    <button
+                      onClick={()=>navigate("/login")}
+                      style={{marginTop:8,padding:0,border:"none",background:"none",fontFamily:fb,fontSize:13,fontWeight:600,color:B[700],textDecoration:"underline",cursor:"pointer"}}
+                    >
+                      Fazer login
+                    </button>
+                  </>
+                ) : submitError.kind==="cpf_exists" ? (
+                  <>
+                    {/* Texto sujeito a revisao pela skill de tom de voz da Cora. */}
+                    <div>Já existe um cadastro com esse CPF. Chama a gente no WhatsApp que a gente te ajuda.</div>
+                    <a
+                      href={buildHugoContactLink(`Oi, tentei assinar na Cora mas já existe um cadastro com meu CPF.`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{display:"inline-block",marginTop:8,fontFamily:fb,fontSize:13,fontWeight:600,color:B[700],textDecoration:"underline"}}
+                    >
+                      Falar no WhatsApp
+                    </a>
+                  </>
+                ) : null}
               </div>
             )}
             <div style={{display:"flex",alignItems:"center",gap:12}}>
