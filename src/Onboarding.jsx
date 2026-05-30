@@ -704,8 +704,7 @@ export default function CoraOnboarding({onComplete, subscriptionsOpen=true, onGo
                   submitError
                 ) : submitError.kind==="email_exists" ? (
                   <>
-                    {/* Texto sujeito a revisao pela skill de tom de voz da Cora. */}
-                    <div>Esse e-mail já tem conta na Cora. É só entrar.</div>
+                    <div>Esse e-mail já tem cadastro na Cora. É só entrar.</div>
                     <button
                       onClick={()=>navigate("/login")}
                       style={{marginTop:8,padding:0,border:"none",background:"none",fontFamily:fb,fontSize:13,fontWeight:600,color:B[700],textDecoration:"underline",cursor:"pointer"}}
@@ -715,8 +714,7 @@ export default function CoraOnboarding({onComplete, subscriptionsOpen=true, onGo
                   </>
                 ) : submitError.kind==="cpf_exists" ? (
                   <>
-                    {/* Texto sujeito a revisao pela skill de tom de voz da Cora. */}
-                    <div>Já existe um cadastro com esse CPF. Chama a gente no WhatsApp que a gente te ajuda.</div>
+                    <div>Já existe um cadastro com esse CPF. Chama a gente no WhatsApp pra resolver.</div>
                     <a
                       href={buildHugoContactLink(`Oi, tentei assinar na Cora mas já existe um cadastro com meu CPF.`)}
                       target="_blank"
