@@ -15,7 +15,9 @@
  * Erros que nao sejam 404 (no GET) viram throw com mensagem descritiva.
  * O Error tem `.status` (HTTP) e `.code` (campo `error` do body) anexados
  * pra callers detectarem casos especificos (ex: 409 subscriptions_closed,
- * 409 cutoff_passed).
+ * 409 cutoff_passed). No onboarding (D.3), postSubscription pode retornar
+ * 409 com `.code` "email_exists" (e-mail ja tem conta) ou "cpf_exists"
+ * (CPF ja cadastrado) — o Onboarding trata cada um com mensagem/acao propria.
  */
 
 const throwApiError = async (res, fallback) => {

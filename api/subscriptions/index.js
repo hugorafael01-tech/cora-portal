@@ -1,11 +1,20 @@
 /**
- * POST /api/subscriptions
+ * POST /api/subscriptions  (Frente D / D.3 — onboarding escreve no DB)
  *
- * Cria assinatura pendente em pending_payment, dispara e-mail pro Hugo.
- * Idempotente por CPF: clique duplo retorna o mesmo subscription_id e nao
- * dispara segundo e-mail.
+ * Orquestra a criacao completa do assinante no Confirmar do onboarding:
+ *   1. auth user (admin.createUser, sem senha, email_confirm:true)
+ *   2. profile (user_id, nome, whatsapp, cpf)
+ *   3. subscription (shape novo + double-write das colunas legadas)
+ * e dispara e-mail pro Hugo. Os calculos monetarios sao feitos no servidor.
  *
- * Os calculos monetarios sao feitos no servidor — payload nao envia valores.
+ * Precedencia de erro: EMAIL antes de CPF.
+ *   - email ja registrado -> 409 { error: "email_exists" } (nada criado).
+ *   - cpf ja em profiles (unique) -> 409 { error: "cpf_exists" }, com cleanup
+ *     do auth user recem-criado. A unique de profiles.cpf e a guarda real,
+ *     inclusive contra corrida (sem pre-check separado nem scan de listUsers).
+ * Qualquer falha pos-createUser faz cleanup pra nao deixar usuario orfao.
+ *
+ * service_role bypassa RLS; este handler so roda node-side (api/).
  */
 import { supabaseAdmin } from "../../src/lib/supabase-admin.js";
 import { resend } from "../../src/lib/resend.js";
@@ -117,13 +126,16 @@ export default async function handler(req, res) {
   const cpfDigits = canonicalizeDigits(cpf);
   const whatsappDigits = canonicalizeDigits(whatsapp);
   const cepDigits = canonicalizeDigits(endereco.cep);
+  const emailNorm = String(email).trim().toLowerCase();
 
   // ─── Validacoes ───
   if (!isValidCPF(cpfDigits)) return res.status(422).json({ error: "invalid_cpf" });
-  if (!isValidEmail(email)) return res.status(422).json({ error: "invalid_email" });
+  if (!isValidEmail(emailNorm)) return res.status(422).json({ error: "invalid_email" });
   if (!isValidWhatsApp(whatsappDigits)) return res.status(422).json({ error: "invalid_whatsapp" });
   if (!isValidCEP(cepDigits)) return res.status(422).json({ error: "invalid_cep" });
 
+  const qtyOriginal = Number(itens.original) || 0;
+  const qtyIntegral = Number(itens.integral) || 0;
   const totalPaes = Object.values(itens).reduce((s, q) => s + (Number(q) || 0), 0);
   if (totalPaes < 1 || totalPaes > 3) {
     return res.status(422).json({ error: "invalid_qty" });
@@ -134,17 +146,28 @@ export default async function handler(req, res) {
   const valorFrete = FRETE_MENSAL;
   const valorMensal = valorPaes + valorFrete;
 
-  const insertPayload = {
-    nome: String(nome).trim(),
+  const nomeTrim = String(nome).trim();
+  const bairroTrim = String(endereco.bairro).trim();
+  const cidadeTrim = String(endereco.cidade).trim();
+
+  // zona_entrega: sugestao derivada do endereco (revisavel pelo Hugo). COVERED_AREAS
+  // nao expoe nome de zona, entao usa o bairro como melhor proxy, com fallback pra
+  // cidade e, no pior caso, "a confirmar". Nunca null.
+  const zonaEntrega = bairroTrim || cidadeTrim || "a confirmar";
+
+  // Shape legado (colunas NOT NULL ainda presentes ate o cleanup 86e1mc0ta).
+  // Reusado no insert da subscription (double-write) e no corpo do e-mail.
+  const record = {
+    nome: nomeTrim,
     whatsapp: whatsappDigits,
-    email: String(email).trim().toLowerCase(),
+    email: emailNorm,
     cpf: cpfDigits,
     cep: cepDigits,
     rua: String(endereco.rua).trim(),
     numero: String(endereco.numero).trim(),
     complemento: endereco.complemento ? String(endereco.complemento).trim() : null,
-    bairro: String(endereco.bairro).trim(),
-    cidade: String(endereco.cidade).trim(),
+    bairro: bairroTrim,
+    cidade: cidadeTrim,
     estado: String(endereco.estado).trim(),
     itens,
     total_paes: totalPaes,
@@ -154,66 +177,106 @@ export default async function handler(req, res) {
     coverage_unconfirmed: !!coverage_unconfirmed,
   };
 
-  // ─── INSERT com tratamento de duplicata ───
-  const { data: inserted, error: insertErr } = await supabaseAdmin
+  // ════════════════════════════════════════════════════════════════
+  // Orquestracao D.3: auth user -> profile -> subscription.
+  // ════════════════════════════════════════════════════════════════
+
+  // 1. Cria o usuario de auth (sem senha; magic-link funciona depois pois ja existe).
+  const { data: createdAuth, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+    email: emailNorm,
+    email_confirm: true,
+  });
+
+  if (createErr) {
+    // gotrue recusa e-mail ja registrado. Nada foi criado -> sem orfao.
+    const dupEmail =
+      createErr.code === "email_exists" ||
+      /already.*regist/i.test(createErr.message || "");
+    if (dupEmail) {
+      return res.status(409).json({ error: "email_exists" });
+    }
+    console.error("[subscriptions POST] createUser failed", createErr);
+    return res.status(500).json({ error: "internal_error" });
+  }
+
+  const userId = createdAuth.user.id;
+
+  // Cleanup helper: desfaz o que foi criado (ordem inversa) pra nao deixar orfao.
+  // Loga falhas de cleanup sem mascarar o erro original.
+  const cleanup = async ({ profile = false } = {}) => {
+    if (profile) {
+      const { error } = await supabaseAdmin.from("profiles").delete().eq("user_id", userId);
+      if (error) console.error("[subscriptions POST] cleanup profile delete failed", userId, error);
+    }
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (error) console.error("[subscriptions POST] cleanup deleteUser failed", userId, error);
+  };
+
+  // 2. Insere o profile. cpf UNIQUE e a guarda real contra dupe/corrida.
+  const { error: profileErr } = await supabaseAdmin.from("profiles").insert({
+    user_id: userId,
+    nome: nomeTrim,
+    whatsapp: whatsappDigits,
+    cpf: cpfDigits,
+  });
+
+  if (profileErr) {
+    if (profileErr.code === "23505") {
+      // CPF ja cadastrado em outro profile. Remove o auth user recem-criado.
+      await cleanup();
+      return res.status(409).json({ error: "cpf_exists" });
+    }
+    console.error("[subscriptions POST] profile insert failed", profileErr);
+    await cleanup();
+    return res.status(500).json({ error: "internal_error" });
+  }
+
+  // 3. Insere a subscription (shape novo + double-write legado).
+  const { data: insertedSub, error: subErr } = await supabaseAdmin
     .from("subscriptions")
-    .insert(insertPayload)
+    .insert({
+      user_id: userId,
+      status: "pending_payment",
+      qty_total: totalPaes,
+      qty_original: qtyOriginal,
+      qty_integral: qtyIntegral,
+      zona_entrega: zonaEntrega,
+      ...record,
+    })
     .select("id, status")
     .single();
 
-  let subscription_id;
-  let status;
-  let newRecord = true;
+  if (subErr) {
+    await cleanup({ profile: true });
+    // 23505 aqui = colisao no indice legado subscriptions_cpf_pending_uniq
+    // (ex: assinatura de teste pendente sem profile com o mesmo CPF). Trata
+    // como CPF ja existente em vez de estourar 500.
+    if (subErr.code === "23505") {
+      console.error("[subscriptions POST] subscription unique violation (legacy cpf_pending?)", subErr);
+      return res.status(409).json({ error: "cpf_exists" });
+    }
+    console.error("[subscriptions POST] subscription insert failed", subErr);
+    return res.status(500).json({ error: "internal_error" });
+  }
 
-  if (insertErr) {
-    // 23505 = unique_violation. Indice subscriptions_cpf_pending_uniq impede
-    // 2 pendings com mesmo CPF.
-    if (insertErr.code === "23505") {
-      const { data: existing, error: selectErr } = await supabaseAdmin
-        .from("subscriptions")
-        .select("id, status")
-        .eq("cpf", cpfDigits)
-        .eq("status", "pending_payment")
-        .maybeSingle();
-      if (selectErr || !existing) {
-        console.error("[subscriptions POST] dupe but select failed", selectErr);
-        return res.status(500).json({ error: "internal_error" });
-      }
-      subscription_id = existing.id;
-      status = existing.status;
-      newRecord = false;
+  // 4. E-mail pro Hugo (best-effort; falha nao bloqueia a resposta).
+  try {
+    // SDK Resend v4+ retorna { data, error } sem throw. Precisa checar
+    // .error explicitamente, senao falhas silenciosas passam batido.
+    const result = await resend.emails.send({
+      from: process.env.EMAIL_FROM,
+      to: process.env.EMAIL_TO,
+      subject: `[Cora] Nova assinatura — ${record.nome}`,
+      text: buildEmailBody(record),
+    });
+    if (result?.error) {
+      console.error("[subscriptions POST] email error", result.error);
     } else {
-      console.error("[subscriptions POST] insert error", insertErr);
-      return res.status(500).json({ error: "internal_error" });
+      console.log("[subscriptions POST] email sent", result?.data?.id);
     }
-  } else {
-    subscription_id = inserted.id;
-    status = inserted.status;
+  } catch (err) {
+    console.error("[subscriptions POST] email throw", err);
   }
 
-  // ─── Email so dispara em insert novo ───
-  if (newRecord) {
-    try {
-      // SDK Resend v4+ retorna { data, error } sem throw. Precisa checar
-      // .error explicitamente, senao falhas silenciosas passam batido.
-      const result = await resend.emails.send({
-        from: process.env.EMAIL_FROM,
-        to: process.env.EMAIL_TO,
-        subject: `[Cora] Nova assinatura — ${insertPayload.nome}`,
-        text: buildEmailBody(insertPayload),
-      });
-      if (result?.error) {
-        console.error("[subscriptions POST] email error", result.error);
-      } else {
-        console.log("[subscriptions POST] email sent", result?.data?.id);
-      }
-    } catch (err) {
-      // Falha de email NAO bloqueia resposta. Logado pra debug.
-      console.error("[subscriptions POST] email throw", err);
-    }
-    return res.status(201).json({ subscription_id, status });
-  }
-
-  // Idempotencia: registro pre-existente, retorna 200 sem novo email
-  return res.status(200).json({ subscription_id, status });
+  return res.status(201).json({ subscription_id: insertedSub.id, status: insertedSub.status });
 }
