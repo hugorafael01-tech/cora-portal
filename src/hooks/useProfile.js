@@ -24,7 +24,10 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../auth/useAuth";
 import { supabase } from "../lib/supabase";
 
-export function useProfile() {
+// reloadKey: contador opcional. Quando muda, o effect re-roda o fetch (usado
+// pelo SubscriptionProvider pra invalidar apos uma edicao/onboarding). Default
+// 0 -> retrocompativel com chamadas que nao passam nada (ex: /dev/frente-d).
+export function useProfile(reloadKey = 0) {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id ?? null;
 
@@ -60,7 +63,7 @@ export function useProfile() {
     return () => {
       ignore = true;
     };
-  }, [userId, authLoading]);
+  }, [userId, authLoading, reloadKey]);
 
   // `current`: o resultado em maos so vale se for do usuario atual. Enquanto
   // o fetch do usuario corrente nao chega, tratamos como carregando.

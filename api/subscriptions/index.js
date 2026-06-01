@@ -78,6 +78,11 @@ Esta mensagem foi gerada automaticamente pelo portal Cora.
 `;
 
 export default async function handler(req, res) {
+  // Frente D / D.4: PATCH altera a composicao da assinatura do usuario logado
+  // (identidade derivada do JWT, nao do cliente). POST = criacao no onboarding.
+  if (req.method === "PATCH") {
+    return handlePatchMine(req, res);
+  }
   if (req.method !== "POST") {
     return res.status(405).json({ error: "method_not_allowed" });
   }
@@ -279,4 +284,121 @@ export default async function handler(req, res) {
   }
 
   return res.status(201).json({ subscription_id: insertedSub.id, status: insertedSub.status });
+}
+
+// ════════════════════════════════════════════════════════════════
+// PATCH /api/subscriptions  (Frente D / D.4 — edicao de composicao)
+// ════════════════════════════════════════════════════════════════
+
+// Soma quantidades, ignorando invalidos/negativos.
+const sumItens = (itens) =>
+  Object.values(itens || {}).reduce((s, q) => {
+    const n = Number(q) || 0;
+    return s + (n > 0 ? n : 0);
+  }, 0);
+
+// Normaliza pra { id: qty>0 } — base do double-write e da idempotencia.
+const normalizeItens = (itens) => {
+  const out = {};
+  for (const [k, v] of Object.entries(itens || {})) {
+    const n = Number(v) || 0;
+    if (n > 0) out[k] = n;
+  }
+  return out;
+};
+
+const itensEqual = (a, b) => {
+  const na = normalizeItens(a);
+  const nb = normalizeItens(b);
+  const ka = Object.keys(na);
+  if (ka.length !== Object.keys(nb).length) return false;
+  return ka.every((k) => na[k] === nb[k]);
+};
+
+// Campos que o PATCH le/retorna: qty_* (shape novo) + itens/total_paes (legado,
+// pra idempotencia e double-write) + valores. SEM next_billing_* — recorte D.4:
+// o endpoint so persiste composicao; regra de cobranca/proporcional e fase 2.
+const PATCH_FIELDS =
+  "id, status, itens, qty_total, qty_original, qty_integral, total_paes, valor_paes, valor_frete, valor_mensal";
+
+async function handlePatchMine(req, res) {
+  // ─── Identidade: deriva user_id do JWT (nao confia em id vindo do cliente) ───
+  const authHeader = req.headers.authorization || req.headers.Authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : null;
+  if (!token) {
+    return res.status(401).json({ error: "missing_token" });
+  }
+  const { data: authData, error: authErr } = await supabaseAdmin.auth.getUser(token);
+  if (authErr || !authData?.user) {
+    return res.status(401).json({ error: "invalid_token" });
+  }
+  const userId = authData.user.id;
+
+  // ─── Composicao obrigatoria e bem-formada ───
+  const { itens } = req.body || {};
+  if (!itens || typeof itens !== "object") {
+    return res.status(400).json({ error: "missing_itens" });
+  }
+  // Recomputa total no servidor — nao confia no payload.
+  const totalPaes = sumItens(itens);
+  if (totalPaes < 1 || totalPaes > 3) {
+    return res.status(422).json({ error: "invalid_qty" });
+  }
+
+  // ─── Le a assinatura do PROPRIO usuario (service_role + filtro user_id) ───
+  const { data: current, error: readErr } = await supabaseAdmin
+    .from("subscriptions")
+    .select(PATCH_FIELDS)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (readErr) {
+    console.error("[subscriptions PATCH] read error", readErr);
+    return res.status(500).json({ error: "internal_error" });
+  }
+  if (!current) {
+    // Logado mas sem assinatura: nada a editar.
+    return res.status(404).json({ error: "not_found" });
+  }
+  if (current.status !== "active") {
+    return res.status(409).json({ error: "not_active", status: current.status });
+  }
+
+  // ─── Idempotencia: composicao identica -> no-op ───
+  if (itensEqual(itens, current.itens) && totalPaes === current.total_paes) {
+    return res.status(200).json(current);
+  }
+
+  // ─── Calculos no servidor (so composicao; valor_frete universal R$ 15) ───
+  const qtyOriginal = Number(itens.original) || 0;
+  const qtyIntegral = Number(itens.integral) || 0;
+  const valorPaes = totalPaes * VALOR_POR_PAO;
+  const valorMensal = valorPaes + FRETE_MENSAL;
+
+  const updatePayload = {
+    // double-write: itens jsonb legado + qty_* do shape novo.
+    itens: normalizeItens(itens),
+    qty_total: totalPaes,
+    qty_original: qtyOriginal,
+    qty_integral: qtyIntegral,
+    total_paes: totalPaes,
+    valor_paes: valorPaes,
+    valor_frete: FRETE_MENSAL,
+    valor_mensal: valorMensal,
+    // NAO toca next_billing_*: regra de "quando a mudanca vale" fica pra fase 2.
+  };
+
+  const { data: updated, error: updateErr } = await supabaseAdmin
+    .from("subscriptions")
+    .update(updatePayload)
+    .eq("user_id", userId)
+    .select(PATCH_FIELDS)
+    .single();
+
+  if (updateErr) {
+    console.error("[subscriptions PATCH] update error", updateErr);
+    return res.status(500).json({ error: "internal_error" });
+  }
+
+  return res.status(200).json(updated);
 }
