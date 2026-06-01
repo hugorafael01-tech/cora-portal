@@ -92,9 +92,16 @@ async function handlePost(req, res) {
     return res.status(409).json({ error: "subscription_not_active" });
   }
 
-  // ─── Valida composition (se informado) ───
-  let compositionPayload = null;
-  if (composition !== undefined && composition !== null) {
+  // ─── Composition: so valida/grava quando vem no request (task 86e1neypw) ───
+  // Operacao de EXTRA nao envia composition (campo ausente) -> preserva a
+  // composicao ja gravada, sem revalidar. Desacopla o extra da validacao
+  // soma === total_paes (que so faz sentido quando a composicao muda).
+  // Operacao de COMPOSICAO envia:
+  //   - objeto -> valida soma === total_paes (regra mantida)
+  //   - null   -> limpa o swap (volta ao padrao da assinatura), sem validar soma
+  const compositionProvided = composition !== undefined;
+  let compositionPayload;
+  if (compositionProvided && composition !== null) {
     const sum = compositionSum(composition);
     if (Number.isNaN(sum)) {
       return res.status(400).json({ error: "invalid_composition" });
@@ -103,6 +110,8 @@ async function handlePost(req, res) {
       return res.status(400).json({ error: "composition_quantity_mismatch" });
     }
     compositionPayload = composition;
+  } else if (compositionProvided) {
+    compositionPayload = null;
   }
 
   const totalExtras = computeTotalExtras(extrasArr);
@@ -136,7 +145,6 @@ async function handlePost(req, res) {
   const upsertPayload = {
     subscription_id,
     delivery_date,
-    composition: compositionPayload,
     extras: extrasArr,
     total_extras: totalExtras,
     status: "rascunho",
@@ -144,6 +152,13 @@ async function handlePost(req, res) {
     first_extra_added_at: firstExtraAddedAt,
     abandonment_warning_sent_at: abandonmentWarningSentAt,
   };
+  // composition so entra no payload quando veio no request. Ausente -> fora do
+  // SET do ON CONFLICT DO UPDATE -> valor gravado preservado (ponto 11). Em
+  // insert de pedido novo sem swap, a coluna fica no default (null = segue a
+  // assinatura), que e o correto.
+  if (compositionProvided) {
+    upsertPayload.composition = compositionPayload;
+  }
 
   const { data: upserted, error: upsertErr } = await supabaseAdmin
     .from("weekly_orders")

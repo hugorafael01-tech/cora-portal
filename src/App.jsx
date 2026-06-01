@@ -2259,7 +2259,13 @@ export default function CoraPortal(){
   const postCurrentOrder = async (nextExtras, nextComposition) => {
     if (!subscription?.id || subscription.status !== "active") return;
     const delivery_date = currentWeeklyOrder?.delivery_date || nextEditableThursdayISO();
-    const composition = nextComposition !== undefined
+    // Op de composicao = nextComposition foi passado (updateComposition). Op de
+    // extra = nao passado (add/removeExtraFromCart). Task 86e1neypw: o POST de
+    // extra NAO manda composition (o servidor preserva a gravada e nao revalida
+    // soma === total_paes). O estado local preserva a composicao efetiva nos
+    // dois casos pra UI nao perder o swap.
+    const isCompositionOp = nextComposition !== undefined;
+    const composition = isCompositionOp
       ? nextComposition
       : (currentWeeklyOrder?.composition ?? null);
     const snapshot = weeklyOrders;
@@ -2276,12 +2282,11 @@ export default function CoraPortal(){
     };
     setWeeklyOrders(prev => mergeOrder(prev, optimistic));
     try {
-      const saved = await postWeeklyOrder({
-        subscription_id: subscription.id,
-        delivery_date,
-        composition,
-        extras: nextExtras,
-      });
+      const payload = { subscription_id: subscription.id, delivery_date, extras: nextExtras };
+      // Omite composition em op de extra -> campo ausente no body -> servidor
+      // preserva o gravado, sem revalidar. Op de composicao manda e e validada.
+      if (isCompositionOp) payload.composition = composition;
+      const saved = await postWeeklyOrder(payload);
       setWeeklyOrders(prev => mergeOrder(prev, saved));
     } catch (err) {
       console.error("[App] postWeeklyOrder failed", err);
