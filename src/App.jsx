@@ -1511,7 +1511,7 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
       fontFamily:fb,fontSize:12,color:W[500],lineHeight:1.55,
     }}>
       Pra mudar endereço, forma de pagamento ou pausar a assinatura, fale com a gente pelo{" "}
-      <a href="https://wa.me/5521999429843?text=Oi%2C%20gostaria%20de%20alterar%20minha%20Assinatura" target="_blank" rel="noopener noreferrer" style={{color:B[500],textDecoration:"none",fontWeight:600,display:"inline-flex",alignItems:"center",gap:4}}>
+      <a href={`https://wa.me/${HUGO_WHATSAPP}?text=${encodeURIComponent("Oi, gostaria de alterar minha Assinatura")}`} target="_blank" rel="noopener noreferrer" style={{color:B[500],textDecoration:"none",fontWeight:600,display:"inline-flex",alignItems:"center",gap:4}}>
         WhatsApp
         <I d={ic.chev} size={11} color={B[500]}/>
       </a>.

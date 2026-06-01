@@ -4,7 +4,7 @@
  * fica como pendencia separada (fora do escopo da Fase 4).
  */
 
-export const HUGO_WHATSAPP = "5521999429843";
+export const HUGO_WHATSAPP = "5521971059962";
 
 /**
  * Link wa.me com mensagem pre-preenchida pra "situacao especial" quando
