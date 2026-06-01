@@ -164,6 +164,33 @@ Ciclo completo de autenticação mergeado em main em uma única sessão de 3 dia
 
 ## Última sessão de trabalho
 
+**01/jun/2026 — Frente D / D.4 (subscription no DB) CONCLUIDA**
+
+PR #29 (cae4a60), branch feat/frente-d-subscription-db (removida). Opcao A:
+leitura E escrita da subscription migradas do localStorage pro DB.
+
+- Leitura: useSubscriptionView compoe useSubscription+useProfile (D.2) +
+  email da sessao; traduz qty_*->itens, monta endereco aninhado. Sem estender
+  o select da D.2. SubscriptionProvider (contexto unico em main.jsx, dentro do
+  AuthProvider) -> "gate liberou = dado pronto", expoe refetch().
+- Gate (ProtectedRoute): loader enquanto carrega (nao redireciona), erro nunca
+  vira /interesse, ?dev=1->/onboarding mantido.
+- Estado do App vem do contexto; reconcileSubscription removido; localStorage
+  (cora_subscription) eliminado; src/utils/subscription.js deletado.
+- Edicao: PATCH /api/subscriptions session-scoped (user_id do JWT, cliente nao
+  manda id nem escreve direto - revoke 0019). So persiste composicao (recalcula
+  total_paes/qty_total/valor_paes/valor_mensal, double-write itens+qty_*; nao
+  toca next_billing_*). PATCH do [id].js removido (GET-only pro Perfil).
+- Validado no preview: deslogado->/login; logado-sem-sub->/interesse sem flash;
+  logado-com-sub (hugo+dev) le tudo do DB; edicao da assinatura recorrente
+  PERSISTE apos F5 (prova da Opcao A). Erro de leitura nao bounca.
+
+Follow-ups abertos (nao bloqueiam): 86e1n9990 (WhatsApp -> ja resolvido no #29),
+86e1na332 (cesta da semana nao persiste composicao no F5 - bug separado, fora D.4),
+86e1mn1x7 (duplicado na T1), 86e1mn1xz (login mintando conta).
+
+## Sessões anteriores
+
 **29/mai/2026 — Frente B fechada end-to-end**
 
 Sessão maratona consolidando B.2.4 + B.2.5 + B.2.6 num único dia, após B.2.1-B.2.3 terem fechado em 27/mai.
@@ -175,8 +202,6 @@ Sessão maratona consolidando B.2.4 + B.2.5 + B.2.6 num único dia, após B.2.1-
 Decisão de produto consolidada: `/interesse` é tela temporária pré-Alpha. Pós-Alpha (fechar 30+20 ou operação estabilizar), aquisição vira `/onboarding`, e o ProtectedRoute precisa apontar pra lá — registrado em task `86e1m4um5`.
 
 Próximo: pausa nesta frente. Frente C (auth hardening) e migração de subscription pro DB são as próximas peças, sem urgência imediata.
-
-## Sessões anteriores
 
 - **Data:** 2026-05-25 (segunda)
 - **Tema:** Remoção do Cenário B2 (frete grátis em condomínio) — frete R$ 15 passa a universal
