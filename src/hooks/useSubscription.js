@@ -41,7 +41,10 @@ const SUBSCRIPTION_COLUMNS =
   "asaas_customer_id,asaas_subscription_id," +
   "created_at,updated_at,activated_at,paused_at,cancelled_at";
 
-export function useSubscription() {
+// reloadKey: contador opcional. Quando muda, o effect re-roda o fetch (usado
+// pelo SubscriptionProvider pra invalidar apos uma edicao/onboarding). Default
+// 0 -> retrocompativel com chamadas que nao passam nada (ex: /dev/frente-d).
+export function useSubscription(reloadKey = 0) {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id ?? null;
 
@@ -74,7 +77,7 @@ export function useSubscription() {
     return () => {
       ignore = true;
     };
-  }, [userId, authLoading]);
+  }, [userId, authLoading, reloadKey]);
 
   const current = result.forUserId === userId;
   const loading = authLoading || (!!userId && !current);

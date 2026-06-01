@@ -3,7 +3,9 @@
  *
  * - postSubscription(payload):     POST /api/subscriptions
  * - getSubscription(id):           GET /api/subscriptions/{id}  (null se 404)
- * - patchSubscription(id,payload): PATCH /api/subscriptions/{id} (altera composicao)
+ * - patchMySubscription(payload):  PATCH /api/subscriptions (altera composicao da
+ *                                  assinatura do usuario logado; user_id derivado
+ *                                  da sessao no servidor, nao do cliente)
  * - postWaitlist(payload):         POST /api/coverage-waitlist
  * - getSettings():                 GET /api/settings
  * - postCapacityWaitlist(payload): POST /api/capacity-waitlist
@@ -19,6 +21,8 @@
  * 409 com `.code` "email_exists" (e-mail ja tem conta) ou "cpf_exists"
  * (CPF ja cadastrado) — o Onboarding trata cada um com mensagem/acao propria.
  */
+
+import { supabase } from "../lib/supabase";
 
 const throwApiError = async (res, fallback) => {
   let body = null;
@@ -56,10 +60,23 @@ export async function getSubscription(id) {
   return res.json();
 }
 
-export async function patchSubscription(id, payload, signal) {
-  const res = await fetch(`/api/subscriptions/${encodeURIComponent(id)}`, {
+export async function patchMySubscription(payload, signal) {
+  // Frente D / D.4: o cliente NUNCA escreve direto na tabela (revoke 0019) nem
+  // escolhe QUEM editar por id. Mandamos o JWT da sessao no header; o servidor
+  // valida o token, deriva o user_id e atualiza a propria assinatura.
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) {
+    const err = new Error("Falha ao alterar Assinatura: no_session");
+    err.code = "no_session";
+    throw err;
+  }
+  const res = await fetch("/api/subscriptions", {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify(payload),
     signal,
   });

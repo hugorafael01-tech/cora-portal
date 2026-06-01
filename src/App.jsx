@@ -20,17 +20,19 @@ import ProtectedRoute from "./auth/ProtectedRoute";
 import { useAuth } from "./auth/useAuth";
 import { isPastCutoff, nextEditableThursdayISO, nextSubscriptionChangeThursdayISO } from "./utils/cutoff";
 import { haptic } from "./utils/haptic";
-import { loadSubscription, saveSubscription, clearSubscription, reconcileSubscription } from "./utils/subscription";
-import { getSettings, getSubscription, getWeeklyOrders, postWeeklyOrder, confirmWeeklyOrder, patchSubscription } from "./utils/api";
-import { HUGO_WHATSAPP } from "./config/contact";
+import { getSettings, getSubscription, getWeeklyOrders, postWeeklyOrder, confirmWeeklyOrder, patchMySubscription } from "./utils/api";
+import { useSubscriptionContext } from "./auth/useSubscriptionContext";
+import { supabase } from "./lib/supabase";
+import { CORA_WHATSAPP } from "./config/contact";
 import { MENU_SEMANA } from "./config/menu";
 import { B, W, fd, fb, fmt, radii } from "./tokens";
 
-// `?reset=true`: limpa subscription persistida e remove o param da URL.
-// Top-level (fora do componente) pra rodar antes de qualquer init de state.
-// Util pra QA durante teste de usabilidade.
+// `?reset=true`: encerra a sessao Supabase (a fonte de verdade agora e o DB, nao
+// ha mais snapshot localStorage) e remove o param da URL. Top-level (fora do
+// componente) pra rodar antes do mount. Util pra QA durante teste de usabilidade.
 if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("reset") === "true") {
-  clearSubscription();
+  supabase.auth.signOut().catch(() => { /* best-effort QA reset */ });
+  try { window.localStorage.removeItem("cora_auth_intent"); } catch { /* noop */ }
   try {
     const url = new URL(window.location.href);
     url.searchParams.delete("reset");
@@ -1270,26 +1272,20 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
     setSaving(true);setSaveError(null);
     abortControllerRef.current=new AbortController();
     try{
-      // PATCH real — backend recalcula valores e datas; só enviamos a composição.
-      const backendUpdated=await patchSubscription(
-        subscription.id,
-        {itens:{...rascunho},total_paes:sumAll},
+      // Frente D / D.4: PATCH session-scoped — o servidor deriva o user_id da
+      // sessao (JWT) e atualiza a propria assinatura; nao mandamos id nem
+      // confiamos no cliente pra escolher QUEM editar. So a composicao vai no
+      // corpo; o servidor recalcula total_paes/qty_*/valor_*.
+      const backendUpdated=await patchMySubscription(
+        {itens:{...rascunho}},
         abortControllerRef.current.signal,
       );
-      // Merge: preserva o snapshot local (endereço, nome, cpf… que o backend não
-      // retorna), sobrescreve com os campos autoritativos do backend, e injeta o
-      // snapshot client-side da entrega em vigor (microcopy estável — não vem do
-      // backend, não recalcula ao vivo pra não "andar" após o cutoff).
-      const updated={
-        ...subscription,
-        ...backendUpdated,
-        next_composition_delivery:nextSubscriptionChangeThursdayISO(),
-      };
       setSaving(false);
       setConfirmModal(false);
       setEditing(false);
       setSuccessMsg(`Mudança confirmada. Vale a partir da entrega de ${proxDeliveryDdMm}.`);
-      onAlterado?.(updated);
+      // onAlterado (App) semeia assinaturaQtds da resposta e refaz o fetch do DB.
+      onAlterado?.(backendUpdated);
     }catch(err){
       setSaving(false);
       if(err?.name==="AbortError"){
@@ -1515,7 +1511,7 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
       fontFamily:fb,fontSize:12,color:W[500],lineHeight:1.55,
     }}>
       Pra mudar endereço, forma de pagamento ou pausar a assinatura, fale com a gente pelo{" "}
-      <a href="https://wa.me/5521999429843?text=Oi%2C%20gostaria%20de%20alterar%20minha%20Assinatura" target="_blank" rel="noopener noreferrer" style={{color:B[500],textDecoration:"none",fontWeight:600,display:"inline-flex",alignItems:"center",gap:4}}>
+      <a href={`https://wa.me/${CORA_WHATSAPP}?text=${encodeURIComponent("Oi, gostaria de alterar minha Assinatura")}`} target="_blank" rel="noopener noreferrer" style={{color:B[500],textDecoration:"none",fontWeight:600,display:"inline-flex",alignItems:"center",gap:4}}>
         WhatsApp
         <I d={ic.chev} size={11} color={B[500]}/>
       </a>.
@@ -1822,7 +1818,9 @@ const Perfil=({subscription,weeklyOrders=[],pendingPayment=false})=>{
     setSigningOut(true);
     try{
       await signOut();
-      localStorage.removeItem("cora_subscription");
+      // Frente D / D.4: nao ha mais snapshot cora_subscription (a fonte e o DB).
+      // signOut + onAuthStateChange limpam a sessao; o SubscriptionProvider passa
+      // a devolver null sem sessao. So resta limpar o intent de deep-link.
       localStorage.removeItem("cora_auth_intent");
       navigate("/login",{replace:true});
     }catch(err){
@@ -1975,7 +1973,7 @@ const Perfil=({subscription,weeklyOrders=[],pendingPayment=false})=>{
     <div style={{borderTop:`1px solid ${W[200]}`,marginTop:24,paddingTop:24,marginBottom:12}}>
       <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",marginBottom:8}}>Pausar ou cancelar</div>
       <div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6,marginBottom:16}}>Se precisar pausar por um tempo ou cancelar sua assinatura, fale com a gente pelo WhatsApp. Sem taxa, a qualquer momento.</div>
-      <a href={`https://wa.me/${HUGO_WHATSAPP}?text=${encodeURIComponent("Oi, gostaria de pausar ou cancelar minha assinatura.")}`} target="_blank" rel="noopener noreferrer" className="press-scale" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",padding:"12px 16px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:600,textDecoration:"none",minHeight:44,lineHeight:"20px"}}><I d={ic.msg} size={18} color="#FFF"/>Falar com a Cora no WhatsApp</a>
+      <a href={`https://wa.me/${CORA_WHATSAPP}?text=${encodeURIComponent("Oi, gostaria de pausar ou cancelar minha assinatura.")}`} target="_blank" rel="noopener noreferrer" className="press-scale" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",padding:"12px 16px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:600,textDecoration:"none",minHeight:44,lineHeight:"20px"}}><I d={ic.msg} size={18} color="#FFF"/>Falar com a Cora no WhatsApp</a>
     </div>
 
     {/* Microcopy final — sem <strong> */}
@@ -2089,18 +2087,19 @@ function Layout({pendingPayment,inicioBadge,onNav}){
 // ═══ APP (rodapé persistente aqui) ═══
 export default function CoraPortal(){
   const navigate = useNavigate();
-  // Subscription persistida (MVP via localStorage; Fase 7 troca por DB).
-  const initialSubscription = loadSubscription();
-  const [subscription, setSubscription] = useState(initialSubscription);
+  // Frente D / D.4: a assinatura vem do DB via SubscriptionProvider (leitura
+  // combinada subscription+profile+email, ja no shape das telas). Substitui o
+  // antigo snapshot localStorage (loadSubscription/reconcileSubscription).
+  // O gate (ProtectedRoute) segura ate carregar, entao as telas so montam com
+  // subscription pronto. userData e subscription sao o mesmo objeto adaptado.
+  const { subscription, refetch: refetchSubscription } = useSubscriptionContext();
+  const userData = subscription;
   // Reset scroll ao trocar de rota: agora vive no Layout (dep [location.pathname])
   // pra cobrir as 4 rotas autenticadas. Rotas standalone nao usam shell.
   // === Carrinho persistido no servidor (Frente C item 1, PR 2) ===
   // weeklyOrders vem do GET /api/weekly-orders e é mantido sincronizado por
   // cada handler de carrinho. Primeiro item = pedido da próxima entrega.
   const[weeklyOrders,setWeeklyOrders]=useState([]);
-  // Shape novo (Fase 7): subscription eh flat — nome/whatsapp/email/cpf
-  // ficam no topo, endereco aninhado em endereco, itens em itens.
-  const[userData,setUserData]=useState(initialSubscription||null);
   const[isFirstVisit,setIsFirstVisit]=useState(true);
   const[onboardingConfig,setOnboardingConfig]=useState(null);
 
@@ -2113,14 +2112,27 @@ export default function CoraPortal(){
   };
 
   // === REFACTOR: State da Assinatura agora vive aqui (fonte unica de verdade) ===
-  // Init prioriza initialSubscription.itens (persistida). Sem ela, usa
-  // o default mock de D.pães[].qtd.
-  const [assinaturaQtds,setAssinaturaQtds]=useState(()=>buildQtdsFrom(initialSubscription?.itens));
+  // Init com o default mock; o seed real vem do DB (subscription.itens) via o
+  // bloco de hidratacao abaixo, assim que a leitura combinada resolve.
+  const [assinaturaQtds,setAssinaturaQtds]=useState(()=>buildQtdsFrom());
   // cestaSemana: null = segue a Assinatura. Objeto {id:qty} = cliente customizou esta semana.
   const [cestaSemana,setCestaSemana]=useState(null);
   // Baseline do ciclo: composicao ja cobrada no inicio do mes corrente.
   // So muda na virada de ciclo (1o do proximo mes, via simularViradaDeMes).
-  const [assinaturaBaseline,setAssinaturaBaseline]=useState(()=>buildQtdsFrom(initialSubscription?.itens));
+  const [assinaturaBaseline,setAssinaturaBaseline]=useState(()=>buildQtdsFrom());
+  // Hidratacao da composicao a partir do DB: quando a subscription do contexto
+  // chega (ou troca de usuario), semeia assinaturaQtds + baseline com itens do
+  // banco. setState durante render (padrao React de "ajustar state quando uma
+  // dep muda") -> sem flash de mock e sem set-state-in-effect. Keyado pelo id:
+  // edicao re-le com o MESMO id (handleAlterarAssinatura ja semeia da resposta),
+  // entao nao re-dispara aqui; so login/troca de usuario re-semeia.
+  const [seededSubId,setSeededSubId]=useState(null);
+  if(subscription?.id && subscription.id!==seededSubId){
+    const seed=buildQtdsFrom(subscription.itens);
+    setAssinaturaQtds(seed);
+    setAssinaturaBaseline(seed);
+    setSeededSubId(subscription.id);
+  }
   // Historico do ciclo atual: null quando assinaturaQtds === assinaturaBaseline.
   // Objeto unico (nao array) representando a diferenca liquida vs baseline.
   const [historicoCicloAtual,setHistoricoCicloAtual]=useState(null);
@@ -2193,21 +2205,9 @@ export default function CoraPortal(){
   // banner + bloqueio de extras (active/paused/cancelled = sem efeito).
   const pendingPayment=subscription?.status==="pending_payment";
 
-  // Reconcilia status com servidor 1x ao montar. Quando Hugo muda status
-  // pra active no Supabase, F5 detecta e atualiza local + UI sem acao.
-  useEffect(()=>{
-    let cancelled=false;
-    reconcileSubscription().then((updated)=>{
-      if(cancelled) return;
-      if(updated){
-        setSubscription(updated);
-      } else if(!loadSubscription()){
-        // Subscription foi deletada no servidor (404 limpou local). Limpa state.
-        setSubscription(null);
-      }
-    }).catch(()=>{ /* reconcile ja loga; degrade gracioso */ });
-    return ()=>{cancelled=true;};
-  },[]);
+  // Frente D / D.4: o reconcileSubscription do mount saiu. O SubscriptionProvider
+  // ja e a leitura continua do DB (status incluso); status muda no banco ->
+  // refetch (ou novo login) reflete sem snapshot local.
 
   // Derivados
   // Alteracao pendente de Assinatura (reducao valem so no proximo ciclo).
@@ -2300,63 +2300,49 @@ export default function CoraPortal(){
   };
 
   const handleOnboardingComplete=(payload)=>{
-    // POST do POST /api/subscriptions ja rodou no clique "Confirmar" da T2.
-    // Aqui so persiste o resultado + payload no localStorage e navega pra Home.
+    // POST /api/subscriptions ja rodou no clique "Confirmar" da T2 (D.3 gravou
+    // auth+profile+subscription no DB). Frente D / D.4: nao ha mais snapshot
+    // local pra salvar — semeia a config do ciclo (assinaturaQtds/baseline saem
+    // do onboardingConfig) e RELE do DB via refetch. Sem sessao ativa (magic
+    // link pos-cadastro e Frente C, ainda pendente), o gate manda pra /login;
+    // o fluxo dev de onboarding nao popula a Home sem sessao (ver nota do PR).
     const data=payload?.data||{};
     const assinatura=payload?.assinatura||{};
-    const coverage_unconfirmed=!!payload?.coverage_unconfirmed;
     const subscription_id=payload?.subscription_id;
-    const status=payload?.status;
 
     if(!subscription_id){
-      // Caso defensivo: sem id, nao faz sentido criar subscription local.
-      // Loga e segue pra Home (onboarding ja foi).
+      // Caso defensivo: sem id, o onboarding nao concluiu. Loga e segue pra Home
+      // (o gate decide o destino real conforme sessao/assinatura).
       console.warn("[App] onboarding sem subscription_id, abortando persist");
       navigate("/",{replace:true});
       return;
     }
 
-    const novaSubscription={
-      id: subscription_id,
-      status,
-      nome: data.nome,
-      whatsapp: data.whatsapp,
-      email: data.email,
-      cpf: data.cpf,
-      endereco:{
-        cep: data.cep,
-        rua: data.rua,
-        numero: data.numero,
-        complemento: data.complemento,
-        bairro: data.bairro,
-        cidade: data.cidade,
-        estado: data.estado,
-      },
-      itens: assinatura,
-      coverage_unconfirmed,
-      createdAt: new Date().toISOString(),
-    };
-    saveSubscription(novaSubscription);
-    setSubscription(novaSubscription);
-    setUserData(novaSubscription);
     if(Object.keys(assinatura).length>0){
       setOnboardingConfig({data,assinatura});
     }
+    // Fonte unica de verdade: rele do DB em vez de montar snapshot local.
+    refetchSubscription();
     navigate("/",{replace:true});
   };
 
-  // Aplica alteração da Assinatura (Frente C item 2, Cenário A — mês alinhado).
-  // `updated` vem do POST (ou stub) com a subscription completa atualizada
-  // (itens, total_paes, valor_paes, valor_mensal, next_billing_change_date,
-  // next_billing_value). Sync local: state + localStorage. Alteração permanente,
-  // baseline = nova composição (sem ciclo histórico).
+  // Aplica alteração da Assinatura (Frente C item 2 -> Frente D / D.4).
+  // `updated` vem da resposta do PATCH (composicao recalculada no servidor:
+  // itens, qty_*, total_paes, valor_*). Semeia o state local imediatamente (UI
+  // responsiva) e dispara refetch pra reconfirmar do DB (fonte unica). Nao ha
+  // mais saveSubscription — o DB e a fonte. Alteracao permanente: baseline =
+  // nova composicao.
   const handleAlterarAssinatura=(updated)=>{
     haptic();
-    setSubscription(updated);
-    setAssinaturaQtds(updated.itens);
-    setAssinaturaBaseline(updated.itens);
+    // O endpoint normaliza itens (dropa zeros), entao um tipo zerado some do
+    // objeto. NAO usar buildQtdsFrom aqui: ele preencheria a chave ausente com
+    // o default mock (p.qtd) em vez de 0. Mapeia com 0-default explicito.
+    const novaComp={};
+    D.pães.forEach(p=>{novaComp[p.id]=Number(updated?.itens?.[p.id])||0;});
+    setAssinaturaQtds(novaComp);
+    setAssinaturaBaseline(novaComp);
     setCestaSemana(null);
-    saveSubscription(updated);
+    refetchSubscription();
   };
 
   // Fallback minimo enquanto chunks lazy carregam. Usa grafismo da marca.

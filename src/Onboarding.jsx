@@ -6,7 +6,7 @@ import CoverageBlocker from "./components/CoverageBlocker";
 import { B, W, fd, fb, fmt, radii } from "./tokens";
 import { formatWhatsApp, formatCPF, isValidWhatsApp, isValidEmail, isValidCPF, isValidCEP, isValidNome, isValidNumero } from "./utils/validators";
 import { estaCoberto, estaNaWhitelist } from "./utils/coverage";
-import { buildHugoCoverageLink, buildHugoContactLink } from "./config/contact";
+import { buildCoraCoverageLink, buildCoraContactLink } from "./config/contact";
 import { postWaitlist, postSubscription } from "./utils/api";
 import { calcularPrimeiraEntrega, formatarPrimeiraEntrega } from "./utils/firstDelivery";
 
@@ -249,7 +249,7 @@ const Step1=({
           estado={data.estado}
           onSubmitWaitlist={onSubmitWaitlist}
           onTryOtherCEP={onTryOtherCEP}
-          whatsappLink={buildHugoCoverageLink(data.bairro)}
+          whatsappLink={buildCoraCoverageLink(data.bairro)}
         />
       )}
 
@@ -578,7 +578,7 @@ export default function CoraOnboarding({onComplete, subscriptionsOpen=true, onGo
           return;
         }
         // E-mail novo mas CPF ja cadastrado: o magic link nao resolve (pode nao
-        // lembrar o e-mail usado). Caminho de contato manual com o Hugo.
+        // lembrar o e-mail usado). Caminho de contato manual com a Cora.
         if(err?.code==="cpf_exists"){
           setSubmitError({kind:"cpf_exists"});
           return;
@@ -716,7 +716,7 @@ export default function CoraOnboarding({onComplete, subscriptionsOpen=true, onGo
                   <>
                     <div>Já existe um cadastro com esse CPF. Chama a gente no WhatsApp pra resolver.</div>
                     <a
-                      href={buildHugoContactLink(`Oi, tentei assinar na Cora mas já existe um cadastro com meu CPF.`)}
+                      href={buildCoraContactLink(`Oi, tentei assinar na Cora mas já existe um cadastro com meu CPF.`)}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{display:"inline-block",marginTop:8,fontFamily:fb,fontSize:13,fontWeight:600,color:B[700],textDecoration:"underline"}}
