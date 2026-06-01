@@ -23,7 +23,7 @@ import { haptic } from "./utils/haptic";
 import { getSettings, getSubscription, getWeeklyOrders, postWeeklyOrder, confirmWeeklyOrder, patchMySubscription } from "./utils/api";
 import { useSubscriptionContext } from "./auth/useSubscriptionContext";
 import { supabase } from "./lib/supabase";
-import { HUGO_WHATSAPP } from "./config/contact";
+import { CORA_WHATSAPP } from "./config/contact";
 import { MENU_SEMANA } from "./config/menu";
 import { B, W, fd, fb, fmt, radii } from "./tokens";
 
@@ -1511,7 +1511,7 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
       fontFamily:fb,fontSize:12,color:W[500],lineHeight:1.55,
     }}>
       Pra mudar endereço, forma de pagamento ou pausar a assinatura, fale com a gente pelo{" "}
-      <a href={`https://wa.me/${HUGO_WHATSAPP}?text=${encodeURIComponent("Oi, gostaria de alterar minha Assinatura")}`} target="_blank" rel="noopener noreferrer" style={{color:B[500],textDecoration:"none",fontWeight:600,display:"inline-flex",alignItems:"center",gap:4}}>
+      <a href={`https://wa.me/${CORA_WHATSAPP}?text=${encodeURIComponent("Oi, gostaria de alterar minha Assinatura")}`} target="_blank" rel="noopener noreferrer" style={{color:B[500],textDecoration:"none",fontWeight:600,display:"inline-flex",alignItems:"center",gap:4}}>
         WhatsApp
         <I d={ic.chev} size={11} color={B[500]}/>
       </a>.
@@ -1973,7 +1973,7 @@ const Perfil=({subscription,weeklyOrders=[],pendingPayment=false})=>{
     <div style={{borderTop:`1px solid ${W[200]}`,marginTop:24,paddingTop:24,marginBottom:12}}>
       <div style={{fontFamily:fd,fontSize:20,textTransform:"uppercase",color:B[500],letterSpacing:"0.02em",marginBottom:8}}>Pausar ou cancelar</div>
       <div style={{fontFamily:fb,fontSize:14,color:W[600],lineHeight:1.6,marginBottom:16}}>Se precisar pausar por um tempo ou cancelar sua assinatura, fale com a gente pelo WhatsApp. Sem taxa, a qualquer momento.</div>
-      <a href={`https://wa.me/${HUGO_WHATSAPP}?text=${encodeURIComponent("Oi, gostaria de pausar ou cancelar minha assinatura.")}`} target="_blank" rel="noopener noreferrer" className="press-scale" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",padding:"12px 16px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:600,textDecoration:"none",minHeight:44,lineHeight:"20px"}}><I d={ic.msg} size={18} color="#FFF"/>Falar com a Cora no WhatsApp</a>
+      <a href={`https://wa.me/${CORA_WHATSAPP}?text=${encodeURIComponent("Oi, gostaria de pausar ou cancelar minha assinatura.")}`} target="_blank" rel="noopener noreferrer" className="press-scale" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",padding:"12px 16px",borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontFamily:fb,fontSize:14,fontWeight:600,textDecoration:"none",minHeight:44,lineHeight:"20px"}}><I d={ic.msg} size={18} color="#FFF"/>Falar com a Cora no WhatsApp</a>
     </div>
 
     {/* Microcopy final — sem <strong> */}
