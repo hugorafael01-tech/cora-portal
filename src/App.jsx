@@ -2224,6 +2224,36 @@ export default function CoraPortal(){
   const currentExtras = currentWeeklyOrder?.extras || [];
   const cutoff = isPastCutoff(currentWeeklyOrder?.delivery_date);
 
+  // Hidrata cestaSemana a partir da composicao persistida do pedido da semana
+  // (task 86e1na332). Sem isso, apos o F5 a composicao trocada da semana some e
+  // a tela cai no padrao da assinatura, mesmo o weekly-order tendo gravado a
+  // troca no banco. Espelha o seed de assinaturaQtds (subscription) da D.4 logo
+  // acima: setState-em-render guardado pelo id, em vez de useEffect -> sem flash
+  // e sem set-state-in-effect.
+  //
+  // Guard pelo ID do pedido: semeia UMA vez por id (hidratacao / troca de
+  // pedido), nao a cada render nem apos mutacao local. Por isso nao atropela
+  // edicao em andamento (onSetCestaSemana mantem o id) nem os setCestaSemana(null)
+  // deliberados pos-acao (handleAlterarAssinatura mantem o id; onboarding zera os
+  // weekly-orders -> id vira undefined -> nao entra no bloco). Cobre rascunho e
+  // confirmado (currentWeeklyOrder e weeklyOrders[0], sem filtro de status).
+  //
+  // Traducao generica sobre D.paes com 0-default (NAO buildQtdsFrom, que cai no
+  // mock p.qtd pra chave ausente): um pao com qty 0 vira 0, e um pao futuro
+  // ausente da composition vira 0 em vez do mock.
+  const [seededOrderId, setSeededOrderId] = useState(null);
+  if (currentWeeklyOrder?.id && currentWeeklyOrder.id !== seededOrderId) {
+    const comp = currentWeeklyOrder.composition;
+    if (comp && Object.keys(comp).length > 0) {
+      const seed = {};
+      D.pães.forEach(p => { seed[p.id] = Number(comp[p.id]) || 0; });
+      setCestaSemana(seed);
+    }
+    // Avanca mesmo sem composition, pra nao re-tentar todo render num pedido
+    // so-de-extras (composition null).
+    setSeededOrderId(currentWeeklyOrder.id);
+  }
+
   // POST upsert canônico. Optimistic update local antes da resposta;
   // em erro, reverte snapshot e loga (toast/feedback visual entra na Fase 2).
   const postCurrentOrder = async (nextExtras, nextComposition) => {
