@@ -164,6 +164,32 @@ Ciclo completo de autenticação mergeado em main em uma única sessão de 3 dia
 
 ## Última sessão de trabalho
 
+**01/jun/2026 — Fixes da cesta da semana (pos-D.4)**
+
+Dois bugs da cesta da semana, achados na esteira da D.4, fechados no mesmo dia.
+
+- **86e1na332 — composicao da semana nao persistia no F5** (PR #32, bcc469c). Bug de
+  hidratacao no cliente: o weekly-order ja gravava a composition, mas cestaSemana
+  nascia null e nunca era semeado dela. Seed render-phase guardado por
+  currentWeeklyOrder.id (espelha o seed de assinaturaQtds da D.4), map generico
+  sobre D.paes com 0-default (nao buildQtdsFrom, que cai no mock). Nao atropela
+  edicao em andamento nem os setCestaSemana(null) deliberados. So src/App.jsx.
+- **86e1neypw — adicionar extra reprovava com 400 composition_quantity_mismatch**
+  (PR #33, 4ee5e62). O cliente reenviava a composition em todo POST e o endpoint
+  revalidava soma === total_paes mesmo em op de extra; com a composicao da semana
+  divergente do total_paes (plano editado 2->3), o extra ficava refem. Fix:
+  desacoplar. Op de extra nao manda composition (cliente) e o endpoint so
+  valida/grava quando ela vem no request (ausente -> preserva sem revalidar; objeto
+  -> valida; null -> limpa swap). Validacao em si mantida. App.jsx + api/weekly-orders.
+
+Ambos: branch propria, PR draft, squash-merge, branch removida. Build + test:cutoff
+(6/6) limpos, lint baseline preservado. Validacao de preview pelo Hugo.
+
+Follow-up aberto (NAO neste escopo): 86e1ngu34 — auto-sincronizar a composicao da
+semana com o novo total do plano quando o plano muda no meio da semana.
+
+## Sessões anteriores
+
 **01/jun/2026 — Frente D / D.4 (subscription no DB) CONCLUIDA**
 
 PR #29 (cae4a60), branch feat/frente-d-subscription-db (removida). Opcao A:
@@ -188,8 +214,6 @@ leitura E escrita da subscription migradas do localStorage pro DB.
 Follow-ups abertos (nao bloqueiam): 86e1n9990 (WhatsApp -> ja resolvido no #29),
 86e1na332 (cesta da semana nao persiste composicao no F5 - bug separado, fora D.4),
 86e1mn1x7 (duplicado na T1), 86e1mn1xz (login mintando conta).
-
-## Sessões anteriores
 
 **29/mai/2026 — Frente B fechada end-to-end**
 
