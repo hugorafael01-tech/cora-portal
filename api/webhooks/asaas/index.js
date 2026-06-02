@@ -60,6 +60,9 @@ export default async function handler(req, res) {
     );
     return res.status(401).json({ error: "unauthorized" });
   }
+  // Comparacao string direta (===) aprovada no Alpha. Hardening futuro
+  // (follow-up registrado): trocar por crypto.timingSafeEqual pra nao vazar
+  // timing na comparacao do token.
   const provided = req.headers["asaas-access-token"];
   if (!provided || provided !== expected) {
     return res.status(401).json({ error: "unauthorized" });
