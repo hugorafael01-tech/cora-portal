@@ -31,6 +31,13 @@ import { supabaseAdmin } from "../../../src/lib/supabase-admin.js";
 const EVENTS_EM_DIA = new Set(["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]);
 const EVENTS_VENCIDO = new Set(["PAYMENT_OVERDUE"]);
 
+// subscriptions.id e uuid. external_reference vem digitado a mao no painel Asaas
+// (fase 1), entao pode nao ser um uuid valido. Sem essa guarda, o PostgREST rejeita
+// a busca por id com 400 ("invalid input syntax for type uuid"), o que cairia como
+// FALHA de reflexo (processed_at null) em vez de "nao casou". Regex generica basta
+// pra evitar o 400 antes do .eq por id.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Monta o patch de status pra subscription a partir do tipo do evento.
 // Retorna null pros tipos nao-tratados (nao mexe no payment_status).
 function statusPatchForEvent(eventType, nowIso) {
@@ -131,8 +138,11 @@ export default async function handler(req, res) {
 
   try {
     // ─── 4a. Resolve a subscription ───
-    // Caminho principal: external_reference = id da subscription da Cora.
-    if (externalReference) {
+    // Caminho principal: external_reference = id (uuid) da subscription da Cora.
+    // So busca por id se for um uuid valido — um valor nao-uuid nao casa por id e
+    // so daria 400 no PostgREST; pula direto pro fallback (vira "nao casou", nao
+    // "falha"). Com isso o throw abaixo so dispara por erro REAL de query.
+    if (externalReference && UUID_RE.test(externalReference)) {
       const { data: sub, error: subErr } = await supabaseAdmin
         .from("subscriptions")
         .select("id")
