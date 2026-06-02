@@ -164,6 +164,49 @@ Ciclo completo de autenticação mergeado em main em uma única sessão de 3 dia
 
 ## Última sessão de trabalho
 
+**02/jun/2026 — Asaas Webhooks / Perna 2: endpoint (86e1mk8c0) CONCLUIDA**
+
+PR #35 (squash cff992b), branch feat/asaas-webhooks-perna2 (removida). So o
+endpoint que RECEBE os webhooks; perna 1 (schema, migration 0020) ja estava no
+ar; perna 3 (painel no backoffice) e a proxima.
+
+- Novo endpoint POST /api/webhooks/asaas (api/webhooks/asaas/index.js). Reusa
+  supabaseAdmin (service_role); cliente nunca escreve em asaas_webhook_events.
+- Auth por header estatico asaas-access-token === process.env.ASAAS_WEBHOOK_TOKEN
+  (server-side, sem VITE_). Env ausente OU token errado -> 401 (decidido: 500
+  repetido pausaria a fila do Asaas em 15 falhas; erro de config nao derruba a
+  fila). Comparacao === no Alpha, com comentario marcando crypto.timingSafeEqual
+  como hardening futuro.
+- So id e event sao obrigatorios; todo payment.* opcional -> robusto a campo
+  novo/faltante (nunca lanca excecao por atributo desconhecido).
+- Persiste PRIMEIRO (body cru em jsonb), responde 200 so apos. 23505 no
+  asaas_event_id -> 200 e para (idempotente). Outro erro de insert -> 500.
+- Casa subscription por external_reference (fallback asaas_customer_id);
+  CONFIRMED/RECEIVED -> payment_status em_dia + last_payment_at; OVERDUE ->
+  vencido; demais tipos so ficam registrados crus (PAYMENT_CREATED NAO seta
+  pendente — fica pra fase 2). Reflexo e best-effort: falha NUNCA derruba o 200.
+- processed_at = now() quando o evento foi avaliado ate o fim (inclui nao-casar e
+  tipo nao-tratado); null EXCLUSIVAMENTE em falha real de resolucao/reflexo (o
+  catch) -> sinaliza "reprocessar".
+- Body parsing: req.body chega parseado como objeto JSON (runtime Node padrao da
+  Vercel, igual a api/subscriptions). Auth e por token no header, nao assinatura
+  HMAC sobre o corpo, entao nao precisa de raw body nem config de bodyParser.
+- node --check limpo. Briefing + roteiro de validacao (SQL + payload curl de
+  exemplo) commitados em docs/.
+
+Pendencias pra Hugo (nao-codigo, fora do escopo da perna):
+- Gerar ASAAS_WEBHOOK_TOKEN forte e setar na Vercel (Production + Preview, sem
+  VITE_); usar o MESMO ao criar o webhook no Sandbox do Asaas. CC nao inventa o
+  valor — sem a env var o endpoint responde 401 a tudo.
+- Validar no Preview com docs/CORA_Validacao_Asaas_Perna2_Endpoint.md (9 cenarios:
+  405/401/400, evento valido, idempotencia, casamento+reflexo, nao-casa, overdue,
+  tipo nao-tratado). ATENCAO: Preview e prod compartilham o mesmo Supabase — usar
+  ids evt_test_* e rodar o DELETE de limpeza ao fim.
+
+Proximo: perna 3 (painel no backoffice pra eventos sem subscription casada).
+
+## Sessões anteriores
+
 **01/jun/2026 — Fixes da cesta da semana (pos-D.4)**
 
 Dois bugs da cesta da semana, achados na esteira da D.4, fechados no mesmo dia.
@@ -187,8 +230,6 @@ Ambos: branch propria, PR draft, squash-merge, branch removida. Build + test:cut
 
 Follow-up aberto (NAO neste escopo): 86e1ngu34 — auto-sincronizar a composicao da
 semana com o novo total do plano quando o plano muda no meio da semana.
-
-## Sessões anteriores
 
 **01/jun/2026 — Frente D / D.4 (subscription no DB) CONCLUIDA**
 
