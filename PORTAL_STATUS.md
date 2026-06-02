@@ -164,6 +164,36 @@ Ciclo completo de autenticação mergeado em main em uma única sessão de 3 dia
 
 ## Última sessão de trabalho
 
+**02/jun/2026 — Fix: external_reference nao-uuid no webhook Asaas (86e1pcyzj)**
+
+PR #37 (squash ef55fd5), branch fix/asaas-external-ref-nao-uuid (removida). Bug de
+borda em cima da perna 2; diagnostico fechado pelo log da Vercel (GET subscriptions
+-> 400 por uuid invalido).
+
+- CAUSA: external_reference vem digitado a mao no painel Asaas (fase 1). A
+  resolucao fazia .eq("id", external_reference) contra subscriptions.id (uuid);
+  valor nao-uuid -> PostgREST rejeita com 400 -> caia no catch -> reflectionFailed
+  -> carimbo gravava subscription_id null SEM processed_at. Ou seja: "nao casou"
+  (caso normal) era tratado como "falha de reflexo" (reprocessar), mascarando typo
+  como erro de sistema no painel da perna 3.
+- FIX: guarda UUID_RE no nivel do modulo; a busca por id so roda se
+  external_reference for uuid valido, senao pula pro fallback por
+  asaas_customer_id (coluna text, sem cast). Nao casando -> "nao casou" legitimo:
+  subscription_id null E processed_at carimbado. O throw permanece, mas so dispara
+  por erro REAL. processed_at null volta a ser exclusivo de falha real.
+- Cirurgico: so a condicao da query por id no passo 4a. Insert (3), idempotencia
+  (23505), carimbo (4c) e contrato de resposta (200/401/400/500) intocados.
+- Validado via harness Node local contra o Supabase compartilhado (token local
+  arbitrario, ids evt_test_*, restore + cleanup no fim): 13/13 checks PASS —
+  nao-uuid e uuid-inexistente -> processed_at preenchido; happy path na Hugo Dev
+  (b6a0614c) -> em_dia + last_payment_at; idempotencia e contrato preservados.
+  DB deixado limpo (Hugo Dev de volta a payment_status null, zero evt_test_*).
+
+Pendencias da perna 2 (Hugo, ainda valem): gerar ASAAS_WEBHOOK_TOKEN + validar no
+Preview com o Sandbox do Asaas. Proximo: perna 3 (painel no backoffice).
+
+## Sessões anteriores
+
 **02/jun/2026 — Asaas Webhooks / Perna 2: endpoint (86e1mk8c0) CONCLUIDA**
 
 PR #35 (squash cff992b), branch feat/asaas-webhooks-perna2 (removida). So o
@@ -204,8 +234,6 @@ Pendencias pra Hugo (nao-codigo, fora do escopo da perna):
   ids evt_test_* e rodar o DELETE de limpeza ao fim.
 
 Proximo: perna 3 (painel no backoffice pra eventos sem subscription casada).
-
-## Sessões anteriores
 
 **01/jun/2026 — Fixes da cesta da semana (pos-D.4)**
 
