@@ -24,12 +24,7 @@
  * so node-side). Cliente nunca escreve em asaas_webhook_events.
  */
 import { supabaseAdmin } from "../../../src/lib/supabase-admin.js";
-
-// Eventos que "pagam" do lado da Cora (cartao tem RECEIVED so 32 dias depois do
-// CONFIRMED; Pix vai direto a RECEIVED). Demais tipos sao registrados crus sem
-// mexer no status — decisao fechada (Hugo, 02/jun): 'pendente' fica pra fase 2.
-const EVENTS_EM_DIA = new Set(["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]);
-const EVENTS_VENCIDO = new Set(["PAYMENT_OVERDUE"]);
+import { statusPatchForEvent } from "../../_lib/asaas-status.js";
 
 // subscriptions.id e uuid. external_reference vem digitado a mao no painel Asaas
 // (fase 1), entao pode nao ser um uuid valido. Sem essa guarda, o PostgREST rejeita
@@ -37,18 +32,6 @@ const EVENTS_VENCIDO = new Set(["PAYMENT_OVERDUE"]);
 // FALHA de reflexo (processed_at null) em vez de "nao casou". Regex generica basta
 // pra evitar o 400 antes do .eq por id.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-// Monta o patch de status pra subscription a partir do tipo do evento.
-// Retorna null pros tipos nao-tratados (nao mexe no payment_status).
-function statusPatchForEvent(eventType, nowIso) {
-  if (EVENTS_EM_DIA.has(eventType)) {
-    return { payment_status: "em_dia", last_payment_at: nowIso, last_payment_event: eventType };
-  }
-  if (EVENTS_VENCIDO.has(eventType)) {
-    return { payment_status: "vencido", last_payment_event: eventType };
-  }
-  return null;
-}
 
 export default async function handler(req, res) {
   // ─── 1. Metodo ───
