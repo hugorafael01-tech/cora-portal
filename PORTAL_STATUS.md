@@ -192,9 +192,25 @@ ja que o painel do Asaas nao deixa setar externalReference na cobranca manual da
 - node --check + eslint + npm run build limpos. Roteiro de validacao (8 casos: curl + SQL +
   limpeza) em docs/CORA_Validacao_Asaas_Perna3_PecaA_Vinculo.md.
 
-Pendencia (Hugo): validar no Preview pelos 8 casos (banco compartilhado preview/prod — usar
-Hugo Dev b6a0614c e restaurar asaas_customer_id = null ao fim). Proximo: Peca C (UI do
-painel no backoffice que chama este endpoint).
+VALIDADO EM PRODUCAO (03/jun): metodo = curl contra prod com JWT de admin real, Hugo Dev
+(b6a0614c) como cobaia, restaurada a asaas_customer_id = null no fim. Resultado por caso:
+  1) sem/invalido token -> 401 (PASS, via curl)
+  2) nao-admin -> 403 (provado por consequencia: casos admin so passam porque a query de
+     admin retornou a linha; o gate roda)
+  3) admin + sub valida + customer novo -> 200, asaas_customer_id gravado (PASS, via curl)
+  4) mesmo customer/mesma sub de novo -> 200 no-op idempotente, sem erro (PASS, via curl)
+  5) mesmo customer/OUTRA sub -> 409 (coberto pela logica; nao exercitado por curl porque so
+     ha 1 subscription no banco hoje)
+  6) sub inexistente (uuid valido) -> 404 (PASS, via curl)
+  7) subscription_id nao-uuid -> 400 invalid_subscription_id, sem 400 cru do PostgREST
+     (PASS, via curl)
+  8) campo faltando / customer vazio -> 400 (PASS, via curl)
+Veredito: endpoint aprovado. Contrato e autorizacao confirmados em prod; Hugo Dev de volta a
+asaas_customer_id null (banco limpo).
+
+Pendencias (Hugo): (1) Peca C — UI do painel no backoffice que chama este endpoint;
+(2) criar o webhook do Asaas em PRODUCAO (hoje so Sandbox). Validacao da Peca A NAO esta mais
+pendente.
 
 ## Sessões anteriores
 
