@@ -23,10 +23,72 @@
  */
 import { supabaseAdmin } from "../../../src/lib/supabase-admin.js";
 import { withCors } from "../../_lib/cors.js";
+import { statusPatchForEvent } from "../../_lib/asaas-status.js";
 
 // Guarda de UUID antes de bater na coluna uuid (licao do fix do webhook: valor
 // nao-uuid no .eq faz o PostgREST devolver 400 cru). Mesma regex do webhook.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Reconcilia os eventos passados de um cliente recem-vinculado (decisao Hugo,
+ * 03/jun: vincular = identificar E reconciliar). Best-effort: o vinculo ja foi
+ * gravado pelo caller; uma falha aqui NAO derruba o vinculo — loga, retorna
+ * { ok:false } e o caller responde 200 com reconciled:false. Re-vincular roda
+ * isto de novo (idempotente), entao uma reconciliacao parcial e auto-curavel.
+ *
+ * Faz: (a) le o evento mais recente do cliente; (b) carimba subscription_id em
+ * TODOS os orfaos daquele customer; (c) carimba processed_at onde ainda for null;
+ * (d) reflete payment_status pelo evento mais recente (received_at = data real do
+ * pagamento). Cada passo e idempotente.
+ */
+async function reconcileCustomerEvents(subscriptionId, customerId) {
+  try {
+    // (a) Evento mais recente do cliente (manda no status, incl. OVERDUE).
+    const { data: latest, error: latestErr } = await supabaseAdmin
+      .from("asaas_webhook_events")
+      .select("event_type, received_at")
+      .eq("asaas_customer_id", customerId)
+      .order("received_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (latestErr) throw latestErr;
+
+    // (b) Carimba posse em todos os orfaos do cliente (subscription_id null).
+    const { error: ownErr } = await supabaseAdmin
+      .from("asaas_webhook_events")
+      .update({ subscription_id: subscriptionId })
+      .eq("asaas_customer_id", customerId)
+      .is("subscription_id", null);
+    if (ownErr) throw ownErr;
+
+    // (c) Carimba processed_at SO onde ainda for null (nao sobrescreve historico).
+    const { error: procErr } = await supabaseAdmin
+      .from("asaas_webhook_events")
+      .update({ processed_at: new Date().toISOString() })
+      .eq("asaas_customer_id", customerId)
+      .is("processed_at", null);
+    if (procErr) throw procErr;
+
+    // (d) Reflete status pelo mais recente. Tipo nao-tratado -> patch null -> nao
+    //     mexe no payment_status (mas b/c ja rodaram). last_payment_at = received_at.
+    let paymentStatus = null;
+    if (latest) {
+      const patch = statusPatchForEvent(latest.event_type, latest.received_at);
+      if (patch) {
+        const { error: updErr } = await supabaseAdmin
+          .from("subscriptions")
+          .update(patch)
+          .eq("id", subscriptionId);
+        if (updErr) throw updErr;
+        paymentStatus = patch.payment_status;
+      }
+    }
+    return { ok: true, paymentStatus };
+  } catch (err) {
+    console.error("[asaas/vincular] reconciliacao falhou", { subscriptionId, customerId }, err);
+    return { ok: false, paymentStatus: null };
+  }
+}
 
 async function handler(req, res) {
   // ─── 0. Metodo ───
@@ -93,17 +155,10 @@ async function handler(req, res) {
     return res.status(404).json({ error: "subscription_not_found" });
   }
 
-  // ─── 5. Idempotencia: mesmo customer ja na MESMA subscription -> no-op ───
-  if (target.asaas_customer_id === customerId) {
-    return res.status(200).json({
-      subscription_id: target.id,
-      asaas_customer_id: target.asaas_customer_id,
-    });
-  }
-
-  // ─── 6. Conflito: customer ja vinculado a OUTRA subscription -> 409 ───
-  // Protege contra desviar pagamento pro assinante errado (decisao Hugo: nao
-  // sobrescreve).
+  // ─── 5. Conflito: customer ja vinculado a OUTRA subscription -> 409 ───
+  // Barra ANTES de gravar/reconciliar: protege contra desviar pagamento pro
+  // assinante errado (decisao Hugo: nao sobrescreve). No caminho idempotente
+  // (customer ja nesta sub) este check nao dispara (o customer nao esta em OUTRA).
   const { data: conflict, error: conflictErr } = await supabaseAdmin
     .from("subscriptions")
     .select("id")
@@ -119,21 +174,33 @@ async function handler(req, res) {
     return res.status(409).json({ error: "customer_already_linked" });
   }
 
-  // ─── 7. Grava o vinculo ───
-  const { data: updated, error: updateErr } = await supabaseAdmin
-    .from("subscriptions")
-    .update({ asaas_customer_id: customerId })
-    .eq("id", subscription_id)
-    .select("id, asaas_customer_id")
-    .single();
-  if (updateErr) {
-    console.error("[asaas/vincular] update error", updateErr);
-    return res.status(500).json({ error: "internal_error" });
+  // ─── 6. Grava o vinculo (pula se ja esta nesta sub: caminho idempotente) ───
+  // Idempotente NAO retorna cedo: re-vincular o mesmo par normalmente e pra
+  // FORCAR a reconciliacao de um evento que chegou depois -> sempre reconcilia.
+  if (target.asaas_customer_id !== customerId) {
+    const { error: updateErr } = await supabaseAdmin
+      .from("subscriptions")
+      .update({ asaas_customer_id: customerId })
+      .eq("id", subscription_id);
+    if (updateErr) {
+      console.error("[asaas/vincular] update error", updateErr);
+      return res.status(500).json({ error: "internal_error" });
+    }
   }
 
+  // ─── 7. Reconcilia os eventos passados do cliente (best-effort) ───
+  // O vinculo acima ja esta gravado e e a ancora; uma falha aqui NAO o derruba.
+  const recon = await reconcileCustomerEvents(subscription_id, customerId);
+
+  // ─── 8. Resposta ───
+  // reconciled:false sinaliza (sem ser silencioso) que a reconciliacao nao
+  // completou; re-vincular roda de novo e converge. payment_status = status
+  // refletido por esta reconciliacao (null se o evento mais recente nao mexe nele).
   return res.status(200).json({
-    subscription_id: updated.id,
-    asaas_customer_id: updated.asaas_customer_id,
+    subscription_id: subscription_id,
+    asaas_customer_id: customerId,
+    reconciled: recon.ok,
+    payment_status: recon.paymentStatus,
   });
 }
 
