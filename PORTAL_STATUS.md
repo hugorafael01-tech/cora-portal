@@ -164,6 +164,56 @@ Ciclo completo de autenticação mergeado em main em uma única sessão de 3 dia
 
 ## Última sessão de trabalho
 
+**03/jun/2026 — Asaas Perna 3 / Peca A: endpoint de vinculo asaas_customer_id (86e1prrkz)**
+
+PR #39 (squash 38758f8), branch feat/asaas-vincular-customer (removida). Mergeado e
+deployado. Endpoint novo que o backoffice chama pra gravar o asaas_customer_id numa
+subscription; habilita o casamento evento->assinante pelo fallback do webhook (perna 2),
+ja que o painel do Asaas nao deixa setar externalReference na cobranca manual da fase 1.
+
+- TAREFA 0 (investigacao antes de codar): como o admin e identificado no cora-backoffice.
+  ACHADO que diverge do briefing: admin_users identifica por EMAIL (PK), NAO por user_id.
+  is_admin() SQL faz WHERE email = auth.jwt()->>'email' (migration 0002_admin_users); o
+  RequireAuth.tsx do backoffice idem (.eq('email', session.user.email)). Sem coluna
+  user_id, sem flag de ativo/role: presenca de linha = admin. Seed atual
+  hugorafael01@gmail.com.
+- Novo POST /api/asaas/vincular (api/asaas/vincular/index.js). service_role (caminho 1):
+  so o portal escreve em subscriptions; backoffice (anon key) chama o endpoint (respeita
+  a 0019). Auth por JWT (molde handlePatchMine). Como service_role BYPASSA RLS, autorizacao
+  de admin e por QUERY EXPLICITA contra admin_users pelo email do JWT (o is_admin() de RLS
+  nao se aplica). Nao-admin -> 403.
+- Contrato: 405 (metodo); 401 (sem token/invalido); 403 (nao-admin); 400 (campo faltando /
+  subscription_id nao-uuid via guarda UUID_RE / customer vazio); 404 (alvo inexistente);
+  200 no-op idempotente (mesmo customer/mesma sub); 409 customer_already_linked (customer
+  ja em OUTRA sub, nao sobrescreve); 200 grava {subscription_id, asaas_customer_id}.
+- SO o vinculo: NAO reprocessa eventos passados nem varre asaas_webhook_events (decisao
+  Hugo: so casar futuros, nao ha orfao). Schema intocado (asaas_customer_id existe desde a
+  D.1). Guarda UUID_RE espelha o fix do webhook (sem 400 cru do PostgREST).
+- node --check + eslint + npm run build limpos. Roteiro de validacao (8 casos: curl + SQL +
+  limpeza) em docs/CORA_Validacao_Asaas_Perna3_PecaA_Vinculo.md.
+
+VALIDADO EM PRODUCAO (03/jun): metodo = curl contra prod com JWT de admin real, Hugo Dev
+(b6a0614c) como cobaia, restaurada a asaas_customer_id = null no fim. Resultado por caso:
+  1) sem/invalido token -> 401 (PASS, via curl)
+  2) nao-admin -> 403 (provado por consequencia: casos admin so passam porque a query de
+     admin retornou a linha; o gate roda)
+  3) admin + sub valida + customer novo -> 200, asaas_customer_id gravado (PASS, via curl)
+  4) mesmo customer/mesma sub de novo -> 200 no-op idempotente, sem erro (PASS, via curl)
+  5) mesmo customer/OUTRA sub -> 409 (coberto pela logica; nao exercitado por curl porque so
+     ha 1 subscription no banco hoje)
+  6) sub inexistente (uuid valido) -> 404 (PASS, via curl)
+  7) subscription_id nao-uuid -> 400 invalid_subscription_id, sem 400 cru do PostgREST
+     (PASS, via curl)
+  8) campo faltando / customer vazio -> 400 (PASS, via curl)
+Veredito: endpoint aprovado. Contrato e autorizacao confirmados em prod; Hugo Dev de volta a
+asaas_customer_id null (banco limpo).
+
+Pendencias (Hugo): (1) Peca C — UI do painel no backoffice que chama este endpoint;
+(2) criar o webhook do Asaas em PRODUCAO (hoje so Sandbox). Validacao da Peca A NAO esta mais
+pendente.
+
+## Sessões anteriores
+
 **02/jun/2026 — Fix: external_reference nao-uuid no webhook Asaas (86e1pcyzj)**
 
 PR #37 (squash ef55fd5), branch fix/asaas-external-ref-nao-uuid (removida). Bug de
@@ -191,8 +241,6 @@ borda em cima da perna 2; diagnostico fechado pelo log da Vercel (GET subscripti
 
 Pendencias da perna 2 (Hugo, ainda valem): gerar ASAAS_WEBHOOK_TOKEN + validar no
 Preview com o Sandbox do Asaas. Proximo: perna 3 (painel no backoffice).
-
-## Sessões anteriores
 
 **02/jun/2026 — Asaas Webhooks / Perna 2: endpoint (86e1mk8c0) CONCLUIDA**
 
