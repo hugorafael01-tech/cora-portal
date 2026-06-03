@@ -22,12 +22,13 @@
  * service_role bypassa RLS; este handler so roda node-side (api/).
  */
 import { supabaseAdmin } from "../../../src/lib/supabase-admin.js";
+import { withCors } from "../../_lib/cors.js";
 
 // Guarda de UUID antes de bater na coluna uuid (licao do fix do webhook: valor
 // nao-uuid no .eq faz o PostgREST devolver 400 cru). Mesma regex do webhook.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   // ─── 0. Metodo ───
   if (req.method !== "POST") {
     return res.status(405).json({ error: "method_not_allowed" });
@@ -135,3 +136,7 @@ export default async function handler(req, res) {
     asaas_customer_id: updated.asaas_customer_id,
   });
 }
+
+// CORS por cima da logica ja validada (Peca A): preflight OPTIONS -> 204 e header
+// de origem em todas as respostas. A logica do handler fica intocada.
+export default withCors(handler);
