@@ -164,6 +164,66 @@ Ciclo completo de autenticação mergeado em main em uma única sessão de 3 dia
 
 ## Última sessão de trabalho
 
+**03/jun/2026 — Asaas: vincular passa a RECONCILIAR eventos do cliente (86e1prrkz)**
+
+PR #42 (squash a3c33d8), branch feat/asaas-vinculo-reconciliacao (removida). Evolucao do
+endpoint da Peca A: antes vincular SO gravava asaas_customer_id, entao o pagamento orfao
+continuava em "pra identificar" e o payment_status null. Confirmado em teste real (03/jun):
+Hugo vincula e "nada muda" na tela. Decisao Hugo: vincular = identificar E reconciliar os
+eventos passados do cliente. NAO toca schema.
+
+- Helper compartilhado (fonte de verdade unica): extraido api/_lib/asaas-status.js
+  (statusPatchForEvent + EVENTS_EM_DIA/VENCIDO), antes inline no webhook. O webhook passa a
+  importar de la; chamada byte-identica (o 2o arg ja era a data a carimbar — webhook segue
+  passando now(), reconciliacao passa o received_at do evento).
+- Reconciliacao no /vincular (best-effort, apos gravar o vinculo): (a) le o evento mais
+  recente do cliente; (b) carimba subscription_id em TODOS os orfaos do customer; (c)
+  processed_at = now() so onde for null (nao sobrescreve historico); (d) reflete
+  payment_status pelo MAIS RECENTE (received_at), incl. OVERDUE -> vencido; tipo nao-tratado
+  nao mexe no status. last_payment_at = received_at do evento, nao o clique.
+- Atomicidade: sem transacao (RPC = schema, fora do escopo). Reconciliacao best-effort NAO
+  derruba o vinculo: falha -> loga + 200 reconciled:false (sinalizado, nao silencioso). Cada
+  passo idempotente; re-vincular reconcilia de novo -> auto-curavel/converge.
+- Ordem nova: 404 -> conflito 409 (barra ANTES) -> grava (pula no idempotente, mas NAO
+  retorna cedo) -> reconcilia (nos DOIS caminhos) -> 200. Resposta ganha reconciled +
+  payment_status (aditivo; a UI so da refetch e ignora o corpo). CORS intocado.
+- node --check + npm run build limpos; eslint sem novos problemas (process no-undef do
+  webhook e baseline pre-existente, identico ao main). Roteiro de validacao (6 casos + SQL de
+  setup/limpeza, incl. "mais recente manda" RECEIVED/OVERDUE) em
+  docs/CORA_Validacao_Asaas_Vinculo_Reconciliacao.md.
+
+VALIDADA EM PRODUCAO (03/jun) pelos casos centrais, via curl com a Hugo Dev (banco
+restaurado no fim): caso 1 reconciliacao basica (RECEIVED -> em_dia, last_payment_at = data
+do evento, orfao sai) e caso 2 "mais recente manda" (RECEIVED 01/jun + OVERDUE 05/jun ->
+payment_status vencido, ambos eventos saem de orfao). Os demais 4 casos (RECEIVED depois de
+OVERDUE, tipo nao-tratado, idempotente, nao-regressao da Peca A) considerados cobertos como
+variacoes da mesma mecanica que os 2 centrais exercitaram. A UI do backoffice nao muda (ja
+da refetch pos-200).
+
+Proximo: Peca C parte 2 (UI/acao de vincular no backoffice, task 86e1pwnhv) + criar o
+webhook do Asaas em producao (hoje so Sandbox).
+
+## Sessões anteriores
+
+**03/jun/2026 — Asaas C2 parte 1: helper de CORS reutilizavel (86e1pwnhv)**
+
+PR #41 (squash 2dfc0a8), branch feat/asaas-cors-helper (removida). O backoffice
+(admin.acora.com.br) precisa chamar POST /api/asaas/vincular (app.acora.com.br) do
+navegador -> cross-origin; antes OPTIONS -> 405 e nenhuma resposta com
+Access-Control-Allow-Origin, entao o browser bloqueava (por curl funcionava).
+
+- TAREFA 0: api/_lib/ ja e a casa de utilitarios API-only (junto do cutoff.js) -> novo
+  api/_lib/cors.js. Nenhum endpoint setava header/OPTIONS antes (so res.status().json() +
+  dispatch por req.method). Unico endpoint do portal que o backoffice chama e o /vincular
+  (confirmado no cora-backoffice; demais sao mesma-origem ou chamados pelo Asaas).
+- withCors(handler): allowlist fixa (hoje so https://admin.acora.com.br), eco SEGURO (so
+  reflete origem que esta na lista), NUNCA "*", nunca reflete origem fora da allowlist.
+  Libera so POST/OPTIONS + Authorization/Content-Type. Sem Allow-Credentials (auth e Bearer,
+  nao cookie). Vary: Origin + Max-Age 24h. Preflight OPTIONS -> 204 sem cair na logica.
+- Aplicado so no /vincular (export default withCors(handler)). Logica da Peca A intocada: so
+  ganha CORS por cima -> todas as respostas (200/4xx/5xx) herdam o header de origem.
+- node --check + eslint + npm run build limpos. Mergeado e deployado.
+
 **03/jun/2026 — Asaas Perna 3 / Peca A: endpoint de vinculo asaas_customer_id (86e1prrkz)**
 
 PR #39 (squash 38758f8), branch feat/asaas-vincular-customer (removida). Mergeado e
@@ -239,8 +299,9 @@ borda em cima da perna 2; diagnostico fechado pelo log da Vercel (GET subscripti
   (b6a0614c) -> em_dia + last_payment_at; idempotencia e contrato preservados.
   DB deixado limpo (Hugo Dev de volta a payment_status null, zero evt_test_*).
 
-Pendencias da perna 2 (Hugo, ainda valem): gerar ASAAS_WEBHOOK_TOKEN + validar no
-Preview com o Sandbox do Asaas. Proximo: perna 3 (painel no backoffice).
+Perna 2 VALIDADA com evento real do Asaas no Sandbox (ASAAS_WEBHOOK_TOKEN gerado e
+setado na Vercel; webhook criado no Sandbox; evento real chegou e refletiu). Pendencia
+operacional que RESTA: criar o webhook do Asaas em PRODUCAO (hoje so Sandbox).
 
 **02/jun/2026 — Asaas Webhooks / Perna 2: endpoint (86e1mk8c0) CONCLUIDA**
 
