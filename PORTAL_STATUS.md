@@ -164,6 +164,36 @@ Ciclo completo de autenticação mergeado em main em uma única sessão de 3 dia
 
 ## Última sessão de trabalho
 
+**11/jun/2026 — Login: segundo passo com codigo OTP do email no /login-sent**
+
+PR #44 (draft), branch feat/login-otp. O template de Magic Link do Supabase (compartilhado
+com o backoffice) agora inclui um codigo OTP ({{ .Token }}, 6-10 digitos) alem do link; o
+portal ganha o campo pra digita-lo, espelhando a solucao do backoffice (cora-backoffice
+src/pages/Login.tsx, PRs #38/#39). SEM SCHEMA.
+
+- /login-sent ganha o form "Código do email": inputMode numeric, autoComplete
+  one-time-code, maxLength 10; CTA primario "Entrar com código" habilita com 6+
+  digitos. Submit: strip de nao-digitos (colar com espacos funciona), validacao
+  6-10 digitos, verifyEmailOtp -> navigate(resolveAuthIntent()) — MESMO destino
+  pos-login do /auth/callback (deep link cora_auth_intent, TTL 1h, consumido).
+- Novo helper verifyEmailOtp(email, token) em src/auth/useAuth.js (verifyOtp type
+  'email'; mesmo contrato throw/void de signInWithMagicLink/signOut).
+- Erro do codigo (invalido/expirado/rede) -> mensagem inline amigavel sem perder o
+  estado da tela; some ao digitar de novo. Copy sem jargao (nada de "OTP"/"token").
+- resolveAuthIntent duplicado de AuthCallback.jsx (mesma decisao de zero acoplamento
+  entre telas do fluxo; extrair pra util quando uma 3a tela precisar).
+- Copy atualizada: /login "A gente envia um link e um código pro seu email";
+  /login-sent h1 "Email enviado", corpo cita link E codigo, "Reenviar email", fine
+  print "O link e o código funcionam por uma hora". Fluxo por link intacto (reenvio,
+  cooldown e callback inalterados).
+- npm run build limpo; eslint identico ao baseline do main (32 problems, nenhum nos
+  arquivos tocados); test:cutoff 6/6.
+
+Pendente (Hugo, Preview): pedir acesso -> digitar codigo -> logado no mesmo destino do
+link; codigo errado -> erro claro + retry; colar com espacos; login por link intacto.
+
+## Sessões anteriores
+
 **03/jun/2026 — Asaas: vincular passa a RECONCILIAR eventos do cliente (86e1prrkz)**
 
 PR #42 (squash a3c33d8), branch feat/asaas-vinculo-reconciliacao (removida). Evolucao do
@@ -202,8 +232,6 @@ da refetch pos-200).
 
 Proximo: Peca C parte 2 (UI/acao de vincular no backoffice, task 86e1pwnhv) + criar o
 webhook do Asaas em producao (hoje so Sandbox).
-
-## Sessões anteriores
 
 **03/jun/2026 — Asaas C2 parte 1: helper de CORS reutilizavel (86e1pwnhv)**
 
