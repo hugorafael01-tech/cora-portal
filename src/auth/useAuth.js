@@ -37,6 +37,25 @@ async function signInWithMagicLink(email) {
 }
 
 /**
+ * Verifica o codigo numerico (OTP) que chega no MESMO email do magic
+ * link (o template inclui {{ .Token }} alem do link). Em sucesso o SDK
+ * grava a sessao e dispara SIGNED_IN -- efeito identico ao clique no
+ * link -- e resolve void. Em erro (codigo invalido/expirado, rede),
+ * throw o objeto error original do SDK.
+ *
+ * O caller passa o token ja sanitizado (so digitos); aqui nao ha
+ * validacao de formato.
+ */
+async function verifyEmailOtp(email, token) {
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: "email",
+  });
+  if (error) throw error;
+}
+
+/**
  * Encerra a sessao do usuario corrente.
  *
  * Em sucesso, resolve void. Em erro real do SDK, throw.
@@ -60,6 +79,9 @@ async function signOut() {
  *   - signInWithMagicLink(email):  dispara magic link; throw em erro,
  *                                  resolve void em sucesso (inclui o
  *                                  caso de email desconhecido)
+ *   - verifyEmailOtp(email, token): valida o codigo do email (mesma
+ *                                  sessao do link); throw em erro,
+ *                                  resolve void em sucesso
  *   - signOut():                   encerra sessao; throw em erro,
  *                                  resolve void em sucesso
  *
@@ -70,5 +92,5 @@ export function useAuth() {
   if (context === null) {
     throw new Error("useAuth must be used within <AuthProvider>");
   }
-  return { ...context, signInWithMagicLink, signOut };
+  return { ...context, signInWithMagicLink, verifyEmailOtp, signOut };
 }

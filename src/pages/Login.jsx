@@ -333,7 +333,7 @@ export default function Login() {
     <div style={pageStyle}>
       <div style={bodyStyle}>
         <h1 style={h1Style}>Entrar</h1>
-        <p style={subStyle}>Sem senha. Um link no seu email destrava a entrada.</p>
+        <p style={subStyle}>Sem senha. A gente envia um link e um código pro seu email.</p>
 
         {bannerKind === "danger" && (
           <Banner
