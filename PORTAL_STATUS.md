@@ -1,15 +1,19 @@
 # Portal do Assinante — Status Atual
 
-_Auto-gerado em 2026-05-20 por Claude Code. Não editar manualmente acima da seção "Pendências não-código"._
+_Auto-gerado em 2026-06-11 por Claude Code. Não editar manualmente acima da seção "Pendências não-código"._
 
 ## Versão
 - **App:** v0.0.0 (produto v3.2.7)
 - **Branch:** main
-- **Último commit:** `34d850e` — 2026-05-20 — feat(assinatura): Frente C item 2 — Tela Sua Assinatura editável (#7)
+- **Último commit:** `8c3cf6a` — 2026-06-11 — feat(login): segundo passo com codigo OTP do email no /login-sent (#44)
 
 ## Rotas / páginas
-- src/pages/PreCadastro.jsx
+- src/pages/Login.jsx _(Auth B.2)_
+- src/pages/LoginSent.jsx _(Auth B.2; campo "Código do email" via verifyOtp, jun/2026)_
+- src/pages/AuthCallback.jsx _(Auth B.2.4)_
+- src/pages/PreCadastro.jsx _(redesign Variante A em mai/2026)_
 - src/pages/CapacityWaitlist.jsx _(Frente A)_
+- src/pages/DevFrenteD.jsx _(harness dev da Frente D)_
 
 ## Componentes principais
 - src/components/CEPField.jsx _(Fase 3)_
@@ -22,38 +26,39 @@ _Auto-gerado em 2026-05-20 por Claude Code. Não editar manualmente acima da se�
 
 ## Dependências relevantes
 - react @ ^19.2.4
+- react-router-dom @ ^7.15.1
 - @supabase/supabase-js _(novo na Fase 7)_
 - resend _(novo na Fase 7)_
 
 ## Marcadores de integração (grep)
 | Termo | Arquivos |
 |---|---|
-| asaas | 2 (src/App.jsx + api/subscriptions/index.js) |
-| otp | 0 |
-| whatsapp | 15 |
-| webhook | 1 (api/lead.js) |
-| supabase | 12 (lib + utils + app + 9 endpoints) |
-| resend | 4 (lib + 3 endpoints) |
+| asaas | 6 (api/_lib/asaas-status + api/_lib/cors + vincular + webhook + subscriptions + App.jsx) |
+| otp | 3 (useAuth + Login + LoginSent) |
+| whatsapp | 16 |
+| webhook | 4 (api/webhooks/asaas + vincular + asaas-status + lead) |
+| supabase | 23 (lib + auth + hooks + pages + endpoints) |
+| resend | 5 (lib + 4 endpoints) |
 | stripe | 0 |
 | pagar.me | 0 |
 
 ## TODOs e FIXMEs no código
-Nenhum encontrado
+Nenhum encontrado _(1 falso positivo: "TODOS" em comentário de api/asaas/vincular/index.js)_
 
 ## Últimos 10 commits
-- `34d850e` — 2026-05-20 — feat(assinatura): Frente C item 2 — Tela Sua Assinatura editável (#7)
-- `2fed8d8` — 2026-05-19 — docs: adiciona wireframe v4 da tela Sua Assinatura
-- `4e5689a` — 2026-05-18 — docs: atualiza cabeçalho auto-gerado do PORTAL_STATUS
-- `e48bf33` — 2026-05-18 — feat(catalogo): copy aprovado dos 6 produtos + fix empty state do Hero (#6)
-- `58f194d` — 2026-05-16 — docs: atualiza PORTAL_STATUS com refactor da Assinatura no Drawer mergeado
-- `9a66133` — 2026-05-16 — docs: atualiza cabeçalho auto-gerado do PORTAL_STATUS
-- `9e3cb9a` — 2026-05-16 — feat(drawer): refactor da seção Sua Assinatura — QtyStepper + colapso + polish v2 (#5)
-- `95f4dd1` — 2026-05-15 — docs: briefing + wireframe do refactor da assinatura no Drawer
-- `c85921a` — 2026-05-15 — docs: atualiza PORTAL_STATUS com Frente C item 3 mergeada
-- `6880217` — 2026-05-15 — docs: atualiza cabeçalho auto-gerado do PORTAL_STATUS
+- `8c3cf6a` — 2026-06-11 — feat(login): segundo passo com codigo OTP do email no /login-sent (#44)
+- `4914d13` — 2026-06-03 — docs(status): registra sessao de integracao Asaas (webhook, vinculo, CORS, reconciliacao) (#43)
+- `a3c33d8` — 2026-06-03 — feat(asaas): vincular passa a RECONCILIAR eventos do cliente (86e1prrkz) (#42)
+- `2dfc0a8` — 2026-06-03 — feat(asaas): helper de CORS reutilizavel + aplica no /vincular (C2 parte 1) (86e1pwnhv) (#41)
+- `03518fd` — 2026-06-03 — docs(status): registra Asaas Perna 3 / Peca A concluida (#40)
+- `38758f8` — 2026-06-03 — feat(asaas): endpoint de vinculo asaas_customer_id (perna 3 / peca A) (86e1prrkz) (#39)
+- `c3654e8` — 2026-06-02 — docs(status): registra fix do external_reference nao-uuid (86e1pcyzj) (#38)
+- `ef55fd5` — 2026-06-02 — fix(asaas): external_reference nao-uuid vira "nao casou", nao "falha" (86e1pcyzj) (#37)
+- `31d2420` — 2026-06-02 — docs(status): registra Asaas Webhooks / Perna 2 (endpoint) concluida (#36)
+- `cff992b` — 2026-06-02 — feat(asaas): endpoint de webhooks — perna 2 (86e1mk8c0) (#35)
 
 ## Build / Deploy
-- **Último build local:** 2026-05-20
+- **Último build local:** 2026-06-11
 - **vercel.json:** presente _(rewrites refinados na Fase 7)_
 
 ---
@@ -163,6 +168,16 @@ Ciclo completo de autenticação mergeado em main em uma única sessão de 3 dia
 - Onboarding integrado ao auth real (criar user Supabase no fim do fluxo de cadastro)
 
 ## Última sessão de trabalho
+
+**11/jun/2026 — Faxina: arquiva briefings Asaas + limpa branches + regenera cabecalho**
+
+Pos-merge da PR #44. (a) 5 briefings Asaas de trabalho concluido movidos pra
+docs/archive/briefings/ (Perna2_Endpoint, Fix_ExternalRef_NaoUuid, C2_CORS_Helper,
+Perna3_PecaA_EndpointVinculo, Vinculo_Reconciliacao — os 3 ultimos estavam untracked e
+foram commitados ja no archive). Os 3 roteiros CORA_Validacao_Asaas_* ficam na raiz de
+docs/ de proposito: a pendencia do webhook de PRODUCAO vai reusa-los. (b) Branches
+locais e remotas de PRs mergeadas removidas — sobrou so main. (c) Cabecalho auto-gerado
+deste arquivo regenerado (rotas completas, grep markers, commits, datas).
 
 **11/jun/2026 — Login: segundo passo com codigo OTP do email no /login-sent**
 
