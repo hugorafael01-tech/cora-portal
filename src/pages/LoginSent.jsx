@@ -8,11 +8,15 @@ import { useAuth } from "../auth/useAuth";
    /login-sent
 
    Tela 2 do fluxo de entrada. Recebe email via location.state e
-   oferece reenviar (com cooldown automatico de 60s) ou voltar pra /login.
-   Sem location.state.email (acesso direto, F5 perdendo state), redireciona
-   pra /login. Rate-limit do Supabase reinicia o cooldown com o N retornado
-   pela mensagem (ou 60s default); erros genericos so logam (banner de erro
-   pro reenvio fica como follow-up, fora do escopo de B.2.2/2.3).
+   oferece: (a) digitar o codigo numerico que chega no email junto do
+   link (verifyOtp type 'email' -> mesma sessao e mesmo destino do
+   /auth/callback), (b) reenviar (com cooldown automatico de 60s) ou
+   (c) voltar pra /login. Sem location.state.email (acesso direto, F5
+   perdendo state), redireciona pra /login. Rate-limit do Supabase
+   reinicia o cooldown com o N retornado pela mensagem (ou 60s default);
+   erros genericos do reenvio so logam (banner de erro pro reenvio fica
+   como follow-up, fora do escopo de B.2.2/2.3). Erro do codigo vira
+   mensagem inline sem perder o estado da tela.
    ══════════════════════════════════════════ */
 
 /* ── Icones SVG inline. stroke 1.5, viewBox 24x24. ── */
@@ -178,6 +182,74 @@ const emailHighlightStyle = {
   wordBreak: "break-all",
 };
 
+/* ── Campo do codigo do email ── */
+const codigoLabelStyle = {
+  display: "block",
+  textAlign: "left",
+  fontFamily: fb,
+  fontSize: 13,
+  fontWeight: 500,
+  color: W[700],
+  marginBottom: 6,
+  lineHeight: 1.3,
+};
+
+const codigoInputStyle = (hasError) => ({
+  width: "100%",
+  height: 52,
+  boxSizing: "border-box",
+  borderRadius: radii.md,
+  border: `1.5px solid ${hasError ? "#DC2626" : W[300]}`,
+  padding: "0 16px",
+  fontSize: 18,
+  fontFamily: fb,
+  color: W[800],
+  background: "#FFF",
+  outline: "none",
+  textAlign: "center",
+  letterSpacing: "0.3em",
+  fontVariantNumeric: "tabular-nums",
+  transition: "border-color 150ms",
+});
+
+const codigoErrorStyle = {
+  fontFamily: fb,
+  fontSize: 13,
+  color: "#DC2626",
+  marginTop: 6,
+  lineHeight: 1.4,
+  textAlign: "left",
+};
+
+/* CTA primario do codigo. Mesma base visual do CTA do Login.jsx
+   (ctaBaseStyle + ctaVisualByState), duplicada pela mesma decisao de
+   zero acoplamento entre as telas do fluxo. */
+const ctaPrimaryBase = {
+  width: "100%",
+  height: 52,
+  borderRadius: radii.md,
+  border: "none",
+  fontFamily: fb,
+  fontSize: 16,
+  fontWeight: 600,
+  color: "#FFF",
+  transition: "background 150ms",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 8,
+};
+
+const ctaPrimaryByState = (state) => {
+  if (state === "disabled") {
+    return { background: W[300], color: W[500], cursor: "not-allowed" };
+  }
+  if (state === "loading") {
+    return { background: B[600], cursor: "wait" };
+  }
+  return { background: B[500], cursor: "pointer" };
+};
+
 /* CTA secundario (stroke azul). Quando em cooldown, vira cinza disabled.
    Spinner aparece quando state === 'loading'. */
 const ctaSecondaryBase = {
@@ -266,7 +338,7 @@ const ctaLabel = (state) => {
   }
   const seconds = parseCooldownSeconds(state);
   if (seconds > 0) return `Reenviar em ${seconds}s`;
-  return "Reenviar link";
+  return "Reenviar email";
 };
 
 /* ── Detecao de rate-limit do Supabase ──
@@ -291,6 +363,40 @@ const extractCooldownSeconds = (msg) => {
 const INITIAL_COOLDOWN_SECONDS = 60;
 const JUST_RESENT_TTL_MS = 4000;
 
+/* ── Codigo do email (OTP) ──
+   O template de email compartilhado com o backoffice envia, alem do
+   link, um codigo numerico de 6 a 10 digitos ({{ .Token }}). verifyOtp
+   com type 'email' valida esse codigo e cria a MESMA sessao do clique
+   no link. Copy sem jargao: pro assinante e so "o codigo do email". */
+const OTP_RE = /^\d{6,10}$/;
+const OTP_MIN_DIGITS = 6;
+const OTP_ERROR_MSG =
+  "Esse código não funcionou ou já venceu. Confere no email mais recente e tenta de novo.";
+
+/* ── Destino pos-login (deep link) ──
+   Duplicado de AuthCallback.jsx (resolveAuthIntent + TTL), pela mesma
+   decisao de zero acoplamento entre as telas do fluxo; extrair pra util
+   compartilhado quando uma terceira tela precisar. Consome (remove) o
+   intent sempre, e cai em "/" se ausente, expirado ou corrompido. */
+const INTENT_TTL_MS = 60 * 60 * 1000;
+
+function resolveAuthIntent() {
+  let destination = "/";
+  try {
+    const raw = localStorage.getItem("cora_auth_intent");
+    if (raw) {
+      const { path, ts } = JSON.parse(raw);
+      if (path && typeof ts === "number" && Date.now() - ts < INTENT_TTL_MS) {
+        destination = path;
+      }
+    }
+  } catch { /* json invalido ou storage indisponivel -- usa default */ }
+  try {
+    localStorage.removeItem("cora_auth_intent");
+  } catch { /* storage indisponivel -- ignora */ }
+  return destination;
+}
+
 /* ══════════════════════════════════════════
    COMPONENTE PRINCIPAL
    ══════════════════════════════════════════ */
@@ -298,7 +404,7 @@ const JUST_RESENT_TTL_MS = 4000;
 export default function LoginSent() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signInWithMagicLink } = useAuth();
+  const { signInWithMagicLink, verifyEmailOtp } = useAuth();
 
   // Email vem do location.state setado por Login.jsx no submit. Acesso direto
   // a /login-sent ou F5 (que zera o history state) cai no guard de redirect.
@@ -309,8 +415,16 @@ export default function LoginSent() {
   // dar feedback do envio, nao pra disparar reenvios em rajada).
   const [cooldownSeconds, setCooldownSeconds] = useState(INITIAL_COOLDOWN_SECONDS);
   const [submitting, setSubmitting] = useState(false);
-  // justResent: controla banner success "Link reenviado" com auto-hide 4s.
+  // justResent: controla banner success "Email reenviado" com auto-hide 4s.
   const [justResent, setJustResent] = useState(false);
+
+  // Codigo do email: armazenado como digitado (strip de nao-digitos so no
+  // submit e na regra de habilitar o CTA -- colar "123 456" funciona).
+  const [codigo, setCodigo] = useState("");
+  // verifying: verifyOtp em flight. Bloqueia novo submit + mostra spinner.
+  const [verifying, setVerifying] = useState(false);
+  // codigoError: mensagem inline sob o campo. Some ao digitar de novo.
+  const [codigoError, setCodigoError] = useState(null);
 
   // Guard onMount: sem email vindo de location.state, vai pra /login.
   // replace:true pra nao deixar /login-sent no historico (back button do
@@ -364,6 +478,37 @@ export default function LoginSent() {
     }
   };
 
+  const onChangeCodigo = (e) => {
+    setCodigo(e.target.value);
+    // Erro inline some assim que o usuario mexe no campo de novo.
+    if (codigoError) setCodigoError(null);
+  };
+
+  const onSubmitCodigo = async (e) => {
+    e.preventDefault();
+    if (verifying) return;
+    // Strip de tudo que nao for digito (colar com espacos do email funciona).
+    const token = codigo.replace(/\D/g, "");
+    if (!OTP_RE.test(token)) {
+      setCodigoError("O código tem pelo menos 6 números. Confere no email.");
+      return;
+    }
+    setCodigoError(null);
+    setVerifying(true);
+    try {
+      await verifyEmailOtp(email, token);
+      // Mesmo destino pos-login do /auth/callback (clique no link). Sem
+      // setVerifying(false): o componente desmonta no navigate.
+      navigate(resolveAuthIntent(), { replace: true });
+    } catch (err) {
+      // Codigo invalido/expirado, rate-limit ou rede: mensagem amigavel
+      // unica, estado da tela preservado, usuario pode tentar de novo.
+      console.error("[LoginSent] verifyOtp error:", err);
+      setVerifying(false);
+      setCodigoError(OTP_ERROR_MSG);
+    }
+  };
+
   const onClickBack = () => {
     navigate("/login", { replace: true });
   };
@@ -380,6 +525,14 @@ export default function LoginSent() {
       : "idle";
   const ctaDisabled = submitting || cooldownSeconds > 0;
 
+  // CTA do codigo derivado: loading > disabled (< 6 digitos) > enabled.
+  const codigoDigits = codigo.replace(/\D/g, "");
+  const codigoCtaState = verifying
+    ? "loading"
+    : codigoDigits.length < OTP_MIN_DIGITS
+      ? "disabled"
+      : "enabled";
+
   return (
     <div style={pageStyle}>
       <div style={bodyStyle}>
@@ -392,15 +545,56 @@ export default function LoginSent() {
           />
         </div>
 
-        <h1 style={h1Style}>Link enviado</h1>
+        <h1 style={h1Style}>Email enviado</h1>
 
         <p style={corpoStyle}>
-          Foi pra <span style={emailHighlightStyle}>{email}</span>. Clica e entra direto, de
-          qualquer aparelho.
+          Enviamos um link e um código pra <span style={emailHighlightStyle}>{email}</span>.
+          Clica no link pra entrar ou, se preferir, digite o código aqui.
         </p>
 
+        <form onSubmit={onSubmitCodigo} noValidate style={{ marginBottom: 28 }}>
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor="login-codigo" style={codigoLabelStyle}>
+              Código do email
+            </label>
+            <input
+              id="login-codigo"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={10}
+              value={codigo}
+              onChange={onChangeCodigo}
+              disabled={verifying}
+              style={codigoInputStyle(!!codigoError)}
+              aria-invalid={!!codigoError}
+              aria-describedby={codigoError ? "login-codigo-error" : undefined}
+            />
+            {codigoError && (
+              <div id="login-codigo-error" role="alert" style={codigoErrorStyle}>
+                {codigoError}
+              </div>
+            )}
+          </div>
+          <button
+            type="submit"
+            disabled={codigoCtaState !== "enabled"}
+            aria-busy={codigoCtaState === "loading"}
+            style={{ ...ctaPrimaryBase, ...ctaPrimaryByState(codigoCtaState) }}
+          >
+            {codigoCtaState === "loading" ? (
+              <>
+                <Spinner size={16} color="#FFF" />
+                Entrando...
+              </>
+            ) : (
+              "Entrar com código"
+            )}
+          </button>
+        </form>
+
         {justResent && (
-          <Banner kind="success" body="Link reenviado. Confere a caixa de entrada." />
+          <Banner kind="success" body="Email reenviado. Confere a caixa de entrada." />
         )}
 
         <button
@@ -414,7 +608,7 @@ export default function LoginSent() {
           {ctaLabel(resendState)}
         </button>
 
-        <p style={finePrintStyle}>O link funciona por uma hora. Vale checar o spam.</p>
+        <p style={finePrintStyle}>O link e o código funcionam por uma hora. Vale checar o spam.</p>
 
         <div style={backRowStyle}>
           <button
