@@ -542,6 +542,11 @@ const EditarCestaDrawer=({
   const triggerCompositionSave=(nextComp)=>{
     if(compDebounceRef.current) clearTimeout(compDebounceRef.current);
     compDebounceRef.current=setTimeout(()=>{
+      // Guarda: nunca persiste composição inválida (sumAll!==totalPaes). Estado
+      // inválido temporário (handleDecrement) fica só local até voltar a somar
+      // o total do plano — aí sim o próximo debounce salva normal.
+      const nextSum=D.pães.reduce((s,p)=>s+(nextComp[p.id]||0),0);
+      if(nextSum!==totalPaes) return;
       const igual=D.pães.every(p=>(nextComp[p.id]||0)===(baselineNorm[p.id]||0));
       onSetCestaSemana(igual?null:nextComp);
       updateComposition(igual?null:nextComp);
