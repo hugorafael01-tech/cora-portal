@@ -627,7 +627,30 @@ const EditarCestaDrawer=({
 
   const totalExtras=currentExtras.reduce((s,e)=>s+e.qty*Number(e.preco_unit),0);
   const hasExtras=currentExtras.length>0;
-  const isEmpty=!hasExtras&&!hasAlteration;
+
+  // Referência de entrega do ciclo (decisão de produto 20/07/2026): o
+  // weekly_order confirmado é o único override válido (composição E extras).
+  // Rascunho não vale nada — sem confirmação, a entrega cai no baseline puro
+  // da assinatura, sem extras. Comparação por conteúdo normalizado (qty>0,
+  // ordenado por id), não por igualdade de referência de objeto.
+  const referenceCompNorm=isConfirmado
+    ?normalizeComp(currentWeeklyOrder.composition??baselineQtds)
+    :baselineNorm;
+  const referenceExtras=isConfirmado?(currentWeeklyOrder.extras??[]):[];
+  const normalizeExtrasForCompare=(list)=>(list||[])
+    .filter(e=>e&&e.qty>0)
+    .map(e=>({id:e.id,qty:e.qty}))
+    .sort((a,b)=>a.id.localeCompare(b.id));
+  const extrasEqual=(a,b)=>{
+    const na=normalizeExtrasForCompare(a),nb=normalizeExtrasForCompare(b);
+    return na.length===nb.length&&na.every((e,i)=>e.id===nb[i].id&&e.qty===nb[i].qty);
+  };
+  const compDiffersFromReference=D.pães.some(p=>(comp[p.id]||0)!==(referenceCompNorm[p.id]||0));
+  const extrasDifferFromReference=!extrasEqual(currentExtras,referenceExtras);
+  // "Empty" = estado atual do drawer já é exatamente o que será entregue —
+  // nada a confirmar.
+  const isEmpty=!compDiffersFromReference&&!extrasDifferFromReference;
+  const showPendingReminder=!isConfirmado&&!isLocked&&(compDiffersFromReference||extrasDifferFromReference);
 
   // Sub-header copy (1 linha): contexto da entrega + cutoff.
   const headerSub=pendingPayment
@@ -638,9 +661,14 @@ const EditarCestaDrawer=({
 
   // Estados do botão Confirmar pedido (sempre visível no rodapé):
   //   - cutoff/pendingPayment → disabled (estado bloqueante)
-  //   - status === 'confirmado' && !cutoff → "Confirmado ✓" disabled (success)
+  //   - status === 'confirmado' && !cutoff && nada pendente vs. referência →
+  //     "Confirmado ✓" disabled (success)
   //   - demais → "Confirmar pedido" enabled; POST só se rascunho, senão no-op
-  const showConfirmadoState=isConfirmado&&!cutoff&&!pendingPayment;
+  // O gate extra em isEmpty cobre o caso em que o status local ainda é
+  // 'confirmado' mas a composição ficou temporariamente inválida (guarda do
+  // handleDecrement, PR #48) — sem ele o botão mostraria "Confirmado ✓" com
+  // uma composição que na verdade não bate mais com o que foi confirmado.
+  const showConfirmadoState=isConfirmado&&!cutoff&&!pendingPayment&&isEmpty;
 
   return<>
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(26,24,21,0.5)",zIndex:50,animation:"fadeIn 200ms ease"}}/>
@@ -877,7 +905,10 @@ const EditarCestaDrawer=({
             <rect x="2" y="5" width="20" height="14" rx="2"/>
             <line x1="2" y1="10" x2="22" y2="10"/>
           </svg>
-          <span>Extras entram na sua próxima fatura. Alterações até terça, 12h.</span>
+          <span>
+            Extras entram na sua próxima fatura. Alterações até terça, 12h.
+            {showPendingReminder&&" Sem confirmar, sua entrega segue a assinatura padrão, sem extras."}
+          </span>
         </div>
       </div>
 
@@ -906,9 +937,10 @@ const EditarCestaDrawer=({
           )
           :(
             // Disabled quando bloqueado, composição inválida (sumAll≠totalPaes) ou empty
-            // (sem extras E sem alteração na assinatura). Label vira "Sem alterações"
-            // só no empty — composição inválida mantém "Confirmar pedido" pra preservar
-            // o reconhecimento da ação, microcopy invalid já comunica o porquê.
+            // (estado atual do drawer já bate com a referência de entrega do ciclo —
+            // ver isEmpty acima). Label vira "Sem alterações" só no empty — composição
+            // inválida mantém "Confirmar pedido" pra preservar o reconhecimento da
+            // ação, microcopy invalid já comunica o porquê.
             <ActionBtn primary
               disabled={isLocked||isCompositionInvalid||isEmpty}
               loadingText="Confirmando…"
