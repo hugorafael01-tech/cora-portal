@@ -54,6 +54,15 @@ export async function readCapacityGate(supabaseAdmin) {
     return closed;
   }
 
+  // max_subscriptions precisa ser um number valido: se vier null/undefined/nao
+  // numerico, `occupied >= max` seria false e o gate abriria so pelo flag —
+  // fail-open exatamente onde a trava de capacidade nao pode falhar aberta.
+  const maxSubscriptions = settings.max_subscriptions;
+  if (typeof maxSubscriptions !== "number" || !Number.isFinite(maxSubscriptions)) {
+    console.error("[capacity] max_subscriptions invalido, fail-closed", maxSubscriptions);
+    return closed;
+  }
+
   // count exato das assinaturas que ocupam vaga (head:true nao traz linhas).
   const { count, error: countErr } = await supabaseAdmin
     .from("subscriptions")
@@ -65,8 +74,9 @@ export async function readCapacityGate(supabaseAdmin) {
     return closed;
   }
 
-  const flagOpen = settings.subscriptions_open !== false;
-  const maxSubscriptions = settings.max_subscriptions;
+  // Estritamente === true: null/undefined trata como FECHADO (fail-closed no
+  // unico ponto onde o gate nao pode abrir por ausencia de valor).
+  const flagOpen = settings.subscriptions_open === true;
   const occupied = count;
   const capacityFull = occupied >= maxSubscriptions;
 
