@@ -68,6 +68,18 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 <!-- STATUS_MANUAL_START -->
 
+## Sessão 20/07/2026 — Capacity gate por capacidade no servidor (branch `feat/capacity-gate-servidor`)
+
+Decisão de produto (20/07/2026): o gate de assinaturas deixa de ser binário (`app_settings.subscriptions_open`) e vira **trava de capacidade no servidor** — o portal conta assinaturas ocupadas e fecha sozinho ao lotar, sem flip manual do switch. Pré-requisito de schema já cumprido no Backoffice: `app_settings.max_subscriptions` (integer NOT NULL DEFAULT 30, migration 0031, aplicada no banco 20/jul). Este PR (repo cora-portal) consome a coluna.
+
+- **`api/_lib/capacity.js` (novo):** `readCapacityGate(supabaseAdmin)` — fonte única do gate. Lê `subscriptions_open` + `max_subscriptions`, conta assinaturas que ocupam vaga (`status IN ('active','pending_payment')`) e devolve `{ ok, flagOpen, maxSubscriptions, occupied, capacityFull, open }`. Contagem no momento da chamada (corrida de dois onboards simultâneos batendo o limite é risco aceito nesta escala — sem lock). **Fail-closed:** qualquer falha de leitura → gate fechado.
+- **`api/settings.js`:** usa o helper; `subscriptions_open` retornado é o gate **efetivo** (switch E capacidade). Expõe também `capacity_full`/`max_subscriptions`/`occupied`. **Inverte o fail-open anterior → fail-closed** (falha de leitura devolve `subscriptions_open:false`).
+- **`api/subscriptions/index.js` (POST):** substitui o check flag-only pelo helper, antes de criar auth user. Switch fechado ou fail-closed → 409 `subscriptions_closed`; capacidade lotada → 409 `capacity_full`.
+- **Cliente:** `src/App.jsx` — `getSettings()` no boot agora é fail-closed (catch → `setSubscriptionsOpen(false)`); o Splash já mostra a tela de capacidade quando `subscriptionsOpen===false`, então lotado no splash cai direto na lista de espera sem preencher nada. `src/Onboarding.jsx` — 409 `capacity_full` tratado igual a `subscriptions_closed` (redirect `closed-during-flow` pra `CapacityWaitlist`). Reaproveita a UX de lista de espera existente (Frente A), sem tela nova.
+- **Não tocado:** `/interesse`, `ProtectedRoute`, fluxo de quem já tem assinatura, e nada do PR #49 (botão Confirmar do drawer — validação separada). Branch criado a partir de `origin/main`.
+- **Validação (Vercel Preview, do Hugo):** (1) `max_subscriptions=1` + seed com 1 assinatura active → `/onboarding` cai na tela de capacidade no splash; (2) `max_subscriptions=30` → onboarding flui até criar `pending_payment`; (3) bloquear a request de `/api/settings` no DevTools → gate fechado, não aberto.
+- **Pós-merge (do Hugo):** setar `subscriptions_open=true` e conferir `max_subscriptions=30` via SQL; aí o link `/onboarding` abre pros 30.
+
 ## Spec vigente
 - **Portal:** v3.0 (mar/2026) + Adendo v3.1 (mar/2026)
   - Backend (schema, endpoints, persistência) detalhado em `docs/archive/briefings/CORA_Briefing_Fase7_Backend.md` e `docs/archive/briefings/CORA_Prompt_Fase7_ClaudeCode.md`

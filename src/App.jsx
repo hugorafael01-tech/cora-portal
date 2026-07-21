@@ -2145,8 +2145,10 @@ export default function CoraPortal(){
   const [ehPrimeiroAcesso,setEhPrimeiroAcesso]=useState(true);
 
   // ─── Capacity gate ───
-  // null enquanto carrega, true/false depois do fetch. Fallback otimista:
-  // se /api/settings falhar, segue como true (nao bloqueia o portal).
+  // subscriptions_open ja vem EFETIVO do servidor (switch manual E capacidade;
+  // decisao 20/07/2026). Inicia true so pra nao piscar a tela fechada durante o
+  // fetch — leitura pendente nao e erro. FAIL-CLOSED: se /api/settings falhar
+  // (rede/servidor), fecha o gate. Nunca abrir por erro.
   const [subscriptionsOpen, setSubscriptionsOpen] = useState(true);
   // 'splash' = chegou via Splash modo fechado (entrada direta).
   // 'closed-during-flow' = bateu o 409 a meio do onboarding (race C6).
@@ -2156,7 +2158,11 @@ export default function CoraPortal(){
     let cancelled = false;
     getSettings()
       .then((s) => { if (!cancelled) setSubscriptionsOpen(!!s.subscriptions_open); })
-      .catch(() => { /* fallback ja eh true */ });
+      .catch((err) => {
+        // Fail-closed: falha de leitura fecha o gate (nao abre por erro).
+        console.error("[App] getSettings failed, fail-closed", err);
+        if (!cancelled) setSubscriptionsOpen(false);
+      });
     return () => { cancelled = true; };
   }, []);
 
