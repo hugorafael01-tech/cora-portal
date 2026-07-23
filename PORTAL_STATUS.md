@@ -181,6 +181,25 @@ Ciclo completo de autenticação mergeado em main em uma única sessão de 3 dia
 
 ## Última sessão de trabalho
 
+**23/jul/2026 — Catalogo: atualiza precos e pesos de avulso (FINANCE v4.1)**
+
+Alinha o hardcode do catalogo do Portal (const D em src/App.jsx: D.paes, D.rotativos,
+D.extras) aos novos precos/pesos de avulso decididos por Hugo em 21/jul, fonte
+CORA_FINANCE v4.1. Mesmos valores ja aplicados no banco (produtos.preco_avulso /
+peso_alvo_g) em 21/jul; esta mudanca so espelha essa fonte no front. Mexeu SOMENTE em
+preco/precoNum/peso — nome, desc, sobre, ingredientes etc intactos.
+
+- original: R$ 30,00 / 710g (era R$ 27,00 / 700g)
+- integral: R$ 30,00 / 714g (era R$ 29,00 / 700g) — Original e Integral agora empatam
+  em R$ 30, entao a troca entre eles segue "sem custo extra"
+- multigraos: R$ 36,00 / 631g (era R$ 32,00 / 615g)
+- ciabatta: R$ 25,00 / 550g (preco inalterado, so peso; era 533g)
+- focaccia: R$ 28,00 / 385g (era R$ 22,00 / 430g) — atualizada nos DOIS lugares
+  (D.extras[0] e D.rotativos, identicos)
+- brioche: R$ 36,00 / 345g (era R$ 32,00 / 256g)
+
+Nao mexeu em assinatura (R$99/pao), frete (R$15) nem MENU_SEMANA. Pizza fora do Portal.
+
 **11/jun/2026 — Faxina: arquiva briefings Asaas + limpa branches + regenera cabecalho**
 
 Pos-merge da PR #44. (a) 5 briefings Asaas de trabalho concluido movidos pra
