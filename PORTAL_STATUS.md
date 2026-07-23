@@ -68,6 +68,27 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 <!-- STATUS_MANUAL_START -->
 
+## Sessão 23/07/2026 — Saneamento pós-sprint de launch (doc-only) + estado operacional
+
+Consolidação dos fatos das sessões 20-23/07 que ainda não estavam no STATUS. Doc-only: nenhum código, nenhuma migration, nenhum schema.
+
+### PR #53 — Piso de lançamento nas datas de entrega (mergeado em `main`)
+
+Constante `LAUNCH_FIRST_DELIVERY = '2026-08-06'` em `src/utils/cutoff.js`, aplicada **na fonte** (`nextEditableThursdayISO` e derivados — incl. a `proximaQuinta` local do App): o Portal nunca mostra nem opera entrega anterior a 06/08. Motivo: a primeira entrega real é 06/08, mas o cálculo por matemática de data operava o ciclo 30/07, que não existe comercialmente. **Auto-expira após o launch** — depois de 06/08 a quinta calculada é sempre >= o piso, então o `max()` vira no-op e a constante pode ser removida em qualquer limpeza futura, sem pressa.
+
+### Estado operacional do lançamento
+
+- **Primeira entrega real:** quinta **06/08/2026** (corte terça **04/08 12h SP**). **Primeira fatura ancorada em 04/08** (pagamento antes do corte).
+- **Gate:** `subscriptions_open=false` até o disparo (segunda **27/07**). `max_subscriptions=31` no banco — **1 vaga ocupada de propósito** pela assinatura seed `hugo+dev` (harness de teste do Hugo, decisão 23/07), logo **30 vagas reais**.
+- **Webhook Asaas de PRODUÇÃO:** registrado no painel (nome "Cora Portal — Pagamentos", URL `https://app.acora.com.br/api/webhooks/asaas`). `ASAAS_WEBHOOK_TOKEN` validado em prod por smoke test 23/07 (sem token → 401; com token → 400 payload vazio). Eventos: `PAYMENT_CONFIRMED`/`RECEIVED`/`OVERDUE` + `REFUNDED`/`DELETED`, envio sequencial. Confirmação final com o primeiro pagamento real. **Encerra a pendência "criar o webhook do Asaas em produção" que aparece nos logs de jun/2026 abaixo (à época só existia o Sandbox).**
+- **Especial do lançamento:** FOCACCIA (decisão 23/07) — `MENU_SEMANA` e `D.extras[0]` atuais já estão corretos, nenhum código pendente.
+- **Fotos do catálogo:** as atuais são provisórias; a troca por fotos reais é PR de assets pós-launch, não bloqueia.
+
+### Issues conhecidas em aberto (pós-launch)
+
+- [86e2ek4cy](https://app.clickup.com/t/86e2ek4cy) — drawer pinado no ciclo fechado de terça 12h até quinta (lockout de ~2 dias pra editar a semana seguinte). Pós-launch.
+- [86e2fqk33](https://app.clickup.com/t/86e2fqk33) — cardápio da semana lido do banco (matar o hardcode `MENU_SEMANA`/`D.extras`). Primeira melhoria pós-launch; **NÃO fazer antes do dia 6**.
+
 ## Sessão 20/07/2026 — Capacity gate por capacidade no servidor (branch `feat/capacity-gate-servidor`)
 
 Decisão de produto (20/07/2026): o gate de assinaturas deixa de ser binário (`app_settings.subscriptions_open`) e vira **trava de capacidade no servidor** — o portal conta assinaturas ocupadas e fecha sozinho ao lotar, sem flip manual do switch. Pré-requisito de schema já cumprido no Backoffice: `app_settings.max_subscriptions` (integer NOT NULL DEFAULT 30, migration 0031, aplicada no banco 20/jul). Este PR (repo cora-portal) consome a coluna.
