@@ -18,7 +18,7 @@ import ProductCard from "./components/ProductCard";
 import PendingPaymentBanner from "./components/PendingPaymentBanner";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import { useAuth } from "./auth/useAuth";
-import { isPastCutoff, nextEditableThursdayISO, nextSubscriptionChangeThursdayISO } from "./utils/cutoff";
+import { isPastCutoff, nextEditableThursdayISO, nextSubscriptionChangeThursdayISO, LAUNCH_FIRST_DELIVERY } from "./utils/cutoff";
 import { haptic } from "./utils/haptic";
 import { getSettings, getSubscription, getWeeklyOrders, postWeeklyOrder, confirmWeeklyOrder, patchMySubscription } from "./utils/api";
 import { useSubscriptionContext } from "./auth/useSubscriptionContext";
@@ -67,7 +67,11 @@ const proximaQuinta=(now=new Date())=>{
   const d=new Date(now);
   const diasAte=(4-d.getDay()+7)%7;
   d.setDate(d.getDate()+diasAte);
-  return d;
+  // Piso de lancamento (mesma constante do modulo de datas): nenhuma "proxima
+  // entrega" pode ser anterior a 06/08/2026. Auto-aposenta pos-lancamento.
+  const [ly,lm,ld]=LAUNCH_FIRST_DELIVERY.split("-").map(Number);
+  const piso=new Date(ly,lm-1,ld);
+  return d<piso?piso:d;
 };
 const formatarDataEntrega=(d)=>`${_DIAS_SEMANA_FULL_PT[d.getDay()]}, ${d.getDate()} de ${_MESES_FULL_PT[d.getMonth()]}`;
 

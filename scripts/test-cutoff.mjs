@@ -6,7 +6,7 @@
  * Exit 0 em sucesso, 1 em falha.
  */
 import assert from "node:assert/strict";
-import { isPastCutoff, isThursday } from "../src/utils/cutoff.js";
+import { isPastCutoff, isThursday, nextEditableThursdayISO, LAUNCH_FIRST_DELIVERY } from "../src/utils/cutoff.js";
 
 const CASES = [
   {
@@ -63,6 +63,19 @@ try {
 } catch (e) {
   failed += 1;
   console.error("✗ isThursday — sanidade", e.message);
+}
+
+// Piso de lançamento: nenhuma "próxima entrega" antes de 06/08/2026.
+try {
+  assert.equal(isThursday(LAUNCH_FIRST_DELIVERY), true, "piso é uma quinta");
+  // Ciclo pré-lançamento (30/07) é elevado ao piso 06/08.
+  assert.equal(nextEditableThursdayISO(new Date("2026-07-23T14:00:00Z")), LAUNCH_FIRST_DELIVERY, "30/07 → piso");
+  // Pós-lançamento: o piso vira no-op, retorna a quinta calculada.
+  assert.equal(nextEditableThursdayISO(new Date("2026-09-01T10:00:00Z")), "2026-09-03", "pós-lançamento no-op");
+  console.log("✓ piso de lançamento — 30/07 elevado a 06/08, no-op pós-lançamento");
+} catch (e) {
+  failed += 1;
+  console.error("✗ piso de lançamento", e.message);
 }
 
 if (failed > 0) {
