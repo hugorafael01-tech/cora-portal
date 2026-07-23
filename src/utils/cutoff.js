@@ -35,6 +35,17 @@ export function isThursday(dateStr) {
   return d.getUTCDay() === 4;
 }
 
+// Piso de lancamento: a primeira entrega real da Cora e 06/08/2026. O Portal
+// calcula "proxima quinta editavel" por matematica de data e, antes do
+// lancamento, aponta ciclos (ex: 30/07) que nao existem comercialmente. Esta
+// constante forca toda derivacao de "proxima entrega" a nunca ser anterior a
+// 06/08.
+//
+// Auto-aposentadoria: depois de 06/08/2026 a quinta calculada e sempre >= o
+// piso, entao o max() vira no-op. A constante pode ser removida em qualquer
+// limpeza futura, sem pressa e sem efeito colateral.
+export const LAUNCH_FIRST_DELIVERY = "2026-08-06";
+
 // Próxima quinta a partir de `now` cujo cutoff (terça 15h UTC) ainda não passou.
 // Se hoje é quinta ou já passamos do cutoff dela, pula pra quinta seguinte.
 // Exportada pra App usar como `delivery_date` ao criar a primeira cesta da
@@ -50,7 +61,10 @@ export function nextEditableThursdayISO(now = new Date()) {
   if (now >= cutoff) {
     thursday.setUTCDate(thursday.getUTCDate() + 7);
   }
-  return thursday.toISOString().slice(0, 10);
+  const iso = thursday.toISOString().slice(0, 10);
+  // Piso de lancamento aplicado na fonte: comparacao lexicografica de ISO
+  // (YYYY-MM-DD) equivale a comparacao de data. Pos-06/08 vira no-op.
+  return iso < LAUNCH_FIRST_DELIVERY ? LAUNCH_FIRST_DELIVERY : iso;
 }
 
 // Data em que uma alteração de assinatura (Frente C item 2) entra em vigor:
