@@ -583,11 +583,12 @@ export default function CoraOnboarding({onComplete, subscriptionsOpen=true, onGo
           setSubmitError({kind:"cpf_exists"});
           return;
         }
-        // Capacity gate fechou enquanto user navegava (condicao de corrida).
-        // Redirect pra lista de espera com reason='closed-during-flow' — a
-        // CapacityWaitlist renderiza banner persistente nesse caso. Checa o code
-        // (nao o status 409, que agora tambem cobre email_exists/cpf_exists).
-        if(err?.code==="subscriptions_closed"){
+        // Gate fechou enquanto user navegava (condicao de corrida): switch manual
+        // (subscriptions_closed) OU capacidade lotou no meio do fluxo
+        // (capacity_full, decisao 20/07/2026). Ambos -> lista de espera com
+        // reason='closed-during-flow' (banner persistente na CapacityWaitlist).
+        // Checa o code (nao o status 409, que tambem cobre email_exists/cpf_exists).
+        if(err?.code==="subscriptions_closed" || err?.code==="capacity_full"){
           if(onGoToCapacityWaitlist){
             onGoToCapacityWaitlist("closed-during-flow");
             return;
