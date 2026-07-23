@@ -181,6 +181,26 @@ Ciclo completo de autenticação mergeado em main em uma única sessão de 3 dia
 
 ## Última sessão de trabalho
 
+**23/jul/2026 — Catalogo: precos, pesos de vitrine e copy da Focaccia (FINANCE v4.1 + Hugo 22/jul)**
+
+Atualiza o hardcode do catalogo do Portal (const D em src/App.jsx: D.paes, D.rotativos,
+D.extras). Fontes: CORA_FINANCE v4.1 (precos) + decisao Hugo 22/jul (pesos de vitrine e
+copy). Mexeu SOMENTE em preco/precoNum/peso e, na Focaccia, desc/ingredientes. Substitui
+o rascunho anterior de precos (PR #51, fechada como superseded).
+
+- Precos: original R$ 30 / integral R$ 30 / multigraos R$ 36 / ciabatta R$ 25 (inalterado)
+  / focaccia R$ 28 (D.extras[0] E D.rotativos) / brioche R$ 36. Original e Integral empatam
+  em R$ 30 -> troca "sem custo extra".
+- Pesos de VITRINE (com "~" de aproximado — promessa comercial, corte manual varia;
+  proposital NAO igualar ao peso_alvo_g tecnico do banco): original ~700g / integral ~700g
+  / multigraos ~620g / ciabatta ~480g / focaccia ~420g / brioche ~350g.
+- Copy da Focaccia (nos dois lugares, identicos): desc e ingredientes novos (cebola roxa
+  macerada, azeite infusionado com alecrim, flor de sal). Campo `sobre` NAO mexido nesta
+  rodada.
+
+Nao mexeu em assinatura (R$99/pao), frete (R$15), MENU_SEMANA nem no `sobre`/`subCopy`.
+Pizza fora do Portal.
+
 **11/jun/2026 — Faxina: arquiva briefings Asaas + limpa branches + regenera cabecalho**
 
 Pos-merge da PR #44. (a) 5 briefings Asaas de trabalho concluido movidos pra
