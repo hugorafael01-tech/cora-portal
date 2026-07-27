@@ -63,7 +63,7 @@ ${sub.complemento ? sub.complemento + "\n" : ""}${sub.bairro} — ${sub.cidade}/
 ${fmtCEP(sub.cep)}
 
 Assinatura:
-${sub.total_paes} pão${sub.total_paes === 1 ? "" : "(ães)"} por semana
+${sub.total_paes} ${sub.total_paes === 1 ? "pão" : "pães"} por semana
 ${detalharItens(sub.itens)}
 
 Pães:    ${fmtMoney(sub.valor_paes)}  (${sub.total_paes} × R$ 99,00)
@@ -71,6 +71,9 @@ Entrega: ${fmtMoney(sub.valor_frete)}
 Total:   ${fmtMoney(sub.valor_mensal)} / mês
 
 Status: aguardando criação de cobrança no Asaas.
+
+Descritivo pra colar no Asaas:
+Assinatura ${detalharItens(sub.itens)} por semana.
 ${sub.coverage_unconfirmed ? "⚠ Cobertura não confirmada automaticamente. Verificar manualmente.\n\n" : ""}
 Acessar Asaas: https://www.asaas.com/
 
