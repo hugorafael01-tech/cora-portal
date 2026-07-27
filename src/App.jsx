@@ -1399,7 +1399,7 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
           transition:"background 150ms ease",
         }} onMouseEnter={e=>{if(!cutoff) e.currentTarget.style.background=B[50];}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}>
           <I d={ic.edit} size={16} color={cutoff?W[400]:B[500]}/>
-          Alterar minha Assinatura
+          Alterar minha assinatura
         </button>
         {cutoff&&<CutoffMsg/>}
       </>}
@@ -1510,7 +1510,7 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
           fontFamily:fb,fontSize:12,color:ST.warning.t,
           margin:"-4px 0 12px",padding:"0 2px",lineHeight:1.4,
         }}>
-          Sua Assinatura precisa de pelo menos 1 pão por semana.
+          Sua assinatura precisa de pelo menos 1 pão por semana.
         </div>}
 
         {/* edit-foot: Cancelar (ghost) + Salvar alterações (primary, label preservado quando disabled) */}
@@ -1552,7 +1552,7 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
       fontFamily:fb,fontSize:12,color:W[500],lineHeight:1.55,
     }}>
       Pra mudar endereço, forma de pagamento ou pausar a assinatura, fale com a gente pelo{" "}
-      <a href={`https://wa.me/${CORA_WHATSAPP}?text=${encodeURIComponent("Oi, gostaria de alterar minha Assinatura")}`} target="_blank" rel="noopener noreferrer" style={{color:B[500],textDecoration:"none",fontWeight:600,display:"inline-flex",alignItems:"center",gap:4}}>
+      <a href={`https://wa.me/${CORA_WHATSAPP}?text=${encodeURIComponent("Oi, gostaria de alterar minha assinatura")}`} target="_blank" rel="noopener noreferrer" style={{color:B[500],textDecoration:"none",fontWeight:600,display:"inline-flex",alignItems:"center",gap:4}}>
         WhatsApp
         <I d={ic.chev} size={11} color={B[500]}/>
       </a>.

@@ -92,7 +92,7 @@ const Splash=({onStart, gateClosed=false, onGoToWaitlist})=>(
             Feliz em te receber.
           </p>
           <p style={{fontFamily:fb,fontSize:"clamp(22px, 6.5vw, 30px)",lineHeight:1.3,color:W[800],margin:0,marginTop:4,fontWeight:500}}>
-            Vamos montar sua Assinatura?
+            Vamos montar sua assinatura?
           </p>
         </div>
 
@@ -277,7 +277,7 @@ const Step1=({
         marginTop:16,
         marginBottom:24,
       }}>
-        Seus dados são usados pra entregar seu pão e cobrar a Assinatura. Pode pedir pra excluir pelo WhatsApp.
+        Seus dados são usados pra entregar seu pão e cobrar a assinatura. Pode pedir pra excluir pelo WhatsApp.
       </p>
     </div>
   );
