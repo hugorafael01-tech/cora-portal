@@ -374,7 +374,15 @@ const Welcome=({data,assinatura,onComplete})=>{
         )}
 
         <div className="welcome-stagger-4" style={{fontFamily:fb,fontSize:13,color:B[700],marginTop:16,lineHeight:1.5,background:B[50],border:`1px solid ${B[100]}`,borderRadius:radii.lg,padding:12,width:"100%",textAlign:"left"}}>
-          Em breve, você recebe no WhatsApp {data.whatsapp || "—"} o link pra fazer o primeiro pagamento.
+          A cobrança chega no seu e-mail em até 24 horas. Ela vem pelo Asaas, em nome de 66.701.743 Hugo Rafael Pereira Eleterio, que é a razão social da Cora. Se não chegar,{" "}
+          <a
+            href={buildCoraContactLink("Oi, assinei a Cora mas ainda não recebi a cobrança por e-mail.")}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{color:B[500],fontWeight:600,textDecoration:"none"}}
+          >
+            me chama no WhatsApp
+          </a>.
         </div>
 
         <div className="welcome-stagger-5" style={{marginTop:24,width:"100%"}}>

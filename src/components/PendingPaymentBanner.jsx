@@ -1,4 +1,5 @@
 import { B, fb } from "../tokens";
+import { buildCoraContactLink } from "../config/contact";
 
 /**
  * Banner persistente exibido quando subscription.status === 'pending_payment'.
@@ -28,7 +29,15 @@ export default function PendingPaymentBanner({ pendingPayment }) {
         textAlign: "center",
       }}
     >
-      Recebemos sua assinatura. Em breve enviamos o link de pagamento pelo WhatsApp.
+      Recebemos sua assinatura. A cobrança chega no seu e-mail em até 24 horas. Se não chegar,{" "}
+      <a
+        href={buildCoraContactLink("Oi, assinei a Cora mas ainda não recebi a cobrança por e-mail.")}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: B[500], fontWeight: 600, textDecoration: "none" }}
+      >
+        me chama
+      </a>.
     </div>
   );
 }
