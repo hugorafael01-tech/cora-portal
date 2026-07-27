@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:cutoff": "node scripts/test-cutoff.mjs"
+    "test:cutoff": "node scripts/test-cutoff.mjs",
+    "test:first-delivery": "node scripts/test-first-delivery.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "~2.105.3",
