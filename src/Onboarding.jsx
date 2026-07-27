@@ -362,7 +362,8 @@ const Welcome=({data,assinatura,onComplete})=>{
               {fotoPrincipal && <img src={fotoPrincipal} alt="" aria-hidden="true" style={{width:72,objectFit:"cover",display:"block",flexShrink:0}}/>}
               <div style={{flex:1,padding:12}}>
                 <div style={{fontFamily:fb,fontSize:14,fontWeight:600,color:W[800],lineHeight:1.4}}>{recap}</div>
-                <div style={{fontFamily:fb,fontSize:12,color:W[600],marginTop:4,lineHeight:1.4}}>Total {fmt(totalMensal)}/mês · Frete incluído</div>
+                <div style={{fontFamily:fb,fontSize:12,color:W[600],marginTop:4,lineHeight:1.4}}>Pães {fmt(totalPaes*VALOR_POR_PAO)}/mês · Frete {fmt(FRETE_MENSAL)}/mês</div>
+                <div style={{fontFamily:fb,fontSize:12,color:W[600],marginTop:2,lineHeight:1.4}}>Total {fmt(totalMensal)}/mês</div>
               </div>
             </div>
             <div style={{height:1,background:W[200]}}/>
@@ -739,8 +740,8 @@ export default function CoraOnboarding({onComplete, subscriptionsOpen=true, onGo
             <div style={{display:"flex",alignItems:"center",gap:12}}>
               {totalItems>0?(
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontFamily:fb,fontSize:13,fontWeight:500,color:W[800],lineHeight:1.3}}>{totalItems} {totalItems===1?"pão":"pães"} por semana</div>
-                  <div style={{fontFamily:fb,fontSize:12,color:W[600],marginTop:2,lineHeight:1.3}}>{fmt(valorPaes)}/mês · Frete {fmt(FRETE_MENSAL)}</div>
+                  <div style={{fontFamily:fb,fontSize:13,fontWeight:500,color:W[800],lineHeight:1.3}}>{totalItems} {totalItems===1?"pão":"pães"} por semana · {totalItems*4} no mês</div>
+                  <div style={{fontFamily:fb,fontSize:12,color:W[600],marginTop:2,lineHeight:1.3}}>Pães {fmt(valorPaes)}/mês · Frete {fmt(FRETE_MENSAL)}/mês</div>
                   <div style={{fontFamily:fb,fontSize:14,fontWeight:700,color:B[700],marginTop:2,lineHeight:1.3}}>Total {fmt(valorTotal)}/mês</div>
                   {atingiuLimite&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:6,lineHeight:1.4}}>Máximo 3 pães por semana.</div>}
                 </div>
