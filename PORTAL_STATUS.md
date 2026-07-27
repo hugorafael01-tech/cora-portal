@@ -68,6 +68,30 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 <!-- STATUS_MANUAL_START -->
 
+## Sessão 27/07/2026 — Percepção de preço, piso de entrega e microcopy do onboarding (PRs #56–#59, mergeados em `main`)
+
+Quatro PRs pequenos e sequenciais de UX/microcopy no fluxo de onboarding, todos mergeados em `main` (último commit `ae46296`). Nenhuma mudança de cálculo, schema ou migration. Cada um validado no Vercel Preview a 390px com o **stub do `POST /api/subscriptions`** (sobrescreve `window.fetch` no headless) pra não criar assinatura real no banco compartilhado com produção.
+
+### PR #56 — Frete sempre com valor e unidade; unidade mensal consistente (`8b94aeb`)
+`src/Onboarding.jsx`. Rodapé do passo de assinatura e card da tela final passavam impressão errada de preço (R$ 99 nu abaixo de "1 pão por semana", frete sem `/mês` lido como valor por entrega, "Frete incluído" no card final).
+- Rodapé T2: adiciona "N no mês" (piso `totalItems*4`), rotula "Pães" no valor, dá `/mês` ao frete.
+- Card da tela final: duas linhas (Pães …/mês · Frete …/mês + Total …/mês), remove "Frete incluído".
+- **Decisão de posicionamento (Hugo, não negociável):** frete sempre separado, com valor e unidade próprios, nunca embutido nem só "incluído". Entrega é feita por parceiro logístico, **nunca mencionado em tela** — só "Frete".
+
+### PR #57 — Piso de lançamento 06/08 na primeira entrega do onboarding (`877ecfd`)
+Fecha o **gap do #53**: o piso `LAUNCH_FIRST_DELIVERY` cobria `nextEditableThursdayISO`/`proximaQuinta`, mas **não** a `calcularPrimeiraEntrega` de `src/utils/firstDelivery.js` (card "Primeira entrega" da tela final), que mostrava 30/07. Aplica a mesma técnica: importa a constante de `cutoff.js` e eleva ao piso.
+- **Fuso:** `calcularPrimeiraEntrega` opera em horário **local** (`getDay`/`getHours`) e devolve `Date`. A comparação é entre `Date`s (não strings ISO como no `cutoff.js`), com o piso reconstruído como meia-noite **local** (`new Date(ano, mes-1, dia)` — nunca `new Date(iso)`, que interpretaria como UTC e deslocaria o dia). Auto-expira pós-06/08 (no-op).
+- **Teste novo:** `scripts/test-first-delivery.mjs` + `npm run test:first-delivery` (6 casos, passa em UTC-10/-3/local/+9). `test:cutoff` 7/7 preservado.
+
+### PR #58 — Empilha o rodapé do passo de assinatura, reusa o breakdown do App (`797776a`)
+`src/Onboarding.jsx`. Corrige a quebra de texto que apareceu **em produção** pós-#56: o rodapé era flex **row** (texto `flex:1` + botões `flexShrink:0`), sobravam ~150px em 390px e as linhas de preço quebravam feio. Empilha em coluna e **reusa o breakdown existente** de `src/App.jsx:1365` (rótulo à esquerda, valor à direita com `space-between` + `tabular-nums`, Total separado por borda) — alinha as duas telas no mesmo formato de extrato. Botões voltam ao full-width nativo do `Btn` (`flex:1`, meio a meio). Uppercase nos rótulos de linha aprovado pelo Hugo (regra do DS proíbe uppercase só em nome de produto, não em rótulo de extrato).
+
+### PR #59 — "assinatura" em caixa baixa no texto corrido (`ae46296`)
+Microcopy: "assinatura" não é nome próprio; em prosa vai minúscula. 5 pontos (`Onboarding.jsx:95` splash, `:280` nota LGPD; `App.jsx:1402` "Alterar minha assinatura", `:1513` aviso de mínimo 1 pão, `:1555` texto do `wa.me`). **Títulos de tela** (Step 2 "Sua Assinatura", header do card, aba Assinatura) e comentários de código **mantêm maiúscula** — são nomes de seção.
+
+### Convenção de validação registrada
+A técnica do stub do `POST /api/subscriptions` (evita gravar assinatura no banco preview=prod capacity-gated) ficou salva na memória do projeto pra reuso.
+
 ## Sessão 23/07/2026 — Saneamento pós-sprint de launch (doc-only) + estado operacional
 
 Consolidação dos fatos das sessões 20-23/07 que ainda não estavam no STATUS. Doc-only: nenhum código, nenhuma migration, nenhum schema.
