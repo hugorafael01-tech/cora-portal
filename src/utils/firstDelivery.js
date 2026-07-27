@@ -9,6 +9,8 @@
  * Não considera se o pagamento foi confirmado — Hugo gerencia
  * manualmente no MVP.
  */
+import { LAUNCH_FIRST_DELIVERY } from './cutoff.js';
+
 const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 
@@ -25,7 +27,17 @@ export const calcularPrimeiraEntrega = (now = new Date()) => {
   const result = new Date(now);
   result.setHours(0, 0, 0, 0);
   result.setDate(result.getDate() + offset);
-  return result;
+
+  // Piso de lançamento (mesma regra do cutoff.js): a primeira entrega nunca é
+  // anterior a LAUNCH_FIRST_DELIVERY. Aqui a comparação é entre Dates, não entre
+  // strings ISO: esta função opera em horário LOCAL (getDay/getHours/setHours),
+  // e `result` já está na meia-noite local. Por isso o piso é reconstruído como
+  // meia-noite LOCAL a partir dos componentes — nunca `new Date(iso)`, que
+  // interpretaria a string como UTC e deslocaria o dia (fuso a oeste renderiza
+  // "5 de agosto"). Pós-06/08 a quinta calculada é sempre >= piso: no-op.
+  const [ano, mes, dia] = LAUNCH_FIRST_DELIVERY.split('-').map(Number);
+  const piso = new Date(ano, mes - 1, dia);
+  return result < piso ? piso : result;
 };
 
 /**
