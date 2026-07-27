@@ -737,19 +737,43 @@ export default function CoraOnboarding({onComplete, subscriptionsOpen=true, onGo
                 ) : null}
               </div>
             )}
-            <div style={{display:"flex",alignItems:"center",gap:12}}>
-              {totalItems>0?(
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontFamily:fb,fontSize:13,fontWeight:500,color:W[800],lineHeight:1.3}}>{totalItems} {totalItems===1?"pão":"pães"} por semana · {totalItems*4} no mês</div>
-                  <div style={{fontFamily:fb,fontSize:12,color:W[600],marginTop:2,lineHeight:1.3}}>Pães {fmt(valorPaes)}/mês · Frete {fmt(FRETE_MENSAL)}/mês</div>
-                  <div style={{fontFamily:fb,fontSize:14,fontWeight:700,color:B[700],marginTop:2,lineHeight:1.3}}>Total {fmt(valorTotal)}/mês</div>
-                  {atingiuLimite&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:6,lineHeight:1.4}}>Máximo 3 pães por semana.</div>}
+            <div style={{display:"flex",flexDirection:"column",gap:14}}>
+
+              {totalItems>0 && (
+                <div>
+                  {/* cabeçalho: quantidade semanal e mensal */}
+                  <div style={{fontFamily:fb,fontSize:13,fontWeight:500,color:W[800],lineHeight:1.3}}>
+                    {totalItems} {totalItems===1?"pão":"pães"} por semana · {totalItems*4} no mês
+                  </div>
+
+                  {/* breakdown, mesmo padrão de App.jsx:1365 */}
+                  <div style={{display:"flex",flexDirection:"column",gap:6,padding:"12px 0 0",borderTop:`1px solid ${W[200]}`,marginTop:10}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+                      <span style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Pães</span>
+                      <span style={{fontFamily:fb,fontSize:14,color:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(valorPaes)}/mês</span>
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+                      <span style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500]}}>Frete</span>
+                      <span style={{fontFamily:fb,fontSize:14,color:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(FRETE_MENSAL)}/mês</span>
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingTop:8,borderTop:`1px solid ${W[200]}`,marginTop:2}}>
+                      <span style={{fontFamily:fd,fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",color:W[700]}}>Total</span>
+                      <span style={{fontFamily:fb,fontWeight:700,fontSize:16,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(valorTotal)}/mês</span>
+                    </div>
+                  </div>
+
+                  {atingiuLimite && (
+                    <div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:8,lineHeight:1.4}}>Máximo 3 pães por semana.</div>
+                  )}
                 </div>
-              ):<div style={{flex:1}}/>}
-              <div style={{display:"flex",gap:10,flexShrink:0}}>
-                <Btn onClick={()=>setStep(1)} disabled={submitting} style={{width:"auto",flex:"0 0 auto",padding:"14px 20px"}}>Voltar</Btn>
-                <Btn primary disabled={!canNext2 || submitting} onClick={handleNext} style={{width:"auto",flex:"0 0 auto",padding:"14px 24px"}}>{submitting?"Enviando…":"Confirmar"}</Btn>
+              )}
+
+              {/* botões full-width */}
+              <div style={{display:"flex",gap:10}}>
+                <Btn onClick={()=>setStep(1)} disabled={submitting} style={{flex:1}}>Voltar</Btn>
+                <Btn primary disabled={!canNext2 || submitting} onClick={handleNext} style={{flex:1}}>{submitting?"Enviando…":"Confirmar"}</Btn>
               </div>
+
             </div>
           </div>
         ):(
