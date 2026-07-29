@@ -68,9 +68,11 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 <!-- STATUS_MANUAL_START -->
 
-## Sessão 27/07/2026 — Percepção de preço, piso de entrega e microcopy do onboarding (PRs #56–#59, mergeados em `main`)
+## Sessão 27/07/2026 — Percepção de preço, piso de entrega e microcopy do onboarding + e-mail de admin e aprendizados do dia 1 do lançamento (PRs #56–#59, #61, mergeados em `main`)
 
 Quatro PRs pequenos e sequenciais de UX/microcopy no fluxo de onboarding, todos mergeados em `main` (último commit `ae46296`). Nenhuma mudança de cálculo, schema ou migration. Cada um validado no Vercel Preview a 390px com o **stub do `POST /api/subscriptions`** (sobrescreve `window.fetch` no headless) pra não criar assinatura real no banco compartilhado com produção.
+
+Ainda em 27/07, mais um PR de código (#61, e-mail de admin) e quatro fatos operacionais do dia 1 do lançamento (EMAIL_TO errado em prod, `invoiceUrl` já gravado no webhook, comportamento da recorrência do Asaas) — todos registrados nas subseções ao fim desta sessão.
 
 ### PR #56 — Frete sempre com valor e unidade; unidade mensal consistente (`8b94aeb`)
 `src/Onboarding.jsx`. Rodapé do passo de assinatura e card da tela final passavam impressão errada de preço (R$ 99 nu abaixo de "1 pão por semana", frete sem `/mês` lido como valor por entrega, "Frete incluído" no card final).
@@ -91,6 +93,30 @@ Microcopy: "assinatura" não é nome próprio; em prosa vai minúscula. 5 pontos
 
 ### Convenção de validação registrada
 A técnica do stub do `POST /api/subscriptions` (evita gravar assinatura no banco preview=prod capacity-gated) ficou salva na memória do projeto pra reuso.
+
+### PR #61 — Descritivo pronto pro Asaas no e-mail de admin (`6930487`)
+`api/subscriptions/index.js`, **só o template `buildEmailBody`** (nenhum outro código: portal, banco, lógica de POST/PATCH, capacity gate e cleanup intocados). O Hugo cria cada cobrança manualmente no Asaas e precisa digitar um descritivo; antes copiava o bloco de assinatura do e-mail e editava à mão. Dois ajustes:
+- **Flexão corrigida:** `${sub.total_paes} pão(ães) por semana` produzia "2 pão(ães)". Passa a trocar a palavra inteira (`sub.total_paes === 1 ? "pão" : "pães"`) → "2 **pães** por semana".
+- **Bloco novo** entre a linha "Status:" e o aviso de cobertura — duas linhas isoladas, sem indentação (fácil de selecionar no celular): `Descritivo pra colar no Asaas:` seguido de `Assinatura ${detalharItens(sub.itens)} por semana.`, reusando `detalharItens` (que já formata combos com " + "). Ex.: 1 pão → "Assinatura 1× Pão Original por semana."; combo → "Assinatura 2× Pão Integral + 1× Pão Original por semana.".
+- **Validação sem tocar o banco** (compartilhado com prod, véspera de lançamento): `buildEmailBody` exercitado direto com mocks nos 3 casos (1 pão / 2 iguais / combo), saídas conferidas. Sem assinatura de teste.
+- **Efeito colateral conhecido, não corrigido (cosmético):** quando `coverage_unconfirmed` é true, o aviso de cobertura aparece colado no descritivo, sem linha em branco entre os dois.
+
+### EMAIL_TO estava errado em produção — corrigido 27/07 (ClickUp [86e2gmuga](https://app.clickup.com/t/86e2gmuga))
+O STATUS afirmava (entrada "Bonus técnico" de 12/05, mais abaixo neste arquivo) que `EMAIL_TO` apontava pra `pedidos@acora.com.br`. **Não correspondia à produção em 27/07.**
+- Descoberto no teste ponta a ponta de 26–27/07: o aviso "[Cora] Nova assinatura" era enviado com sucesso (log da Vercel com "email sent" + ID do Resend), mas chegava numa conta que o Hugo não acompanha mais.
+- **Consequência:** o Hugo não saberia que alguém assinou, não criaria a cobrança no Asaas, e a pessoa ficaria em `pending_payment` esperando uma cobrança que nunca chega.
+- **Corrigido em 27/07:** `EMAIL_TO = hugo@acora.com.br`, com redeploy, validado.
+- **Lição (a parte que se perde):** a variável estava marcada como **Sensitive** no Vercel, o que impede a leitura do valor no painel — inclusive pelo dono — e foi o que cegou o diagnóstico. **Sensitive deve ficar restrito a segredo real** (`SUPABASE_SERVICE_ROLE_KEY`, `ASAAS_API_KEY`, `CRON_SECRET`). Endereço de e-mail não é segredo.
+- **Decisão adiada:** avaliar criar alias `cobranca@acora.com.br` e apontar `EMAIL_TO` pra ele, separando o aviso operacional da caixa pessoal. Não feito em 27/07 por ser véspera de lançamento.
+
+### `invoiceUrl` já está gravado no payload do webhook Asaas (oportunidade — correção no Backoffice)
+Aprendido operando o dia 1 do lançamento (10 assinantes). `api/webhooks/asaas/index.js` grava o payload bruto em `asaas_webhook_events.payload` (jsonb). Dentro de `payload->'payment'` existem, entre outros: `invoiceUrl`, `billingType`, `dueDate`, `description`, `paymentDate`, `netValue`.
+- **Por que importa:** a tela de vínculo do Backoffice lista os pagamentos órfãos só por `asaas_customer_id` e valor. Como toda assinatura de 1 pão custa R$ 114, é impossível identificar de quem é cada pagamento sem sair do sistema. O `invoiceUrl` abre a fatura no Asaas com o nome do cliente e resolveria isso — **e o dado já está gravado.**
+- **Registro:** oportunidade conhecida, **não pendência do portal** — a correção seria no Backoffice, que consome essa tabela.
+
+### Recorrência do Asaas emite 2 cobranças de imediato (observado, não é bug)
+Ao criar a assinatura recorrente, o Asaas emite de imediato a cobrança do mês corrente **E** a do mês seguinte. Em 27/07 cada assinante recebeu duas: vencimento 03/08 e 03/09.
+- Registrado porque **parece cobrança duplicada** quando se olha só a contagem de eventos por assinante — e não é. A partir do segundo mês o pagamento é automático e o vínculo faz o resto sozinho, sem trabalho manual.
 
 ## Sessão 23/07/2026 — Saneamento pós-sprint de launch (doc-only) + estado operacional
 
@@ -663,7 +689,7 @@ Próximo: pausa nesta frente. Frente C (auth hardening) e migração de subscrip
   - Task ClickUp 86e1a8q50 fechada com comentário detalhado.
   - Banco limpo dos registros de teste ao fim da sessão (8 linhas em `capacity_waitlist` + 1 subscription).
 - **Issue pré-existente registrada (não é desta frente):** `POST /api/lead` retorna 404 em ambiente local (`PreCadastro.jsx:256`). Provavelmente apontava pro webhook Make.com em produção e não tem implementação local. Virou task separada na lista Digital & Portal (ver task ClickUp).
-- **Bonus técnico (12/05, dia seguinte):** Google Workspace configurado. Conta `hugo@acora.com.br` ativa, aliases `oi@`, `noreply@`, `pedidos@` criados. MX `acora.com.br` apontando pra `smtp.google.com`. `EMAIL_TO` no Vercel migrado pra `pedidos@acora.com.br` (Production + Preview). Lembrar pra futuro: **Resend mantém suppress list automática** — se um email bouncear (ex: MX faltando), os próximos pro mesmo destinatário ficam suppressed silenciosamente. Solução: remover da Suppressions list no dashboard do Resend.
+- **Bonus técnico (12/05, dia seguinte):** Google Workspace configurado. Conta `hugo@acora.com.br` ativa, aliases `oi@`, `noreply@`, `pedidos@` criados. MX `acora.com.br` apontando pra `smtp.google.com`. `EMAIL_TO` no Vercel migrado pra `pedidos@acora.com.br` (Production + Preview). **[SUPERADO em 27/07/2026 — em produção o `EMAIL_TO` acabou numa conta não monitorada; corrigido pra `hugo@acora.com.br`. Ver "Sessão 27/07/2026" no topo da seção manual.]** Lembrar pra futuro: **Resend mantém suppress list automática** — se um email bouncear (ex: MX faltando), os próximos pro mesmo destinatário ficam suppressed silenciosamente. Solução: remover da Suppressions list no dashboard do Resend.
 - **Pendência operacional:** Hugo precisa monitorar manualmente o número de subscribers ativos. Quando bater o teto, flipar `app_settings.subscriptions_open` via SQL Editor. Evolução futura (alternativa b da task original): contagem automática.
 
 - **Data:** 2026-05-09 (continuação)
