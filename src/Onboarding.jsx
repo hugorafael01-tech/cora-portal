@@ -89,7 +89,7 @@ const Splash=({onStart, gateClosed=false, onGoToWaitlist})=>(
       <>
         <div style={{marginTop:48,maxWidth:300,padding:"0 8px"}}>
           <p style={{fontFamily:fb,fontSize:"clamp(22px, 6.5vw, 30px)",lineHeight:1.3,color:W[500],margin:0,fontWeight:400}}>
-            Feliz em te receber.
+            Toda quinta, pão fresco na sua porta.
           </p>
           <p style={{fontFamily:fb,fontSize:"clamp(22px, 6.5vw, 30px)",lineHeight:1.3,color:W[800],margin:0,marginTop:4,fontWeight:500}}>
             Vamos montar sua assinatura?
@@ -99,6 +99,17 @@ const Splash=({onStart, gateClosed=false, onGoToWaitlist})=>(
         <button onClick={onStart} style={{marginTop:48,width:200,height:52,borderRadius:radii.md,border:"none",background:B[500],color:"#FFF",fontSize:16,fontWeight:600,fontFamily:fb,cursor:"pointer",transition:"background 150ms"}} onMouseOver={e=>e.currentTarget.style.background=B[600]} onMouseOut={e=>e.currentTarget.style.background=B[500]}>
           Vamos
         </button>
+
+        {/* Rota alternativa pra quem chegou pelo QR e ainda nao sabe o que e a Cora.
+            Menor que o botao de proposito: nao compete com a acao principal. */}
+        <a
+          href="https://acora.com.br"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{marginTop:20,fontFamily:fb,fontSize:14,color:B[500],fontWeight:600,textDecoration:"none"}}
+        >
+          Conhecer a Cora
+        </a>
       </>
     )}
 

@@ -20,9 +20,9 @@ const ERROR_COPY = {
 const Header = () => (
   <div style={{ marginBottom: 24 }}>
     <div style={{ fontFamily: fb, fontSize: 16, color: W[800], lineHeight: 1.5 }}>
-      Estamos ampliando a produção.
+      Estamos abrindo aos poucos, e as vagas dessa semana já foram preenchidas.
       <br />
-      Vamos te avisar por email assim que abrir uma vaga.
+      Deixa seu contato que avisamos assim que abrir a próxima.
     </div>
   </div>
 );
@@ -334,8 +334,28 @@ export default function CapacityWaitlist({ reason = "splash" }) {
                 if (!submitting) e.currentTarget.style.background = B[500];
               }}
             >
-              {submitting ? "Enviando…" : "Pronto"}
+              {submitting ? "Enviando…" : "Quero entrar na fila"}
             </button>
+
+            {/* Mesma rota alternativa do splash do onboarding: quem chegou pelo QR
+                e quer entender a Cora antes de deixar contato. */}
+            <a
+              href="https://acora.com.br"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "block",
+                textAlign: "center",
+                marginTop: 16,
+                fontFamily: fb,
+                fontSize: 14,
+                color: B[500],
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Conhecer a Cora
+            </a>
           </>
         )}
       </div>
