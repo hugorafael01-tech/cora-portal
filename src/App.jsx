@@ -93,10 +93,10 @@ const D={
     {id:"integral",nome:"Pão Integral",peso:"~700g",preco:"R$ 30,00",precoNum:30,genero:"m",img:IMG.integral,desc:"A versão integral do Original. Leve, macia, com gergelim na crosta.",sobre:"A versão integral tinha que ser tão versátil quanto o Original. Leve, macia, longe daqueles integrais que parecem tijolo. O processo exige mais cuidado, e o resultado vale. Farinha 100% integral da Fazenda Vargem, um toque de azeite extra virgem que traz maciez, gergelim na crosta. A receita veio quase toda de um curso, com ajustes pra ficar com a cara da Cora. Fermentação com o levain Cora, 77% de hidratação.",ingredientes:"Farinha integral Fazenda Vargem, água mineral, levain Cora, azeite extra virgem, sal marinho e gergelim",subCopy:"Integral leve, todo dia.",qtd:0},
   ],
   rotativos:[
-    {id:"multigraos",nome:"Multigrãos",peso:"~620g",preco:"R$ 36,00",precoNum:36,genero:"m",img:IMG.multigraos,desc:"Seis grãos torrados e escaldados no miolo. Crosta de farelo de aveia. O pão das ocasiões.",sobre:"Receita aprendida com Alex Duarte, do ISPA. Seis grãos diferentes no miolo, crosta de farelo de aveia. O processo de torrar e escaldar os grãos antes de incorporar traz um perfume e uma profundidade de sabor que vale cada mordida. É o pão mais indulgente da Cora, pra uma celebração que pode ser do dia a dia ou de algo especial. Com 110% de hidratação, exige mais atenção do padeiro. Qualquer deslize compromete o resultado.",ingredientes:"Blend de farinhas, água mineral, gergelim branco sem casca, gergelim preto, quinoa, linhaça dourada, semente de girassol, semente de abóbora, farelo de aveia, levain Cora e sal marinho",subCopy:"Quando o pão é a celebração."},
-    {id:"focaccia",nome:"Focaccia Genovesa",peso:"~420g",preco:"R$ 28,00",precoNum:28,genero:"f",img:IMG.focaccia,desc:"Joia da Ligúria. Macia por dentro, dourada por fora. Cebola roxa macerada, azeite infusionado com alecrim e um toque de flor de sal.",sobre:"Joia da culinária da Ligúria, no norte da Itália. A versão autêntica genovesa tem espessura fina, cerca de 2 cm, miolo extremamente macio e crosta dourada e levemente crocante. O segredo está na generosidade do azeite extra virgem e na salmoura que preenche os buraquinhos característicos. A tradição leva alecrim e sal grosso. Na Cora entra também um pouco de cebola roxa. É um pão meio pizza, leve, com cobertura que dá vontade de comer o tabuleiro inteiro. Sai do forno no tabuleiro e vai vendida em pedaços.",ingredientes:"Farinha de trigo italiana, água mineral, azeite extra virgem infusionado com alecrim, levain Cora, cebola roxa, flor de sal e sal marinho",subCopy:"Pra um café da tarde diferente."},
-    {id:"ciabatta",nome:"Ciabatta",peso:"~480g",preco:"R$ 25,00",precoNum:25,genero:"f",img:IMG.ciabatta,desc:"Miolo cheio de alvéolos, casca fina e crocante. O pão do sanduíche ou da refeição.",sobre:"Ciabatta significa chinelo em italiano, pelo formato achatado e largo. É invenção recente: foi criada em 1982 por Arnaldo Cavallari, em Adria, perto de Veneza. Ele queria um pão italiano que competisse com a baguete francesa nos sanduíches. O segredo das bolhas grandes está na hidratação alta. A massa fica úmida e difícil de manipular, exige técnica e paciência. Blend de farinha italiana com 10% de farinha integral e um fio de azeite. Miolo leve e elástico, casca fina e crocante, com camada generosa de farinha por fora.",ingredientes:"Blend de farinha italiana e farinha integral, água mineral, levain Cora, sal marinho e azeite extra virgem",subCopy:"Casca crocante, miolo aerado."},
-    {id:"brioche",nome:"Brioche",peso:"~350g",preco:"R$ 36,00",precoNum:36,genero:"m",img:IMG.brioche,desc:"Macio, levemente adocicado, com perfume cítrico. Cabe na lancheira da escola e no café da manhã sem pressa.",sobre:"Brioche que junta a tradição francesa com técnica italiana. Blend de farinha italiana com um toque de semola, ovos, manteiga, leite e mel. Açúcar aromatizado com raspas de laranja, limão siciliano e baunilha. Pão leve, com leve doçura e perfume cítrico. Fermentação lenta, 100% levain Cora. Exige atenção constante na temperatura pra não perder o ponto da massa. Hugo desenhou pensando nas crianças, num lanche fácil de mastigar pra escola. Adulto também não resiste.",ingredientes:"Blend de farinha italiana e semola, ovos, manteiga, levain Cora, leite, açúcar, mel, sal marinho, raspas de laranja, raspas de limão siciliano e baunilha",subCopy:"O lanche fácil."},
+    {id:"multigraos",nome:"Multigrãos",peso:"~620g",preco:"R$ 36,00",precoNum:36,genero:"m",img:IMG.multigraos,desc:"Seis grãos torrados e escaldados no miolo. Crosta de farelo de aveia. O pão das ocasiões.",sobre:"Receita aprendida com Alex Duarte, do ISPA. Seis grãos diferentes no miolo, crosta de farelo de aveia. O processo de torrar e escaldar os grãos antes de incorporar traz um perfume e uma profundidade de sabor que vale cada mordida. É o pão mais indulgente da Cora, pra uma celebração que pode ser do dia a dia ou de algo especial. Com 110% de hidratação, exige mais atenção do padeiro. Qualquer deslize compromete o resultado.",ingredientes:"Blend de farinhas, água mineral, gergelim branco sem casca, gergelim preto, quinoa, linhaça dourada, semente de girassol, semente de abóbora, farelo de aveia, levain Cora e sal marinho",subCopy:"Pra torrada com abacate, e pra sopa que vira jantar."},
+    {id:"focaccia",nome:"Focaccia Genovesa",peso:"~420g",preco:"R$ 28,00",precoNum:28,genero:"f",img:IMG.focaccia,desc:"Joia da Ligúria. Macia por dentro, dourada por fora. Cebola roxa macerada, azeite infusionado com alecrim e um toque de flor de sal.",sobre:"Joia da culinária da Ligúria, no norte da Itália. A versão autêntica genovesa tem espessura fina, cerca de 2 cm, miolo extremamente macio e crosta dourada e levemente crocante. O segredo está na generosidade do azeite extra virgem e na salmoura que preenche os buraquinhos característicos. A tradição leva alecrim e sal grosso. Na Cora entra também um pouco de cebola roxa. É um pão meio pizza, leve, com cobertura que dá vontade de comer o tabuleiro inteiro. Sai do forno no tabuleiro e vai vendida em pedaços.",ingredientes:"Farinha de trigo italiana, água mineral, azeite extra virgem infusionado com alecrim, levain Cora, cebola roxa, flor de sal e sal marinho",subCopy:"Pra um café da tarde diferente, e pra mesa cheia de gente."},
+    {id:"ciabatta",nome:"Ciabatta",peso:"~480g",preco:"R$ 25,00",precoNum:25,genero:"f",img:IMG.ciabatta,desc:"Miolo cheio de alvéolos, casca fina e crocante. O pão do sanduíche ou da refeição.",sobre:"Ciabatta significa chinelo em italiano, pelo formato achatado e largo. É invenção recente: foi criada em 1982 por Arnaldo Cavallari, em Adria, perto de Veneza. Ele queria um pão italiano que competisse com a baguete francesa nos sanduíches. O segredo das bolhas grandes está na hidratação alta. A massa fica úmida e difícil de manipular, exige técnica e paciência. Blend de farinha italiana com 10% de farinha integral e um fio de azeite. Miolo leve e elástico, casca fina e crocante, com camada generosa de farinha por fora.",ingredientes:"Blend de farinha italiana e farinha integral, água mineral, levain Cora, sal marinho e azeite extra virgem",subCopy:"Pro sanduíche caprichado, e pra limpar o molho do prato."},
+    {id:"brioche",nome:"Brioche",peso:"~350g",preco:"R$ 36,00",precoNum:36,genero:"m",img:IMG.brioche,desc:"Macio, levemente adocicado, com perfume cítrico. Cabe na lancheira da escola e no café da manhã sem pressa.",sobre:"Brioche que junta a tradição francesa com técnica italiana. Blend de farinha italiana com um toque de semola, ovos, manteiga, leite e mel. Açúcar aromatizado com raspas de laranja, limão siciliano e baunilha. Pão leve, com leve doçura e perfume cítrico. Fermentação lenta, 100% levain Cora. Exige atenção constante na temperatura pra não perder o ponto da massa. Hugo desenhou pensando nas crianças, num lanche fácil de mastigar pra escola. Adulto também não resiste.",ingredientes:"Blend de farinha italiana e semola, ovos, manteiga, levain Cora, leite, açúcar, mel, sal marinho, raspas de laranja, raspas de limão siciliano e baunilha",subCopy:"Pro lanche da escola, e pra manhã preguiçosa de domingo."},
   ],
   semana:{pedidosAbertos:false,cardapioProxima:["Pão Original","Pão Integral","Focaccia Genovesa"],entregaProxima:formatarDataEntrega(proximaQuinta(new Date(Date.now()+7*24*60*60*1000)))},
 };
@@ -224,10 +224,13 @@ const useToastStack = () => {
       delete timersRef.current[id];
     }
   };
-  const push = (message) => {
+  // `icon` troca SO o glifo dentro do badge: "check" (default) ou "alert".
+  // Nao existe variante de toast -- cores, borda e layout sao os mesmos nos
+  // dois casos. Serve pra mensagem de falha nao sair com sinal de confirmacao.
+  const push = (message, icon = "check") => {
     const id = ++__toastSeq;
     setToasts((prev) => {
-      const next = [...prev, { id, message }];
+      const next = [...prev, { id, message, icon }];
       // Se passou do limite, dropa o mais antigo (e cancela o timer dele).
       while (next.length > TOAST_STACK_MAX) {
         const stale = next.shift();
@@ -293,7 +296,9 @@ const ToastStack = ({ toasts }) => {
               marginTop: 1,
             }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"/>
+                {t.icon === "alert"
+                  ? <><line x1="12" y1="6" x2="12" y2="13"/><line x1="12" y1="18" x2="12.01" y2="18"/></>
+                  : <polyline points="20 6 9 17 4 12"/>}
               </svg>
             </span>
             <span style={{ flex: 1 }}>{t.message}</span>
@@ -1089,7 +1094,7 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
     try{await addExtraToCart(produto);}
     catch(err){
       console.error("[Home] addExtraToCart failed",err);
-      pushToast(orderErrorToast(err));
+      pushToast(orderErrorToast(err), "alert");
       return;
     }
     const verb=(produto.genero||"m")==="f"?"adicionada":"adicionado";
@@ -1719,7 +1724,7 @@ const Cardapio=({addExtraToCart,cutoff,pendingPayment,deliveryDate})=>{
     try{await addExtraToCart(product);}
     catch(err){
       console.error("[Cardapio] addExtraToCart failed",err);
-      pushToast(orderErrorToast(err));
+      pushToast(orderErrorToast(err), "alert");
       return;
     }
     const verb=(product.genero||"m")==="f"?"adicionada":"adicionado";
