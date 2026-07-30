@@ -24,7 +24,7 @@ import { getSettings, getSubscription, getWeeklyOrders, postWeeklyOrder, confirm
 import { useSubscriptionContext } from "./auth/useSubscriptionContext";
 import { supabase } from "./lib/supabase";
 import { CORA_WHATSAPP } from "./config/contact";
-import { MENU_SEMANA } from "./config/menu";
+import { menuDaSemana } from "./config/menu";
 import { B, W, fd, fb, fmt, radii } from "./tokens";
 
 // `?reset=true`: encerra a sessao Supabase (a fonte de verdade agora e o DB, nao
@@ -85,7 +85,9 @@ const D={
   // `genero` controla a flexão do toast pós-adicionar ("adicionada"/"adicionado").
   // `subCopy` é a sub-copy emocional do hero da Novidade (briefing 5.3).
   // Quando o Backoffice nascer, ambos viram campo do produto no banco.
-  extras:[{id:"focaccia",nome:"Focaccia Genovesa",peso:"~420g",preco:"R$ 28,00",precoNum:28,genero:"f",subCopy:"Pra um café da tarde diferente.",img:IMG.focaccia,desc:"Joia da Ligúria. Macia por dentro, dourada por fora. Cebola roxa macerada, azeite infusionado com alecrim e um toque de flor de sal.",sobre:"Joia da culinária da Ligúria, no norte da Itália. A versão autêntica genovesa tem espessura fina, cerca de 2 cm, miolo extremamente macio e crosta dourada e levemente crocante. O segredo está na generosidade do azeite extra virgem e na salmoura que preenche os buraquinhos característicos. A tradição leva alecrim e sal grosso. Na Cora entra também um pouco de cebola roxa. É um pão meio pizza, leve, com cobertura que dá vontade de comer o tabuleiro inteiro. Sai do forno no tabuleiro e vai vendida em pedaços.",ingredientes:"Farinha de trigo italiana, água mineral, azeite extra virgem infusionado com alecrim, levain Cora, cebola roxa, flor de sal e sal marinho"}],
+  // O especial da semana NAO mora mais aqui: era um objeto fixo com a focaccia
+  // dentro, duplicando D.rotativos, e por isso o Hero nunca rotacionava. Agora
+  // sai de menuDaSemana(deliveryDate) resolvido contra D.rotativos abaixo.
   pães:[
     {id:"original",nome:"Pão Original",peso:"~700g",preco:"R$ 30,00",precoNum:30,genero:"m",img:IMG.original,desc:"O pão do dia a dia. Vai com manteiga no café e com azeite no jantar.",sobre:"Foi com esse pão que tudo começou. Hugo repetiu a receita por anos até chegar num resultado que dava orgulho, e foi nesse processo que a paixão pela panificação se formou. Blend de farinha italiana com um toque de integral brasileira pra ganhar sabor. 24 horas de fermentação, 72% de hidratação.",ingredientes:"Farinha de trigo italiana, água mineral, levain Cora, farinha integral brasileira e sal marinho",subCopy:"O pão que começou tudo.",qtd:1},
     {id:"integral",nome:"Pão Integral",peso:"~700g",preco:"R$ 30,00",precoNum:30,genero:"m",img:IMG.integral,desc:"A versão integral do Original. Leve, macia, com gergelim na crosta.",sobre:"A versão integral tinha que ser tão versátil quanto o Original. Leve, macia, longe daqueles integrais que parecem tijolo. O processo exige mais cuidado, e o resultado vale. Farinha 100% integral da Fazenda Vargem, um toque de azeite extra virgem que traz maciez, gergelim na crosta. A receita veio quase toda de um curso, com ajustes pra ficar com a cara da Cora. Fermentação com o levain Cora, 77% de hidratação.",ingredientes:"Farinha integral Fazenda Vargem, água mineral, levain Cora, azeite extra virgem, sal marinho e gergelim",subCopy:"Integral leve, todo dia.",qtd:0},
@@ -320,6 +322,26 @@ const CutoffBanner=({cutoff})=>{
 // esta com status pending_payment. Compartilhada por Home, Cardapio
 // e OrderFooter pra manter o tom consistente.
 const LOCK_REASON_PENDING="Disponível após confirmação do primeiro pagamento.";
+
+// ─── Erro ao salvar a cesta ───────────────────────────────────────────
+// postCurrentOrder faz update otimista, desfaz em erro e RELANCA. Estes dois
+// helpers sao o que os call-sites fazem com o relance.
+//
+// A mensagem do corte fala da JANELA, nunca do produto: o especial rotaciona
+// (src/config/menu.js), entao "esse item entra na proxima" seria mentira --
+// pode nao existir semana que vem. `err.code` vem do campo `error` do body,
+// preservado por throwApiError em src/utils/api.js.
+const ORDER_ERROR_CUTOFF="A cesta dessa semana já fechou. Você já pode montar a da semana que vem.";
+const ORDER_ERROR_GENERIC="Não consegui adicionar agora. Tenta de novo em alguns segundos.";
+const orderErrorToast=(err)=>err?.code==="cutoff_passed"?ORDER_ERROR_CUTOFF:ORDER_ERROR_GENERIC;
+
+// Call-sites que disparam e nao esperam resposta: steppers +/-, timers de
+// animacao de remocao e o debounce da composicao. Nenhum deles tinha (nem
+// precisa de) tratamento -- o rollback ja devolve a UI ao estado certo e
+// postCurrentOrder ja logou. Sem este catch, o relance viraria unhandled
+// rejection no console, que seria regressao.
+const swallowOrderError=(p)=>{ if(p&&typeof p.catch==="function") p.catch(()=>{}); return p; };
+
 const ActionBtn=({children,loadingText,successText,onAction,onComplete,primary,disabled:extDisabled,full,style:es,ariaLabel})=>{const[st,setSt]=useState('idle');const[err,setErr]=useState('');const handle=async()=>{if(st!=='idle')return;setSt('loading');setErr('');try{await onAction();setSt('success');setTimeout(()=>{setSt('idle');onComplete?.();},1500);}catch(e){setErr(e.message||'Erro ao processar. Tente novamente.');setSt('idle');}};const busy=st==='loading'||st==='success';const label=st==='loading'?loadingText:st==='success'?successText:children;const stStyle=st==='success'?{background:'#D1FAE5',color:'#065F46',border:'1px solid #6EE7B7',opacity:1}:{};return<><Btn primary={st!=='success'&&primary} disabled={busy||extDisabled} onClick={handle} full={full} ariaLabel={ariaLabel} style={{...es,...stStyle}}>{label}</Btn>{err&&<div style={{fontFamily:fb,fontSize:13,color:'#9A3412',background:'#FFEDD5',padding:'8px 12px',borderRadius:radii.md,marginTop:6}}>{err}</div>}</>;};
 
 // O Modal de detalhes do produto saiu na Frente C item 3 (wireframe v2).
@@ -533,11 +555,11 @@ const EditarCestaDrawer=({
     if(compDebounceRef.current) clearTimeout(compDebounceRef.current);
   },[]);
   const handleExtraDecrement=(extra)=>{
-    if(extra.qty>1){removeExtraFromCart(extra.id);return;}
+    if(extra.qty>1){swallowOrderError(removeExtraFromCart(extra.id));return;}
     if(removing.has(extra.id)) return;
     setRemoving(prev=>{const next=new Set(prev);next.add(extra.id);return next;});
     removingTimersRef.current[extra.id]=setTimeout(()=>{
-      removeExtraFromCart(extra.id);
+      swallowOrderError(removeExtraFromCart(extra.id));
       setRemoving(prev=>{const next=new Set(prev);next.delete(extra.id);return next;});
       delete removingTimersRef.current[extra.id];
     },450);
@@ -553,7 +575,7 @@ const EditarCestaDrawer=({
       if(nextSum!==totalPaes) return;
       const igual=D.pães.every(p=>(nextComp[p.id]||0)===(baselineNorm[p.id]||0));
       onSetCestaSemana(igual?null:nextComp);
-      updateComposition(igual?null:nextComp);
+      swallowOrderError(updateComposition(igual?null:nextComp));
     },300);
   };
 
@@ -858,7 +880,7 @@ const EditarCestaDrawer=({
                     name={e.nome}
                     variant="neutral"
                     disabled={isLocked||isRemoving}
-                    onIncrement={()=>addExtraToCart({id:e.id,nome:e.nome,precoNum:Number(e.preco_unit)})}
+                    onIncrement={()=>swallowOrderError(addExtraToCart({id:e.id,nome:e.nome,precoNum:Number(e.preco_unit)}))}
                     onDecrement={()=>handleExtraDecrement(e)}
                   />
                 </div>
@@ -974,8 +996,8 @@ const EditarCestaDrawer=({
 //  - Card da cesta com fundo brand-50, lista unificada (assinatura + extras),
 //    badge/microcopy condicional, botão "Editar carrinho" e "Confirmar pedido"
 //  - Novidade hero com sub-copy emocional e CTA "+ Adicionar à cesta — R$ X"
-//  - Estado "semana sem destaque" quando D.extras vazio
-const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinaturaBaseline,cestaAtual,onSetCestaSemana,pendingPayment,currentWeeklyOrder,currentExtras,addExtraToCart,removeExtraFromCart,updateComposition,confirmCurrentOrder})=>{
+//  - Estado "semana sem destaque" quando a semana não tem especial no mapa
+const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinaturaBaseline,cestaAtual,onSetCestaSemana,pendingPayment,currentWeeklyOrder,currentExtras,addExtraToCart,removeExtraFromCart,updateComposition,confirmCurrentOrder,deliveryDate})=>{
   const[drawerOpen,setDrawerOpen]=useState(false);
   const{toasts,push:pushToast}=useToastStack();
   // `showToast` mantém a assinatura legacy pros callers existentes (ActionBtn
@@ -997,7 +1019,8 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
   const isConfirmado=currentWeeklyOrder?.status==="confirmado";
 
   // ─── Formatação de datas ───────────────────────────────────────────
-  const deliveryDate=currentWeeklyOrder?.delivery_date||nextEditableThursdayISO();
+  // `deliveryDate` vem do App (fonte única) — a mesma data que resolve o menu
+  // da semana, aqui e no Cardápio.
   // Parse com noon UTC pra evitar deriva BRT (UTC-3 ainda cai no mesmo dia)
   const deliveryDateObj=new Date(`${deliveryDate}T12:00:00Z`);
   const deliveryLabelFull=formatarDataEntrega(deliveryDateObj);
@@ -1042,12 +1065,12 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
     removingTimersRef.current={};
   },[]);
   const handleExtraDecrement=(extra)=>{
-    if(extra.qty>1){removeExtraFromCart(extra.id);return;}
+    if(extra.qty>1){swallowOrderError(removeExtraFromCart(extra.id));return;}
     // qty===1 → anima e remove depois.
     if(removing.has(extra.id)) return;
     setRemoving(prev=>{const next=new Set(prev);next.add(extra.id);return next;});
     removingTimersRef.current[extra.id]=setTimeout(()=>{
-      removeExtraFromCart(extra.id);
+      swallowOrderError(removeExtraFromCart(extra.id));
       // Cleanup do Set no próprio callback do timer (evita setState-in-effect).
       setRemoving(prev=>{const next=new Set(prev);next.delete(extra.id);return next;});
       delete removingTimersRef.current[extra.id];
@@ -1056,10 +1079,19 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
 
   useEffect(()=>{if(!isFirstVisit||!onSeen)return;const t=setTimeout(onSeen,5000);return()=>clearTimeout(t);},[isFirstVisit,onSeen]);
 
+  // Especial da semana — mesma fonte do Cardápio (menuDaSemana + D.rotativos).
+  // Semana sem especial no mapa → sem Hero, cai no EmptyState.
+  const menu=menuDaSemana(deliveryDate);
+  const novidade=menu.especial?D.rotativos.find(p=>p.id===menu.especial)||null:null;
+
   // Handler do CTA do NovidadeCard: POST + toast com flexão.
   const handleNovidadeAdd=async(produto)=>{
     try{await addExtraToCart(produto);}
-    catch(err){console.error("[Home] addExtraToCart failed",err); return;}
+    catch(err){
+      console.error("[Home] addExtraToCart failed",err);
+      pushToast(orderErrorToast(err));
+      return;
+    }
     const verb=(produto.genero||"m")==="f"?"adicionada":"adicionado";
     pushToast(`${produto.nome} ${verb} à cesta.`);
   };
@@ -1122,7 +1154,7 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
                   name={e.nome}
                   variant="brand"
                   disabled={isRemoving}
-                  onIncrement={()=>addExtraToCart({id:e.id,nome:e.nome,precoNum:Number(e.preco_unit)})}
+                  onIncrement={()=>swallowOrderError(addExtraToCart({id:e.id,nome:e.nome,precoNum:Number(e.preco_unit)}))}
                   onDecrement={()=>handleExtraDecrement(e)}
                 />}
               </div>
@@ -1173,8 +1205,8 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
     {/* Novidade hero — clique no CTA adiciona direto (sem modal de detalhes).
         Empty state reusa <EmptyState> (mesmo card do Cardápio): sem CTA embutido
         pra evitar duplicação com o link "→ Ver tudo no Cardápio" abaixo. */}
-    {D.extras.length>0
-      ?<NovidadeCard extra={D.extras[0]} onAdd={()=>handleNovidadeAdd(D.extras[0])} cutoff={cutoff} lockedReason={pendingPayment?LOCK_REASON_PENDING:undefined}/>
+    {novidade
+      ?<NovidadeCard extra={novidade} onAdd={()=>handleNovidadeAdd(novidade)} cutoff={cutoff} lockedReason={pendingPayment?LOCK_REASON_PENDING:undefined}/>
       :<EmptyState title="Novidade da semana" body="Nenhuma novidade esta semana."/>
     }
 
@@ -1656,26 +1688,30 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
 // ═══ CARDÁPIO ═══
 // Refactor Frente C item 3 (wireframe v2):
 //  - Linha micro-tipográfica "Extras entram na sua próxima fatura."
-//  - NovidadeCard Hero (D.extras[0]) antes da lista
+//  - NovidadeCard Hero (o especial da semana) antes da lista
 //  - Lista de produtos na ordem curada do wireframe (Original → Integral →
 //    Focaccia → Multigrãos → Brioche → Ciabatta), buscando primeiro em D.pães,
 //    fallback em D.rotativos pra cobrir o catálogo rotativo
 //  - ProductCard expande inline (sem modal sobreposto)
 //  - Click no botão "Adicionar à cesta" dispara POST + toast (stack até 3)
-//  - Solução tática pré-Evandro: a lista é filtrada por MENU_SEMANA
-//    (src/config/menu.js) pra mostrar só os pães da semana corrente
+//  - Solução tática pré-Evandro: lista e especial saem de menuDaSemana(
+//    deliveryDate) (src/config/menu.js), que rotaciona por semana de entrega
 const CARDAPIO_PRODUCT_ORDER=["original","integral","focaccia","multigraos","brioche","ciabatta"];
-const Cardapio=({addExtraToCart,cutoff,pendingPayment})=>{
+const Cardapio=({addExtraToCart,cutoff,pendingPayment,deliveryDate})=>{
   const{toasts,push:pushToast}=useToastStack();
   const lockedReason=pendingPayment?LOCK_REASON_PENDING:undefined;
 
-  // Lista da semana na ordem curada do wireframe. Filtra por MENU_SEMANA
-  // (hardcode tático — só os pães da semana corrente). A Focaccia também é o
+  // Menu da semana da entrega corrente — mesma data que o pedido usa, então o
+  // cardápio vira sozinho no cutoff de terça. Semana fora do mapa cai no
+  // fallback (só os 2 fixos, sem especial) em vez de quebrar.
+  const menu=menuDaSemana(deliveryDate);
+
+  // Lista da semana na ordem curada do wireframe. O especial também é o
   // Novidade Hero, mas continua na lista de propósito: só o card menor expande
   // com a descrição completa do produto. Resolve cada id contra D.pães e
   // D.rotativos (Original/Integral em pães; demais em rotativos).
   const cardapioProducts=CARDAPIO_PRODUCT_ORDER
-    .filter(id=>MENU_SEMANA.includes(id))
+    .filter(id=>menu.itens.includes(id))
     .map(id=>D.pães.find(p=>p.id===id)||D.rotativos.find(p=>p.id===id))
     .filter(Boolean);
 
@@ -1683,13 +1719,16 @@ const Cardapio=({addExtraToCart,cutoff,pendingPayment})=>{
     try{await addExtraToCart(product);}
     catch(err){
       console.error("[Cardapio] addExtraToCart failed",err);
+      pushToast(orderErrorToast(err));
       return;
     }
     const verb=(product.genero||"m")==="f"?"adicionada":"adicionado";
     pushToast(`${product.nome} ${verb} à cesta.`);
   };
 
-  const novidade=D.extras[0];
+  // Especial da semana resolvido contra D.rotativos (onde mora a subCopy de
+  // cada um). Sem especial no mapa → sem Hero, e o EmptyState assume.
+  const novidade=menu.especial?D.rotativos.find(p=>p.id===menu.especial)||null:null;
 
   return<div style={{padding:"24px 16px 16px"}}>
     <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[500],margin:"0 0 4px"}}>Cardápio</h2>
@@ -1751,8 +1790,9 @@ const proximaFaturaDDMM=(now=new Date())=>{
   const prox=new Date(now.getFullYear(),now.getMonth()+1,1);
   return `01/${String(prox.getMonth()+1).padStart(2,"0")}`;
 };
-// Resolve nome/peso de um produto pelo id (catálogo D: pães + rotativos + extras).
-const produtoInfo=(id)=>D.pães.find(p=>p.id===id)||D.rotativos.find(p=>p.id===id)||D.extras.find(p=>p.id===id)||null;
+// Resolve nome/peso de um produto pelo id (catálogo D: pães + rotativos).
+// Cobre extras de pedidos passados: todo especial rotativo está em D.rotativos.
+const produtoInfo=(id)=>D.pães.find(p=>p.id===id)||D.rotativos.find(p=>p.id===id)||null;
 // CPF mascarado: "123.456.789-00" -> "•••.•••.789-00".
 const maskCpf=(c)=>c?c.replace(/^\d{3}\.\d{3}/,"•••.•••"):"";
 // Linhas "N× Nome" de uma composição {id:qty>0}, nome do catálogo (com "Pão").
@@ -2270,6 +2310,10 @@ export default function CoraPortal(){
   const currentWeeklyOrder = weeklyOrders[0] || null;
   const currentExtras = currentWeeklyOrder?.extras || [];
   const cutoff = isPastCutoff(currentWeeklyOrder?.delivery_date);
+  // Data da entrega corrente — fonte única pro label da Home e pro menu da
+  // semana (Home + Cardápio). Mesma expressão que postCurrentOrder usa pro
+  // payload; lá ela fica no clique, aqui no render.
+  const deliveryDate = currentWeeklyOrder?.delivery_date || nextEditableThursdayISO();
 
   // Hidrata cestaSemana a partir da composicao persistida do pedido da semana
   // (task 86e1na332). Sem isso, apos o F5 a composicao trocada da semana some e
@@ -2338,6 +2382,12 @@ export default function CoraPortal(){
     } catch (err) {
       console.error("[App] postWeeklyOrder failed", err);
       setWeeklyOrders(snapshot);
+      // Relanca depois do rollback: sem isso a promise resolvia normal e o
+      // catch de quem chamou nunca rodava -- a cesta esvaziava (rollback ok) e
+      // o toast dizia "adicionado" mesmo assim. Todo call-site trata: os que
+      // mostram toast (handleNovidadeAdd/handleAdd) diferenciam a mensagem;
+      // os que so disparam (steppers, timers, debounce) usam swallowOrderError.
+      throw err;
     }
   };
 
@@ -2451,9 +2501,9 @@ export default function CoraPortal(){
             proprio <Outlet/> com a pagina da rota. */}
         <Route element={<ProtectedRoute/>}>
           <Route element={<Layout pendingPayment={pendingPayment} inicioBadge={inicioBadge} onNav={handleNav}/>}>
-            <Route path="/" element={<Home onNav={handleNav} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaAtual={cestaAtual} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} pendingPayment={pendingPayment} currentWeeklyOrder={currentWeeklyOrder} currentExtras={currentExtras} addExtraToCart={addExtraToCart} removeExtraFromCart={removeExtraFromCart} updateComposition={updateComposition} confirmCurrentOrder={confirmCurrentOrder}/>}/>
+            <Route path="/" element={<Home onNav={handleNav} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaAtual={cestaAtual} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} pendingPayment={pendingPayment} currentWeeklyOrder={currentWeeklyOrder} currentExtras={currentExtras} addExtraToCart={addExtraToCart} removeExtraFromCart={removeExtraFromCart} updateComposition={updateComposition} confirmCurrentOrder={confirmCurrentOrder} deliveryDate={deliveryDate}/>}/>
             <Route path="/assinatura" element={<Assinatura hasPending={false} cutoff={cutoff} subscription={subscription} assinaturaQtds={assinaturaQtds} onAlterado={handleAlterarAssinatura}/>}/>
-            <Route path="/cardapio" element={<Cardapio addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment}/>}/>
+            <Route path="/cardapio" element={<Cardapio addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment} deliveryDate={deliveryDate}/>}/>
             <Route path="/perfil" element={<Perfil subscription={subscription} weeklyOrders={weeklyOrders} pendingPayment={pendingPayment}/>}/>
           </Route>
         </Route>
