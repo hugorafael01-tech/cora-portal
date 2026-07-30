@@ -608,7 +608,16 @@ export default function LoginSent() {
           {ctaLabel(resendState)}
         </button>
 
-        <p style={finePrintStyle}>O link e o código funcionam por uma hora. Vale checar o spam.</p>
+        {/* A segunda linha e a saida pra quem digitou o email errado: da o
+            proximo passo sem confirmar se o endereco tem conta (o helper de
+            auth trata email desconhecido como sucesso, justamente pra nao
+            revelar). Ate 30/07/2026 o login criava conta pro email errado e
+            a pessoa caia no /interesse sem pista nenhuma do que houve. */}
+        <p style={finePrintStyle}>
+          O link e o código funcionam por uma hora. Vale checar o spam.
+          <br />
+          Se nada chegar, confere se o email é o mesmo que você usou pra assinar.
+        </p>
 
         <div style={backRowStyle}>
           <button
