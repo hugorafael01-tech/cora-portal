@@ -166,6 +166,9 @@ export default function CapacityWaitlist({ reason = "splash" }) {
   const [submitError, setSubmitError] = useState(null);
   const [submitted, setSubmitted] = useState(false);
 
+  // Chegou aqui pelo 409 no meio do onboarding e ainda nao deixou o contato.
+  const redirectedMidFlow = !submitted && reason === "closed-during-flow";
+
   const validate = () => {
     const e = {};
     if (!isValidNome(nome)) e.nome = ERROR_COPY.nome;
@@ -230,9 +233,12 @@ export default function CapacityWaitlist({ reason = "splash" }) {
       </div>
 
       <div style={{ flex: 1, padding: 24 }}>
-        {!submitted && reason === "closed-during-flow" && <RedirectBanner />}
-
-        <Header />
+        {/* Banner e Header sao mutuamente exclusivos: os dois dizem que as vagas
+            fecharam e pedem o contato, e empilhados repetiam a mesma mensagem.
+            Quem chega pelo 409 no meio do fluxo le so o banner, que ja explica
+            o que aconteceu. Depois do submit o banner sai e o Header volta,
+            acima da ConfirmationView. */}
+        {redirectedMidFlow ? <RedirectBanner /> : <Header />}
 
         {submitted ? (
           <ConfirmationView />
