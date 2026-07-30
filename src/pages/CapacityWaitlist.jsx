@@ -20,9 +20,9 @@ const ERROR_COPY = {
 const Header = () => (
   <div style={{ marginBottom: 24 }}>
     <div style={{ fontFamily: fb, fontSize: 16, color: W[800], lineHeight: 1.5 }}>
-      Estamos ampliando a produção.
+      Estamos abrindo aos poucos, e as vagas dessa semana já foram preenchidas.
       <br />
-      Vamos te avisar por email assim que abrir uma vaga.
+      Deixa seu contato que avisamos assim que abrir a próxima.
     </div>
   </div>
 );
@@ -166,6 +166,9 @@ export default function CapacityWaitlist({ reason = "splash" }) {
   const [submitError, setSubmitError] = useState(null);
   const [submitted, setSubmitted] = useState(false);
 
+  // Chegou aqui pelo 409 no meio do onboarding e ainda nao deixou o contato.
+  const redirectedMidFlow = !submitted && reason === "closed-during-flow";
+
   const validate = () => {
     const e = {};
     if (!isValidNome(nome)) e.nome = ERROR_COPY.nome;
@@ -230,9 +233,12 @@ export default function CapacityWaitlist({ reason = "splash" }) {
       </div>
 
       <div style={{ flex: 1, padding: 24 }}>
-        {!submitted && reason === "closed-during-flow" && <RedirectBanner />}
-
-        <Header />
+        {/* Banner e Header sao mutuamente exclusivos: os dois dizem que as vagas
+            fecharam e pedem o contato, e empilhados repetiam a mesma mensagem.
+            Quem chega pelo 409 no meio do fluxo le so o banner, que ja explica
+            o que aconteceu. Depois do submit o banner sai e o Header volta,
+            acima da ConfirmationView. */}
+        {redirectedMidFlow ? <RedirectBanner /> : <Header />}
 
         {submitted ? (
           <ConfirmationView />
@@ -334,8 +340,28 @@ export default function CapacityWaitlist({ reason = "splash" }) {
                 if (!submitting) e.currentTarget.style.background = B[500];
               }}
             >
-              {submitting ? "Enviando…" : "Pronto"}
+              {submitting ? "Enviando…" : "Quero entrar na fila"}
             </button>
+
+            {/* Mesma rota alternativa do splash do onboarding: quem chegou pelo QR
+                e quer entender a Cora antes de deixar contato. */}
+            <a
+              href="https://acora.com.br"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "block",
+                textAlign: "center",
+                marginTop: 16,
+                fontFamily: fb,
+                fontSize: 14,
+                color: B[500],
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Conhecer a Cora
+            </a>
           </>
         )}
       </div>
