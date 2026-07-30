@@ -10,30 +10,54 @@ import { supabase } from "../lib/supabase";
 // com o try/catch idiomatico ja usado em Onboarding.jsx. Nao vazam o
 // shape { data, error } do SDK Supabase pros callers.
 
+/* Email sem conta cadastrada, com shouldCreateUser: false.
+   Verificado contra o Supabase do projeto (30/07/2026): HTTP 422,
+   header x-sb-error-code: otp_disabled, body {"error_code":
+   "otp_disabled", "msg":"Signups not allowed for otp"}. Checa o code e,
+   como rede de seguranca, a mensagem -- `code` so existe no auth-js
+   >= 2.44 (projeto em 2.105.4). Nao casa por status 422 sozinho: esse
+   status tambem cobre email_provider_disabled, que eh falha real de
+   configuracao e precisa aparecer como erro de envio. */
+const UNKNOWN_EMAIL_CODE = "otp_disabled";
+const UNKNOWN_EMAIL_MESSAGE_RE = /signups not allowed/i;
+
+function isUnknownEmailError(error) {
+  if (!error) return false;
+  if (error.code === UNKNOWN_EMAIL_CODE) return true;
+  return typeof error.message === "string" && UNKNOWN_EMAIL_MESSAGE_RE.test(error.message);
+}
+
 /**
  * Dispara magic link de acesso pro email informado.
  *
  * Em sucesso, resolve void (o `data` retornado pelo SDK em
  * signInWithOtp e {user: null, session: null} ate o usuario clicar no
  * link e o /auth/callback rodar verifyOtp). Em erro real do SDK
- * (rede, dashboard offline, etc), throw o objeto error original.
+ * (rede, dashboard offline, rate limit), throw o objeto error original.
  *
- * Por design do Supabase, email desconhecido NAO eh erro: o SDK
- * resolve com sucesso silencioso (anti-enumeracao). A UI da /login
- * sempre redireciona pra /login-sent sem revelar se o email existe.
+ * Email desconhecido NAO eh erro pro caller: o SDK devolve otp_disabled
+ * e este helper engole esse caso, resolvendo void. A UI da /login sempre
+ * redireciona pra /login-sent sem revelar se o email existe. Mesmo
+ * contrato de antes -- o que muda eh que a anti-enumeracao passa a ser
+ * garantida aqui, e nao mais pelo sucesso silencioso do Supabase.
  */
 async function signInWithMagicLink(email) {
-  // shouldCreateUser fica em default (true) ate Frente C implementar signUp
-  // explicito no T2 do PreCadastro. Anti-enumeracao ja eh fornecida pelo
-  // Supabase (silent-success pra email desconhecido). Endurecer pra false
-  // quando signUp explicito existir.
+  // shouldCreateUser: false -- login NUNCA cria conta. Quem cadastra eh o
+  // POST /api/subscriptions (admin.createUser) no fim do onboarding.
+  // Com o default (true), email digitado errado na /login virava usuario
+  // novo sem assinatura: a pessoa recebia o link, entrava e caia no
+  // /interesse sem ter errado nada visivel.
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: `${window.location.origin}/auth/callback`,
+      shouldCreateUser: false,
     },
   });
-  if (error) throw error;
+  // Email sem conta vira sucesso: a tela seguinte precisa ser identica
+  // pros dois casos, senao a enumeracao de assinantes fica trivial.
+  // Falha real de envio (rede, 429) continua subindo pro caller.
+  if (error && !isUnknownEmailError(error)) throw error;
 }
 
 /**
