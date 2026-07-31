@@ -4,6 +4,11 @@
  * Reusa logica ja existente em src/utils/validators.js (CPF/email/whatsapp/CEP).
  * Adiciona:
  *   - canonicalizeDigits(str): so digitos
+ *
+ * canonicalizeDigits NAO normaliza codigo do pais -- e generica (CPF, CEP).
+ * Pra whatsapp use normalizeWhatsAppDigits, reexportada aqui: e a mesma
+ * funcao que a mascara do front usa, entao os dois lados gravam a mesma
+ * grafia (DDD + numero, sem o 55).
  *   - isValidUUID(id): regex de UUID v4
  *
  * Tanto endpoints (api/) quanto front podem importar daqui sem risco —
@@ -14,6 +19,7 @@ export {
   isValidEmail,
   isValidWhatsApp,
   isValidCEP,
+  normalizeWhatsAppDigits,
 } from "../utils/validators.js";
 
 export const canonicalizeDigits = (str) => (str ?? "").toString().replace(/\D/g, "");
