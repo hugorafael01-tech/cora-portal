@@ -21,6 +21,7 @@ import { resend } from "../../src/lib/resend.js";
 import { readCapacityGate } from "../_lib/capacity.js";
 import {
   canonicalizeDigits,
+  normalizeWhatsAppDigits,
   isValidCPF,
   isValidEmail,
   isValidWhatsApp,
@@ -137,7 +138,11 @@ export default async function handler(req, res) {
 
   // ─── Canonicaliza ───
   const cpfDigits = canonicalizeDigits(cpf);
-  const whatsappDigits = canonicalizeDigits(whatsapp);
+  // normalizeWhatsAppDigits, nao canonicalizeDigits: whatsappDigits e gravado
+  // em subscriptions E profiles, entao tem que sair daqui ja sem o 55. Se o
+  // payload chegar com codigo do pais (cliente antigo em cache, chamada
+  // direta), duas grafias do mesmo telefone entrariam no banco.
+  const whatsappDigits = normalizeWhatsAppDigits(whatsapp);
   const cepDigits = canonicalizeDigits(endereco.cep);
   const emailNorm = String(email).trim().toLowerCase();
 

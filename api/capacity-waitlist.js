@@ -15,6 +15,7 @@ import { supabaseAdmin } from "../src/lib/supabase-admin.js";
 import { resend } from "../src/lib/resend.js";
 import {
   canonicalizeDigits,
+  normalizeWhatsAppDigits,
   isValidEmail,
   isValidWhatsApp,
   isValidCEP,
@@ -57,7 +58,8 @@ export default async function handler(req, res) {
 
   if (!isValidEmail(email)) fields.email = "invalido";
 
-  const whatsappDigits = canonicalizeDigits(whatsapp);
+  // Grafia unica no banco (DDD + numero, sem o 55) -- ver api/subscriptions.
+  const whatsappDigits = normalizeWhatsAppDigits(whatsapp);
   if (!isValidWhatsApp(whatsappDigits)) fields.whatsapp = "invalido";
 
   const cepDigits = canonicalizeDigits(cep);

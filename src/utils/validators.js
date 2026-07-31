@@ -7,16 +7,39 @@
  */
 
 // ─── WhatsApp ────────────────────────────────────────────────
-// (XX) 9XXXX-XXXX  — 10 ou 11 dígitos
+// (XX) 9XXXX-XXXX  — 10 ou 11 dígitos, sem código do país.
+//
+// Forma canônica ÚNICA do telefone no projeto: DDD + número, sem o 55. É o
+// que os registros do banco já usam, e o que máscara, validação e gravação
+// server-side derivam daqui (nenhum dos três normaliza por conta própria).
+//
+// O teto de 13 dígitos é 55 + DDD + 9 dígitos, o maior número brasileiro
+// possível. Antes o corte era em 11 e caía NO MEIO de quem digitava com +55:
+// os dois últimos dígitos nunca entravam no campo, a máscara ainda produzia
+// algo com cara de telefone válido e isValidWhatsApp aprovava. Ninguém via
+// erro em ponto nenhum do fluxo.
+//
+// O 55 só sai com 12 ou 13 dígitos. Com 10 ou 11 é intocável: 55 também é
+// DDD válido (Rio Grande do Sul), então 5521995135 é DDD 55 + 8 dígitos,
+// legítimo, e não pode virar 21995135.
+export const normalizeWhatsAppDigits = (value) => {
+  const d = (value ?? '').toString().replace(/\D/g, '').slice(0, 13);
+  return (d.length === 12 || d.length === 13) && d.startsWith('55') ? d.slice(2) : d;
+};
+
 export const formatWhatsApp = (value) => {
-  const d = (value ?? '').toString().replace(/\D/g, '').slice(0, 11);
+  // slice(0, 11) depois de normalizar: mantém a saída idêntica à de antes
+  // pra qualquer entrada sem o 55 na frente.
+  const d = normalizeWhatsAppDigits(value).slice(0, 11);
   if (d.length <= 2) return d;
   if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 };
 
+// Valida o que a máscara produz, não o que foi digitado: 5521995135488 e
+// 21995135488 são o mesmo telefone e os dois passam.
 export const isValidWhatsApp = (value) => {
-  const d = (value ?? '').toString().replace(/\D/g, '');
+  const d = normalizeWhatsAppDigits(value);
   return d.length === 10 || d.length === 11;
 };
 
