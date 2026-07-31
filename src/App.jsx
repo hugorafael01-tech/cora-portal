@@ -337,8 +337,14 @@ const LOCK_REASON_PENDING="Disponível após confirmação do primeiro pagamento
 // pode nao existir semana que vem. `err.code` vem do campo `error` do body,
 // preservado por throwApiError em src/utils/api.js.
 const ORDER_ERROR_CUTOFF="A cesta dessa semana já fechou. Você já pode montar a da semana que vem.";
+// `paused` e o unico status nao-active que uma pessoa real alcanca tendo acesso
+// ao portal: pending_payment ja bloqueia o botao (LOCK_REASON_PENDING) e
+// cancelled nao existe. Por isso a mensagem fala de pausa, nao de status.
+const ORDER_ERROR_PAUSED="Sua assinatura está pausada. Me chama no WhatsApp que eu reativo.";
 const ORDER_ERROR_GENERIC="Não consegui adicionar agora. Tenta de novo em alguns segundos.";
-const orderErrorToast=(err)=>err?.code==="cutoff_passed"?ORDER_ERROR_CUTOFF:ORDER_ERROR_GENERIC;
+const orderErrorToast=(err)=>err?.code==="cutoff_passed"?ORDER_ERROR_CUTOFF
+  :err?.code==="subscription_not_active"?ORDER_ERROR_PAUSED
+  :ORDER_ERROR_GENERIC;
 
 // Call-sites que disparam e nao esperam resposta: steppers +/-, timers de
 // animacao de remocao e o debounce da composicao. Nenhum deles tinha (nem
@@ -2353,7 +2359,25 @@ export default function CoraPortal(){
   // POST upsert canônico. Optimistic update local antes da resposta;
   // em erro, reverte snapshot e loga (toast/feedback visual entra na Fase 2).
   const postCurrentOrder = async (nextExtras, nextComposition) => {
-    if (!subscription?.id || subscription.status !== "active") return;
+    // Este guard LANCA, nao retorna. Como `return`, ele saia antes do try:
+    // nenhum POST ia pra rede, o await de quem chamou resolvia `undefined` e o
+    // toast dizia "adicionada a cesta" com a cesta vazia. O relance do catch
+    // (PR #65) nao alcancava este caminho porque ele nunca chega no try.
+    if (!subscription?.id) {
+      // Estado inconsistente: sessao valida sem assinatura carregada. Sem code
+      // -> cai na mensagem generica.
+      const err = new Error("Falha ao salvar a cesta: no_subscription");
+      console.error("[App] postCurrentOrder abortado", err);
+      throw err;
+    }
+    if (subscription.status !== "active") {
+      // Mesmo code que api/weekly-orders/index.js devolve (409) nesse caso, pra
+      // nao criar dois vocabularios para a mesma condicao.
+      const err = new Error("Falha ao salvar a cesta: subscription_not_active");
+      err.code = "subscription_not_active";
+      console.error("[App] postCurrentOrder abortado", err);
+      throw err;
+    }
     const delivery_date = currentWeeklyOrder?.delivery_date || nextEditableThursdayISO();
     // Op de composicao = nextComposition foi passado (updateComposition). Op de
     // extra = nao passado (add/removeExtraFromCart). Task 86e1neypw: o POST de
