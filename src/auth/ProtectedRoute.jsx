@@ -12,14 +12,19 @@ import { B, W } from "../tokens";
    sessao real do Supabase (useAuth) E a assinatura persistida (DB), preservando
    o fluxo dev (?dev=1 -> /onboarding).
 
+   Pos-Alpha (ClickUp 86e1m4um5): logado-sem-assinatura ia pra /interesse, o
+   funil pre-Alpha. Com o Alpha fechado esse destino virou /onboarding: assinar
+   direto, sem passar por lista de interesse. A rota /interesse continua no ar,
+   sem link apontando pra ela.
+
    Ordem dos estados (importa):
      1. auth hidratando        -> loader (sem decidir)
-     2. assinatura carregando  -> loader (NAO redireciona; senao pisca /interesse
+     2. assinatura carregando  -> loader (NAO redireciona; senao pisca /onboarding
                                   ou tranca assinante real durante o fetch)
-     3. erro de leitura do DB  -> retry (NUNCA /interesse; blip de rede nao pode
-                                  bouncar assinante pra waitlist)
+     3. erro de leitura do DB  -> retry (NUNCA /onboarding; blip de rede nao pode
+                                  bouncar assinante pra um cadastro novo)
      4. tem assinatura         -> <Outlet/>
-     5. sem assinatura         -> dev? /onboarding : sessao? /interesse : /login
+     5. sem assinatura         -> dev ou sessao? /onboarding : /login
 
    Layout-route: retorna <Outlet/>, e o Layout (shell autenticado) fica
    aninhado abaixo deste gate em App.jsx.
@@ -83,6 +88,8 @@ export default function ProtectedRoute() {
   // 5. Carregou e NAO tem assinatura.
   // Modo dev: onboarding fake (fluxo de teste preservado, ponto 16 do briefing).
   if (dev) return <Navigate to="/onboarding" replace />;
-  // Logado sem assinatura: funil pre-Alpha (mantem destino; nao /onboarding).
-  return <Navigate to="/interesse" replace />;
+  // Logado sem assinatura: manda assinar. /onboarding e rota publica com gate de
+  // capacidade proprio: com o Alpha lotado a pessoa cai na tela de capacidade em
+  // vez do formulario, que e o comportamento certo.
+  return <Navigate to="/onboarding" replace />;
 }
