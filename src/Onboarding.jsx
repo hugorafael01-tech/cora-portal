@@ -100,15 +100,17 @@ const Splash=({onStart, gateClosed=false, onGoToWaitlist})=>(
           Vamos
         </button>
 
-        {/* Rota alternativa pra quem chegou pelo QR e ainda nao sabe o que e a Cora.
+        {/* Rota alternativa pro WhatsApp: o QR agora leva ao site, entao quem chega
+            aqui ja viu os argumentos e mandar de volta pra la nao resolve. Quem ainda
+            hesita quer falar com alguem antes de decidir.
             Menor que o botao de proposito: nao compete com a acao principal. */}
         <a
-          href="https://acora.com.br"
+          href={buildCoraContactLink("Oi! Tô na tela de assinatura da Cora e queria conversar antes de fechar.")}
           target="_blank"
           rel="noopener noreferrer"
           style={{marginTop:20,fontFamily:fb,fontSize:14,color:B[500],fontWeight:600,textDecoration:"none"}}
         >
-          Conhecer a Cora
+          Quero conversar antes
         </a>
       </>
     )}
