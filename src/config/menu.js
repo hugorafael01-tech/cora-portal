@@ -21,9 +21,15 @@
  */
 const MENU_POR_SEMANA = {
   "2026-08-06": { itens: ["original", "integral", "focaccia"], especial: "focaccia" },
-  "2026-08-13": { itens: ["original", "integral", "multigraos"], especial: "multigraos" },
-  "2026-08-20": { itens: ["original", "integral", "brioche"], especial: "brioche" },
-  "2026-08-27": { itens: ["original", "integral", "ciabatta"], especial: "ciabatta" },
+  // Focaccia repete de propósito (Hugo, 03/08/2026): na entrega de 06/08 cada
+  // assinante recebe uma porção menor de focaccia com um cartão convidando a
+  // entrar no portal e escolher o extra da semana seguinte. Se o portal
+  // mostrasse outro pão aqui, a amostra viraria propaganda de indisponível.
+  // Os demais deslocaram uma semana por causa disso.
+  "2026-08-13": { itens: ["original", "integral", "focaccia"], especial: "focaccia" },
+  "2026-08-20": { itens: ["original", "integral", "multigraos"], especial: "multigraos" },
+  "2026-08-27": { itens: ["original", "integral", "brioche"], especial: "brioche" },
+  "2026-09-03": { itens: ["original", "integral", "ciabatta"], especial: "ciabatta" },
 };
 
 /**
