@@ -33,7 +33,7 @@ const MENU_POR_SEMANA = {
 };
 
 /**
- * Semana sem entrada no mapa (setembro em diante, ou data inesperada): só os
+ * Semana sem entrada no mapa (10/09/2026 em diante, ou data inesperada): só os
  * dois pães fixos e nenhum especial. Nunca quebra a tela e nunca oferece
  * produto que não vai ser assado — errar pra menos é o único erro aceitável
  * aqui, porque o oposto é vender o que não sai do forno.
