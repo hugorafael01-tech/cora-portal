@@ -23,11 +23,9 @@ import {
 
 const buildEmailText = (nome) => `Oi, ${nome}.
 
-Recebemos seu contato. Assim que uma vaga abrir te avisamos, ok?
+Recebemos seu contato. Te aviso por e-mail assim que abrir vaga.
 
 Enquanto isso, acompanha a gente no Instagram @cora.padaria.
-
-Valeu pela paciência.
 
 Hugo
 `;
@@ -36,9 +34,8 @@ const buildEmailHtml = (nome) => `<!doctype html>
 <html lang="pt-BR">
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a1a; line-height: 1.6; max-width: 520px; margin: 0 auto; padding: 24px;">
   <p>Oi, ${nome}.</p>
-  <p>Recebemos seu contato. Assim que uma vaga abrir te avisamos, ok?</p>
+  <p>Recebemos seu contato. Te aviso por e-mail assim que abrir vaga.</p>
   <p>Enquanto isso, acompanha a gente no Instagram <a href="https://instagram.com/cora.padaria" style="color: #1a1a1a;">@cora.padaria</a>.</p>
-  <p>Valeu pela paciência.</p>
   <p style="margin-top: 32px;">Hugo</p>
 </body>
 </html>`;
