@@ -7,4 +7,4 @@
  *
  * No backend, sempre passar `deliveryDate` explícito (assinatura primária).
  */
-export { isPastCutoff, isThursday } from "../../src/utils/cutoff.js";
+export { isPastCutoff, isThursday, nextEditableThursdayISO } from "../../src/utils/cutoff.js";
