@@ -1,7 +1,12 @@
 /**
  * Cron de aviso de carrinho abandonado.
  *
- * Trigger: Vercel Cron a cada 15min (ver `vercel.json`).
+ * Trigger: Vercel Cron uma vez por dia, às 12h UTC (9h da manhã em Brasília),
+ * ver `vercel.json`. O plano Hobby só permite cron diário, e expressão mais
+ * frequente falha no deploy. O horário também não é exato, um agendamento às
+ * 12h UTC dispara entre 12:00 e 12:59. Ou seja, o critério de "parado há ≥2h"
+ * abaixo não implica varredura frequente, e sim que o aviso sai na execução da
+ * manhã seguinte.
  * Auth: header `Authorization: Bearer ${CRON_SECRET}` (Vercel injeta automaticamente).
  *
  * Critério de elegibilidade (pedido em rascunho, com extras, parado há ≥2h,
@@ -32,9 +37,9 @@ Confirme até terça, 12h pra entrar na entrega de quinta.
 
 ${PORTAL_URL}
 
-Se não confirmar, a entrega segue a assinatura padrão.
+Se não confirmar, tudo bem, a entrega segue a sua assinatura de sempre.
 
-Hugo
+Hugo, padeiro apaixonado
 `,
 });
 
