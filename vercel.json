@@ -3,6 +3,7 @@
     { "source": "/((?!api/|@|src/|node_modules/|.*\\.).*)", "destination": "/index.html" }
   ],
   "crons": [
-    { "path": "/api/cron/check-abandoned-carts", "schedule": "0 12 * * *" }
+    { "path": "/api/cron/check-abandoned-carts", "schedule": "0 12 * * *" },
+    { "path": "/api/cron/weekly-special", "schedule": "0 21 * * 0" }
   ]
 }
