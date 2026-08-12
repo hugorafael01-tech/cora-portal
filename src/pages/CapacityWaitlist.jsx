@@ -21,6 +21,7 @@ const Header = () => (
   <div style={{ marginBottom: 24 }}>
     <div style={{ fontFamily: fb, fontSize: 16, color: W[800], lineHeight: 1.5 }}>
       Estamos abrindo aos poucos, e as vagas dessa semana já foram preenchidas.
+      Entregamos na Zona Sul do Rio e em Niterói.
       <br />
       Deixa seu contato que avisamos assim que abrir a próxima.
     </div>
@@ -130,16 +131,9 @@ const ConfirmationView = () => (
     >
       Recebemos seu contato.
     </div>
-    <div
-      style={{
-        fontFamily: fb,
-        fontSize: 15,
-        color: W[700],
-        lineHeight: 1.6,
-        marginBottom: 14,
-      }}
-    >
-      Enquanto isso, acompanha a gente no Instagram{" "}
+    <div style={{ fontFamily: fb, fontSize: 15, color: W[700], lineHeight: 1.6 }}>
+      Te aviso por e-mail assim que abrir vaga. Enquanto isso, acompanha a gente
+      no Instagram{" "}
       <a
         href="https://instagram.com/cora.padaria"
         target="_blank"
@@ -149,9 +143,6 @@ const ConfirmationView = () => (
         @cora.padaria
       </a>
       .
-    </div>
-    <div style={{ fontFamily: fb, fontSize: 15, color: W[700], lineHeight: 1.6 }}>
-      Valeu pela paciência.
     </div>
   </div>
 );
@@ -167,7 +158,9 @@ export default function CapacityWaitlist({ reason = "splash" }) {
   const [submitted, setSubmitted] = useState(false);
 
   // Chegou aqui pelo 409 no meio do onboarding e ainda nao deixou o contato.
-  const redirectedMidFlow = !submitted && reason === "closed-during-flow";
+  const showRedirectBanner = !submitted && reason === "closed-during-flow";
+  // Quem chegou pelo splash le o Header; quem veio do 409 le so o banner.
+  const showHeader = !submitted && !showRedirectBanner;
 
   const validate = () => {
     const e = {};
@@ -233,12 +226,13 @@ export default function CapacityWaitlist({ reason = "splash" }) {
       </div>
 
       <div style={{ flex: 1, padding: 24 }}>
-        {/* Banner e Header sao mutuamente exclusivos: os dois dizem que as vagas
-            fecharam e pedem o contato, e empilhados repetiam a mesma mensagem.
-            Quem chega pelo 409 no meio do fluxo le so o banner, que ja explica
-            o que aconteceu. Depois do submit o banner sai e o Header volta,
-            acima da ConfirmationView. */}
-        {redirectedMidFlow ? <RedirectBanner /> : <Header />}
+        {/* Banner, Header e confirmacao sao mutuamente exclusivos: os tres falam
+            do contato e empilhados se contradizem. Quem chega pelo 409 no meio
+            do fluxo le so o banner, que ja explica o que aconteceu. Depois do
+            submit os dois saem: pedir o contato que a pessoa acabou de deixar
+            fazia ela reler o pedido logo acima da confirmacao. */}
+        {showRedirectBanner && <RedirectBanner />}
+        {showHeader && <Header />}
 
         {submitted ? (
           <ConfirmationView />
