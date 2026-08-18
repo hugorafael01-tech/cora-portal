@@ -3,7 +3,7 @@
   "short_name": "Cora",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FAFAF8",
+  "background_color": "#2E55CD",
   "theme_color": "#2E55CD",
   "icons": [
     { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
