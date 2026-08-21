@@ -28,7 +28,11 @@ const MENU_POR_SEMANA = {
   // Os demais deslocaram uma semana por causa disso.
   "2026-08-13": { itens: ["original", "integral", "focaccia"], especial: "focaccia" },
   "2026-08-20": { itens: ["original", "integral", "multigraos"], especial: "multigraos" },
-  "2026-08-27": { itens: ["original", "integral", "brioche"], especial: "brioche" },
+  // Tres rotativos na mesma semana (Hugo, 21/08/2026): o backoffice cadastrou
+  // Brioche, Focaccia e Multigraos na semana 35 e a campanha de conversao
+  // promete os tres. So o Brioche e `especial` — e a estreia, e o hero aceita
+  // um item so. Focaccia e Multigraos entram como cards normais do Cardapio.
+  "2026-08-27": { itens: ["original", "integral", "multigraos", "focaccia", "brioche"], especial: "brioche" },
   "2026-09-03": { itens: ["original", "integral", "ciabatta"], especial: "ciabatta" },
 };
 
