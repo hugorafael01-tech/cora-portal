@@ -11,6 +11,12 @@
  * Validações: cutoff (terça 15h UTC), delivery em quinta, subscription
  * active, extras bem-formados, composição com soma == total_paes.
  *
+ * Preço de extra NÃO vem do cliente: o `preco_unit` do corpo é ignorado e o
+ * valor sai de `cardapios` pela semana da entrega (api/_lib/extras-precos.js).
+ * Extra fora do cardápio da semana → 400 `extra_not_in_menu`; semana sem
+ * cardápio cadastrado → 400 `week_menu_not_found` (pedido só com composição
+ * continua passando).
+ *
  * Regras de `first_extra_added_at` (timer do cron de abandono):
  *   - extras vazio        → first_extra_added_at = NULL, abandonment_warning_sent_at = NULL
  *   - primeira adição     → first_extra_added_at = NOW(),  abandonment_warning_sent_at = NULL
@@ -19,6 +25,7 @@
 import { supabaseAdmin } from "../../src/lib/supabase-admin.js";
 import { isValidUUID } from "../../src/lib/validators.js";
 import { isPastCutoff, isThursday } from "../_lib/cutoff.js";
+import { fetchPrecosDaSemana, resolveExtrasPrecos, computeTotalExtras } from "../_lib/extras-precos.js";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -27,20 +34,17 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const PUBLIC_FIELDS =
   "id, subscription_id, delivery_date, composition, extras, total_extras, status, confirmed_at, created_at, updated_at";
 
+// Valida so a FORMA do extra. O `preco_unit` pode vir no corpo (o front ainda
+// manda) mas nao e validado nem usado: quem decide preco e o cardapio da
+// semana, resolvido abaixo. Ver api/_lib/extras-precos.js.
 function isValidExtras(extras) {
   if (!Array.isArray(extras)) return false;
   return extras.every((e) =>
     e && typeof e === "object" && !Array.isArray(e) &&
     typeof e.id === "string" && e.id.length > 0 &&
     typeof e.nome === "string" && e.nome.length > 0 &&
-    Number.isInteger(e.qty) && e.qty > 0 &&
-    typeof e.preco_unit === "number" &&
-    Number.isFinite(e.preco_unit) && e.preco_unit >= 0
+    Number.isInteger(e.qty) && e.qty > 0
   );
-}
-
-function computeTotalExtras(extras) {
-  return extras.reduce((sum, e) => sum + e.qty * e.preco_unit, 0);
 }
 
 // Retorna soma das quantidades, ou NaN se o objeto for inválido.
@@ -114,7 +118,35 @@ async function handlePost(req, res) {
     compositionPayload = null;
   }
 
-  const totalExtras = computeTotalExtras(extrasArr);
+  // ─── Preco: vem do cardapio da semana, o do corpo e descartado ───
+  // Roda depois do cutoff e da subscription (nao adianta consultar cardapio de
+  // pedido que ja vai ser rejeitado) e so quando ha extras — pedido so de
+  // composicao nao paga round-trip nenhum.
+  let extrasPayload = extrasArr;
+  if (extrasArr.length > 0) {
+    let precos;
+    try {
+      precos = await fetchPrecosDaSemana(supabaseAdmin, delivery_date);
+    } catch (err) {
+      console.error("[weekly-orders POST] cardapio read failed", err);
+      return res.status(500).json({ error: "internal_error" });
+    }
+    // Semana sem cardapio cadastrado: nao da pra saber o preco de nada, entao
+    // nenhum extra entra. Codigo proprio pra distinguir de "produto errado"
+    // quando alguem for depurar a reclamacao de um assinante.
+    if (!precos) {
+      console.warn("[weekly-orders POST] semana sem cardapio", { delivery_date });
+      return res.status(400).json({ error: "week_menu_not_found" });
+    }
+    const { resolved, missing } = resolveExtrasPrecos(extrasArr, precos);
+    if (missing.length > 0) {
+      console.warn("[weekly-orders POST] extra fora do cardapio da semana", { delivery_date, missing });
+      return res.status(400).json({ error: "extra_not_in_menu" });
+    }
+    extrasPayload = resolved;
+  }
+
+  const totalExtras = computeTotalExtras(extrasPayload);
 
   // ─── SELECT pré-upsert pra aplicar regras de first_extra_added_at ───
   // (2 round-trips no MVP; otimização desnecessária pro volume previsto)
@@ -145,7 +177,7 @@ async function handlePost(req, res) {
   const upsertPayload = {
     subscription_id,
     delivery_date,
-    extras: extrasArr,
+    extras: extrasPayload,
     total_extras: totalExtras,
     status: "rascunho",
     confirmed_at: null,

@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test:cutoff": "node scripts/test-cutoff.mjs",
     "test:first-delivery": "node scripts/test-first-delivery.mjs",
-    "test:whatsapp": "node scripts/test-whatsapp.mjs"
+    "test:whatsapp": "node scripts/test-whatsapp.mjs",
+    "test:extras": "node scripts/test-extras-precos.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "~2.105.3",
