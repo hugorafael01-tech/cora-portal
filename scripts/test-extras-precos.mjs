@@ -84,6 +84,22 @@ const CASES = [
     expected: { resolved: [], missing: [], total: 0 },
   },
   {
+    // `fetchPrecosDaSemana` filtra `produtos.ativo`, igual a view
+    // `cardapio_publico` (migration 0035). Produto desativado nao chega ao
+    // mapa, entao o extra dele cai em `missing` e o pedido inteiro e rejeitado
+    // com `extra_not_in_menu` — mesmo caminho de "produto de outra semana".
+    // Fail-closed de proposito: o oposto e vender pao que ninguem vai assar.
+    name: "produto desativado (fora do mapa) -> missing, pedido rejeitado",
+    extras: [
+      { id: "original", nome: "Pão Original", qty: 1, preco_unit: 30 },
+      { id: "brioche", nome: "Brioche", qty: 1, preco_unit: 36 },
+    ],
+    // Semana 35 sem o brioche: e o que sobra do mapa quando o produto e
+    // desativado depois da semana ja estar montada.
+    precos: new Map([...SEMANA_35].filter(([slug]) => slug !== "brioche")),
+    expected: { resolvedIds: ["original"], missing: ["brioche"] },
+  },
+  {
     name: "chave estranha no extra nao entra no jsonb gravado",
     extras: [{ id: "brioche", nome: "Brioche", qty: 1, preco_unit: 36, admin: true }],
     precos: SEMANA_35,

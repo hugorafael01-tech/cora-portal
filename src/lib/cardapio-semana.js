@@ -7,7 +7,7 @@
  * o preco do extra contra `cardapios`, entao item que o mapa anunciava e o
  * banco nao tinha aparecia na tela e devolvia 400 no "Adicionar a cesta".
  *
- * A fonte agora e a view `cardapio_publico` (backoffice, migration 0034), que
+ * A fonte agora e a view `cardapio_publico` (backoffice, migration 0035), que
  * projeta `cardapios` + `semanas` + `produtos` por `data_entrega` e e legivel
  * por `anon` e `authenticated`. Quem resolve a data continua sendo
  * `nextEditableThursdayISO` (src/utils/cutoff.js) via `deliveryDate` do App — a
@@ -77,7 +77,7 @@ export function montaCardapio(linhas, error) {
 
     itens.push(slug);
     precos.set(slug, preco);
-    // O indice unico parcial da 0034 garante um destaque por semana, entao nao
+    // O indice unico parcial da 0035 garante um destaque por semana, entao nao
     // ha desempate a fazer aqui.
     if (linha.destaque) especial = slug;
   }

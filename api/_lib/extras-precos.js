@@ -14,17 +14,20 @@
  * Integral tambem sao vendidos avulsos na tela Cardapio, e filtrar por rotativo
  * quebraria o pao extra.
  *
- * Quando a task 86e2fqk33 (catalogo por semana) entrar, o front passa a ler
- * daqui tambem — mas a validacao do servidor continua sendo a que vale.
+ * Desde a task 86e2fqk33 o front le o MESMO cardapio, pela view
+ * `cardapio_publico` (backoffice, migration 0035) — mas a validacao do servidor
+ * continua sendo a que vale. Os dois filtram por `produtos.ativo`, e e de
+ * proposito que filtrem igual: ver a nota do filtro em `fetchPrecosDaSemana`.
  */
 
 /**
  * Precos do cardapio da semana da entrega.
  *
  * @returns {Promise<Map<string, number>|null>} Map slug -> preco, ou null
- *   quando a semana nao tem cardapio cadastrado (nao existe em `semanas`, ou
- *   existe sem nenhuma linha em `cardapios`). O caller decide o que fazer com
- *   o null — hoje: rejeitar extras, deixar passar pedido so com composicao.
+ *   quando a semana nao tem cardapio VENDAVEL (nao existe em `semanas`, existe
+ *   sem nenhuma linha em `cardapios`, ou todas as linhas sao de produto
+ *   inativo). O caller decide o que fazer com o null — hoje: rejeitar extras,
+ *   deixar passar pedido so com composicao.
  * @throws erro do supabase (o caller loga e devolve 500)
  */
 export async function fetchPrecosDaSemana(supabaseAdmin, deliveryDate) {
@@ -54,9 +57,25 @@ export async function fetchPrecosDaSemana(supabaseAdmin, deliveryDate) {
   // Busca os slugs num segundo round-trip em vez de embed do PostgREST: o
   // volume e de ~5 linhas por semana e o SELECT explicito nao depende de como
   // a FK esta nomeada. Mesmo trade-off ja aceito no resto deste endpoint.
+  //
+  // `ativo = true` alinha o servidor com a view `cardapio_publico`, que filtra
+  // igual (migration 0035). Sem isso a vitrine escondia o produto desativado e
+  // o servidor ainda aceitaria o pedido dele — a mesma classe de divergencia
+  // entre o que a tela mostra e o que o servidor cobra que a task 86e2fqk33
+  // veio resolver, so que invertida.
+  //
+  // Este client e o `supabaseAdmin` (service_role) e passa por cima da RLS,
+  // entao a policy "produtos public read ativos" (0004) NAO filtra por ele. O
+  // filtro tem que ser explicito aqui.
+  //
+  // Desativar produto e como o Hugo tira do cardapio o que nao vai ser assado.
+  // O efeito e fail-closed: o extra vira `missing` e o pedido inteiro e
+  // rejeitado com `extra_not_in_menu`, em vez de virar um pao que ninguem assa.
+  // Semana inteira inativa cai no `null` do fim da funcao -> `week_menu_not_found`.
   const { data: produtos, error: produtoErr } = await supabaseAdmin
     .from("produtos")
     .select("id, slug")
+    .eq("ativo", true)
     .in("id", linhas.map((l) => l.produto_id));
   if (produtoErr) throw produtoErr;
 
