@@ -24,7 +24,7 @@ import { getSettings, getSubscription, getWeeklyOrders, postWeeklyOrder, confirm
 import { useSubscriptionContext } from "./auth/useSubscriptionContext";
 import { supabase } from "./lib/supabase";
 import { CORA_WHATSAPP } from "./config/contact";
-import { menuDaSemana } from "./config/menu";
+import { useCardapioSemana } from "./hooks/useCardapioSemana";
 import { B, W, fd, fb, fmt, radii } from "./tokens";
 
 // `?reset=true`: encerra a sessao Supabase (a fonte de verdade agora e o DB, nao
@@ -87,7 +87,12 @@ const D={
   // Quando o Backoffice nascer, ambos viram campo do produto no banco.
   // O especial da semana NAO mora mais aqui: era um objeto fixo com a focaccia
   // dentro, duplicando D.rotativos, e por isso o Hero nunca rotacionava. Agora
-  // sai de menuDaSemana(deliveryDate) resolvido contra D.rotativos abaixo.
+  // sai de useCardapioSemana(deliveryDate) resolvido contra D.rotativos abaixo.
+  //
+  // `preco`/`precoNum` daqui viraram FALLBACK. O numero que a tela mostra vem
+  // de `cardapio_publico` via comPrecoDaSemana(), porque e o preco do banco que
+  // o servidor cobra (api/_lib/extras-precos.js). Estes so valem quando a
+  // semana nao tem cardapio cadastrado.
   pães:[
     {id:"original",nome:"Pão Original",peso:"~700g",preco:"R$ 30,00",precoNum:30,genero:"m",img:IMG.original,desc:"O pão do dia a dia. Vai com manteiga no café e com azeite no jantar.",sobre:"Foi com esse pão que tudo começou. Hugo repetiu a receita por anos até chegar num resultado que dava orgulho, e foi nesse processo que a paixão pela panificação se formou. Blend de farinha italiana com um toque de integral brasileira pra ganhar sabor. 24 horas de fermentação, 72% de hidratação.",ingredientes:"Farinha de trigo italiana, água mineral, levain Cora, farinha integral brasileira e sal marinho",subCopy:"O pão que começou tudo.",qtd:1},
     {id:"integral",nome:"Pão Integral",peso:"~700g",preco:"R$ 30,00",precoNum:30,genero:"m",img:IMG.integral,desc:"A versão integral do Original. Leve, macia, com gergelim na crosta.",sobre:"A versão integral tinha que ser tão versátil quanto o Original. Leve, macia, longe daqueles integrais que parecem tijolo. O processo exige mais cuidado, e o resultado vale. Farinha 100% integral da Fazenda Vargem, um toque de azeite extra virgem que traz maciez, gergelim na crosta. A receita veio quase toda de um curso, com ajustes pra ficar com a cara da Cora. Fermentação com o levain Cora, 77% de hidratação.",ingredientes:"Farinha integral Fazenda Vargem, água mineral, levain Cora, azeite extra virgem, sal marinho e gergelim",subCopy:"Integral leve, todo dia.",qtd:0},
@@ -333,7 +338,7 @@ const LOCK_REASON_PENDING="Disponível após confirmação do primeiro pagamento
 // helpers sao o que os call-sites fazem com o relance.
 //
 // A mensagem do corte fala da JANELA, nunca do produto: o especial rotaciona
-// (src/config/menu.js), entao "esse item entra na proxima" seria mentira --
+// (semana a semana, direto do banco), entao "esse item entra na proxima" seria mentira --
 // pode nao existir semana que vem. `err.code` vem do campo `error` do body,
 // preservado por throwApiError em src/utils/api.js.
 const ORDER_ERROR_CUTOFF="A cesta dessa semana já fechou. Você já pode montar a da semana que vem.";
@@ -1001,6 +1006,25 @@ const EditarCestaDrawer=({
   </>;
 };
 
+// Preco da vitrine sai do cardapio da semana, nao do catalogo em codigo.
+//
+// O catalogo continua dono da copy; o NUMERO e do banco desde a task
+// 86e2fqk33, porque e ele que o servidor cobra. Sem isso a tela anunciaria um
+// preco e a fatura viria com outro toda vez que o Hugo mexesse no backoffice.
+//
+// Sobrescreve `precoNum` (usado no POST do pedido, via addExtraToCart) e
+// `preco` (a string exibida). Slug fora do mapa de precos mantem o do catalogo
+// — o caso do fallback, em que so os dois fixos aparecem.
+// `toLocaleString` pt-BR separa "R$" do numero com NBSP (U+00A0); as strings
+// hardcoded do catalogo usam espaco normal. Sem normalizar, o preco vindo do
+// banco sairia com um espaco diferente do resto da tela.
+const precoBRL=(n)=>n.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}).replace(/\u00A0/g," ");
+const comPrecoDaSemana=(produto,precos)=>{
+  if(!produto) return null;
+  const preco=precos.get(produto.id);
+  return preco===undefined?produto:{...produto,precoNum:preco,preco:precoBRL(preco)};
+};
+
 // ─── HOME ───
 // Redesign Frente C item 1 (briefing 5):
 //  - Saudação temporal (sem flexão por gênero)
@@ -1090,10 +1114,14 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
 
   useEffect(()=>{if(!isFirstVisit||!onSeen)return;const t=setTimeout(onSeen,5000);return()=>clearTimeout(t);},[isFirstVisit,onSeen]);
 
-  // Especial da semana — mesma fonte do Cardápio (menuDaSemana + D.rotativos).
-  // Semana sem especial no mapa → sem Hero, cai no EmptyState.
-  const menu=menuDaSemana(deliveryDate);
-  const novidade=menu.especial?D.rotativos.find(p=>p.id===menu.especial)||null:null;
+  // Especial da semana — mesma fonte do Cardápio (useCardapioSemana +
+  // D.rotativos). Semana sem destaque no banco → sem Hero, cai no EmptyState.
+  // Enquanto carrega não mostra nem um nem outro: dizer "nenhuma novidade" pra
+  // depois mudar de ideia é pior que esperar meio segundo.
+  const{menu,loading:menuLoading}=useCardapioSemana(deliveryDate);
+  const novidade=menu.especial
+    ?comPrecoDaSemana(D.rotativos.find(p=>p.id===menu.especial),menu.precos)
+    :null;
 
   // Handler do CTA do NovidadeCard: POST + toast com flexão.
   const handleNovidadeAdd=async(produto)=>{
@@ -1216,7 +1244,8 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
     {/* Novidade hero — clique no CTA adiciona direto (sem modal de detalhes).
         Empty state reusa <EmptyState> (mesmo card do Cardápio): sem CTA embutido
         pra evitar duplicação com o link "→ Ver tudo no Cardápio" abaixo. */}
-    {novidade
+    {menuLoading?null
+      :novidade
       ?<NovidadeCard extra={novidade} onAdd={()=>handleNovidadeAdd(novidade)} cutoff={cutoff} lockedReason={pendingPayment?LOCK_REASON_PENDING:undefined}/>
       :<EmptyState title="Novidade da semana" body="Nenhuma novidade esta semana."/>
     }
@@ -1705,26 +1734,33 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
 //    fallback em D.rotativos pra cobrir o catálogo rotativo
 //  - ProductCard expande inline (sem modal sobreposto)
 //  - Click no botão "Adicionar à cesta" dispara POST + toast (stack até 3)
-//  - Solução tática pré-Evandro: lista e especial saem de menuDaSemana(
-//    deliveryDate) (src/config/menu.js), que rotaciona por semana de entrega
+//  - Lista, especial e PREÇOS saem de useCardapioSemana(deliveryDate), que lê
+//    a view `cardapio_publico` do banco (task 86e2fqk33). Era um mapa fixo em
+//    src/config/menu.js, que exigia deploy pra mudar cardápio e divergia do que
+//    o servidor cobra. A ordem dos cards continua curada aqui embaixo.
 const CARDAPIO_PRODUCT_ORDER=["original","integral","focaccia","multigraos","brioche","ciabatta"];
 const Cardapio=({addExtraToCart,cutoff,pendingPayment,deliveryDate})=>{
   const{toasts,push:pushToast}=useToastStack();
   const lockedReason=pendingPayment?LOCK_REASON_PENDING:undefined;
 
   // Menu da semana da entrega corrente — mesma data que o pedido usa, então o
-  // cardápio vira sozinho no cutoff de terça. Semana fora do mapa cai no
-  // fallback (só os 2 fixos, sem especial) em vez de quebrar.
-  const menu=menuDaSemana(deliveryDate);
+  // cardápio vira sozinho no cutoff de terça. Semana sem cardápio cadastrado
+  // (ou erro de rede) cai no fallback (só os 2 fixos, sem especial) em vez de
+  // quebrar.
+  const{menu,loading:menuLoading}=useCardapioSemana(deliveryDate);
 
   // Lista da semana na ordem curada do wireframe. O especial também é o
   // Novidade Hero, mas continua na lista de propósito: só o card menor expande
   // com a descrição completa do produto. Resolve cada id contra D.pães e
   // D.rotativos (Original/Integral em pães; demais em rotativos).
+  // Só entra card de slug que o catálogo em código conhece: a copy mora lá
+  // (Escopo A da task). Slug novo no banco sem entrada aqui não renderiza —
+  // some da lista em vez de virar card sem descrição.
   const cardapioProducts=CARDAPIO_PRODUCT_ORDER
     .filter(id=>menu.itens.includes(id))
     .map(id=>D.pães.find(p=>p.id===id)||D.rotativos.find(p=>p.id===id))
-    .filter(Boolean);
+    .filter(Boolean)
+    .map(p=>comPrecoDaSemana(p,menu.precos));
 
   const handleAdd=async(product)=>{
     try{await addExtraToCart(product);}
@@ -1738,8 +1774,10 @@ const Cardapio=({addExtraToCart,cutoff,pendingPayment,deliveryDate})=>{
   };
 
   // Especial da semana resolvido contra D.rotativos (onde mora a subCopy de
-  // cada um). Sem especial no mapa → sem Hero, e o EmptyState assume.
-  const novidade=menu.especial?D.rotativos.find(p=>p.id===menu.especial)||null:null;
+  // cada um). Sem destaque no banco → sem Hero, e o EmptyState assume.
+  const novidade=menu.especial
+    ?comPrecoDaSemana(D.rotativos.find(p=>p.id===menu.especial),menu.precos)
+    :null;
 
   return<div style={{padding:"24px 16px 16px"}}>
     <h2 style={{fontFamily:fd,fontSize:26,textTransform:"uppercase",color:B[500],margin:"0 0 4px"}}>Cardápio</h2>
@@ -1756,7 +1794,8 @@ const Cardapio=({addExtraToCart,cutoff,pendingPayment,deliveryDate})=>{
     </div>
 
     {/* Novidade Hero — apenas o primeiro extra, em destaque visual */}
-    {novidade
+    {menuLoading?null
+      :novidade
       ?<NovidadeCard extra={novidade} onAdd={()=>handleAdd(novidade)} cutoff={cutoff} lockedReason={lockedReason}/>
       :<EmptyState title="Novidade da semana" body="Nenhuma novidade esta semana."/>
     }
