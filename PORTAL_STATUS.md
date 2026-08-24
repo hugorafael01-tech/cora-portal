@@ -68,6 +68,38 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 <!-- STATUS_MANUAL_START -->
 
+## Sessão 24/08/2026 — Evento de sandbox do Asaas fora de `asaas_webhook_events` + limpeza da linha órfã (PRs #83, #84, mergeados em `main`)
+
+O webhook de sandbox do Asaas aponta pro **mesmo endpoint** que o de produção. Até 24/08 qualquer evento que passasse na validação de token virava linha em `asaas_webhook_events` — inclusive os de teste. Uma cobrança de R$ 213,00 da assinatura de sandbox "Hugo Dev" (`cus_000008013448`, `sub_rvv4q1vwu9o4ksti`, cartão VISA de teste final 4444) apareceu no Financeiro do Backoffice como "Pagamento pra identificar", sem assinante vinculado e sem contraparte no painel de produção pra conferir. A assinatura gerava cobrança recorrente **mensal** — uma linha órfã nova por mês.
+
+Dois PRs: o #83 impede novos, o #84 limpou o que já tinha entrado. Fora de escopo desde o briefing e não tocados: tela de Financeiro do Backoffice, validação de token, parse e o passo 4 de vínculo.
+
+### PR #83 — Evento de sandbox não entra em `asaas_webhook_events` (`40b86d9`)
+`api/_lib/asaas-sandbox.js` (novo), `api/webhooks/asaas/index.js`, `scripts/test-asaas-sandbox.mjs` (novo), `package.json`. Sem migration, sem mudança de schema.
+- **Onde:** entre o parse defensivo e o `INSERT`. Produção segue idêntica — idempotência por `23505`, validação de token e reflexo de status intocados.
+- **Responde 200, não erro.** Um não-2xx faria o Asaas reenviar e, em 15 tentativas consecutivas, **pausar a fila inteira**. Corpo `{received: true, ignored: "sandbox"}`, log em `console.info` e não `error` — descartar é o comportamento desejado, não falha.
+- **Sinal:** `payment.invoiceUrl`, `bankSlipUrl` e `transactionReceiptUrl` — os mesmos campos já registrados como oportunidade na sessão de 27/07 (ver "`invoiceUrl` já está gravado no payload do webhook Asaas"). Casa por **hostname exato** (`sandbox.asaas.com`), não por prefixo de string: `startsWith("https://sandbox.asaas.com")` também casaria `sandbox.asaas.com.outrodominio.com` e descartaria evento legítimo.
+- **Fail-open deliberado:** campo ausente, valor não-string, URL malformada ou `payment` ausente → **grava**. Perder evento de produção é pior que guardar um de teste; o Asaas não garante reenvio e o evento cru é a fonte da verdade.
+- **Função pura isolada** (`ehEventoSandbox`), no padrão de `extras-precos.js` e `cardapio-semana.js`: I/O separado de lógica, testável sem banco.
+- **Validação:** 20 casos em `npm run test:asaas` (incluindo os payloads reais do evento órfão e de um evento de produção) + regressão da função contra **os 115 eventos reais** já gravados — 1 descartado (o órfão), 114 persistidos, nenhum deles sem subscription casada. Não houve POST end-to-end contra o endpoint de produção: `ASAAS_WEBHOOK_TOKEN` não está no `.env.local`.
+
+### PR #84 — Script one-off pra limpar o evento de sandbox órfão (`50c5f27`)
+`scripts/limpeza-evento-sandbox.sql`, arquivo único, nenhum código de aplicação.
+- **Não é migration, de propósito** (decisão Hugo): migration é histórico que todo ambiente novo replica, e nenhum ambiente novo precisa reproduzir o apagamento de uma linha de evento de teste de agosto de 2026. Soma-se que a numeração das migrations de `asaas_webhook_events` pertence ao **cora-backoffice**, que governa a tabela (migration `0020` de lá) — nenhuma das três migrations do portal (`0001`–`0003`) sequer menciona a tabela.
+- **Forma:** cabeçalho com o alvo completo (id do evento, cliente, `subscription_id`, `invoiceUrl`, `received_at`); `SELECT` de conferência **comentado, antes** do `DELETE`, com instrução de parar se voltar diferente de 1 linha; `DELETE` com dois predicados (`asaas_customer_id` + host do `invoiceUrl`). Rodar duas vezes é inofensivo.
+- **Aplicado em 24/08:** `asaas_webhook_events` foi de 115 para 114 linhas; eventos de sandbox no banco = 0.
+
+### Armadilha: o prefixo do `asaas_event_id` é derivado do TIPO do evento, não do ambiente
+É a detecção "óbvia" em que a próxima pessoa cairia — e ela **descartaria pagamento real**.
+
+O evento de sandbox tinha id `evt_05b708f961d739ea7eba7e4db318f621&18324580`. No mesmo banco havia eventos de **produção** com o hash idêntico `evt_05b708f961d739ea7eba7e4db318f621`, variando só no sufixo `&<n>` — todos `PAYMENT_CREATED`. O hash é função do tipo do evento; o ambiente não aparece nele em lugar nenhum. O único sinal confiável de ambiente no payload é o host das URLs do `payment`.
+
+Registrado no comentário de `api/_lib/asaas-sandbox.js` e travado por um caso em `scripts/test-asaas-sandbox.mjs` que quebra se alguém trocar a detecção pra olhar o id.
+
+### Estado operacional
+- Assinatura de teste **removida do sandbox** pelo Hugo em 24/08 — fecha a torneira na origem. O guard no endpoint fica como rede de segurança caso alguém recrie uma assinatura de teste algum dia.
+- Zero eventos de sandbox no banco; nos 114 eventos restantes o único host que aparece é `www.asaas.com`.
+
 ## Sessão 27/07/2026 — Percepção de preço, piso de entrega e microcopy do onboarding + e-mail de admin e aprendizados do dia 1 do lançamento (PRs #56–#59, #61, mergeados em `main`)
 
 Quatro PRs pequenos e sequenciais de UX/microcopy no fluxo de onboarding, todos mergeados em `main` (último commit `ae46296`). Nenhuma mudança de cálculo, schema ou migration. Cada um validado no Vercel Preview a 390px com o **stub do `POST /api/subscriptions`** (sobrescreve `window.fetch` no headless) pra não criar assinatura real no banco compartilhado com produção.
