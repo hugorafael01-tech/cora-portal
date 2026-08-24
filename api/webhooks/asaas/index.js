@@ -17,6 +17,8 @@
  *     asaas_event_id; 23505 -> 200 e para.
  *   - Falha de reflexo de status NAO derruba o 200 (o evento ja esta salvo;
  *     reflexo pode ser reprocessado depois a partir do evento cru).
+ *   - Evento de SANDBOX nao e persistido: descartado antes do insert, com
+ *     200 (ver _lib/asaas-sandbox.js). Producao segue inalterada.
  *
  * Auth e por token estatico no header (NAO assinatura HMAC sobre o corpo), entao
  * o body parseado padrao da Vercel Function serve — nao precisa de raw body nem
@@ -25,6 +27,7 @@
  */
 import { supabaseAdmin } from "../../../src/lib/supabase-admin.js";
 import { statusPatchForEvent } from "../../_lib/asaas-status.js";
+import { ehEventoSandbox } from "../../_lib/asaas-sandbox.js";
 
 // subscriptions.id e uuid. external_reference vem digitado a mao no painel Asaas
 // (fase 1), entao pode nao ser um uuid valido. Sem essa guarda, o PostgREST rejeita
@@ -77,6 +80,21 @@ export default async function handler(req, res) {
   const asaasCustomerId = payment.customer ?? null;
   const externalReference = payment.externalReference ?? null;
   const paymentStatus = payment.status ?? null;
+
+  // ─── 2b. Evento de sandbox: descarta ANTES de persistir ───
+  // O webhook de sandbox aponta pro mesmo endpoint. Sem isso, cada cobranca da
+  // assinatura de teste (mensal) vira uma linha orfa no Financeiro. Ver a
+  // deteccao — e a armadilha do `id` do evento — em _lib/asaas-sandbox.js.
+  //
+  // Responde 200 de proposito: um nao-2xx faria o Asaas reenviar e, em 15
+  // tentativas consecutivas, PAUSAR a fila inteira. Descartar nao e falha,
+  // entao console.info e nao console.error.
+  if (ehEventoSandbox(body)) {
+    console.info("[asaas webhook] evento de sandbox descartado", asaasEventId, eventType, {
+      invoiceUrl: payment.invoiceUrl ?? null,
+    });
+    return res.status(200).json({ received: true, ignored: "sandbox" });
+  }
 
   // ─── 3. Persiste PRIMEIRO (idempotencia por 23505) ───
   // Grava o body cru em jsonb: resolve campos novos/desconhecidos sem quebrar.
