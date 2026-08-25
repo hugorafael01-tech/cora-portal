@@ -706,6 +706,21 @@ Próximo: pausa nesta frente. Frente C (auth hardening) e migração de subscrip
   - **Validações técnicas:** `npm run build` 257.95 kB / 76.89 kB gzip ✓; lint 18 problems (4 a menos que baseline pré-PR 2 de 22) ✓; `npm run test:cutoff` 6/6 ✓.
 - **Pendência operacional:** check manual semanal de carrinhos abandonados toda terça 8h BRT continua.
 
+- **Data:** 2026-05-12 (terça)
+- **Tema:** Frente C item 1 — Hierarquia da Home, PR 1 (Backend)
+- **Entrada recuperada em 24/08/2026** de um rascunho que ficou em `git stash` desde 12/05 e nunca chegou a ser registrado. Recuperada porque é a **origem da pendência "check manual semanal de carrinhos abandonados toda terça 8h BRT"** — citada quatro vezes mais abaixo neste arquivo sem nenhuma explicação de onde veio.
+- **Decisão do cron — a origem da limitação de agendamento:** o plano **Hobby do Vercel não aceita schedule sub-diário**; `*/15 * * * *` foi recusado. O cron de carrinho abandonado ficou em `0 1 * * 2` (terça 1h UTC = **segunda 22h BRT**, ~14h antes do cutoff), e o buraco que isso deixava era coberto por um **check manual toda terça 8h BRT**. Anotado na época pra revisitar quando o volume crescesse (>100 assinantes): upgrade pro Pro ou cron externo grátis.
+  - **[SUPERADO em 12/08/2026 — PR #73, commit `7e3c7ef`.]** O schedule passou a `0 12 * * *` (12h UTC = **9h BRT, todo dia**) depois que uma assinante adicionou um extra na quinta e só foi avisada quatro dias depois, de madrugada, 14h antes do corte. **Diário é o teto do plano Hobby** — expressão mais frequente falha no deploy, então a limitação continua valendo; o que mudou foi o piso, de semanal pra diário. Com isso o check manual de terça deixa de fazer sentido nos termos originais, e as quatro menções abaixo são todas anteriores a essa mudança.
+- **Saída do PR 1** (mergeado em `main`, commit `f18335f`):
+  - Migration `0003_weekly_orders`.
+  - Três endpoints: `POST /api/weekly-orders`, `POST /api/weekly-orders/:id/confirmar`, `GET /api/weekly-orders`.
+  - Cron `/api/cron/check-abandoned-carts` e o schedule em `vercel.json`.
+  - Util compartilhado `api/_lib/cutoff.js` **em UTC**; refactor de `src/utils/cutoff.js` com `deliveryDate` opcional; três funções novas em `src/utils/api.js`.
+  - Cleanup de artefatos iCloud e padronização do path do pattern (`Cora_tile grafismo.svg` → `Cora_tile_grafismo.svg`, com `App.jsx` atualizado).
+- **Env var nova:** `CRON_SECRET` no Vercel (Production + Preview).
+- **Docs da frente**, produzidos na mesma sessão: decisões de produto (`docs/CORA_FrenteC_HomeHierarquia_Decisoes.md` — cesta como carrinho persistido com confirmação explícita, sem foto, fundo brand-50, lista unificada, drawer sobreposto, modal de detalhes na inclusão), briefing técnico v2 (`docs/CORA_Briefing_FrenteC_Item1_Home.md`, 904 linhas: schema, 3 endpoints, cron de abandono, copy consolidada, critérios de aceite) e prompt operacional (`docs/CORA_Prompt_FrenteC_Item1_ClaudeCode.md`).
+- **Validação manual completa em Preview:** 6/6 testes do cutoff, curls de happy path, 5 cenários de erro e o fluxo do cron com e-mail real chegando.
+
 - **Data:** 2026-05-11 (segunda)
 - **Tema:** Frente A do pós-Fase 7 — Capacity gate antes do lançamento
 - **Saída:**
