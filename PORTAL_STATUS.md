@@ -68,6 +68,38 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 <!-- STATUS_MANUAL_START -->
 
+## Sessão 28/08/2026 — Card da Cesta declara o estado nos três (quatro) casos (PR aberta, não mergeada)
+
+O card falava quando o pedido estava confirmado e se calava quando não estava. Três assinantes, em duas semanas, olharam um rascunho e concluíram que tinham confirmado (Julia 2×, Dani 1×). A causa: um briefing anterior tirou do card o badge e a microcopy de rascunho migrando o aviso pro ponto de 9px do Nav, mas **deixou a microcopy de confirmado**. Ausência de sinal passou a significar "pendente", e ninguém lê ausência.
+
+### O que entrou
+`src/tokens.js` (`sem` e `value`, objetos JS — não CSS custom properties, a migração segue adiada) e `src/App.jsx`. Sem migration, sem rota nova, sem mudança de schema.
+- Badge + linha de status **sempre** no cabeçalho do card, no mesmo lugar e com o mesmo peso.
+- Em rascunho, "Confirmar pedido" passa a vir **acima** do valor, dentro de um bloco com fundo `sem.warning`. O valor de rascunho sai do azul (`value.conditional`); azul agora significa "será cobrado".
+- Ícone `lock` novo (Lucide outline 1.5), `EstadoBadge` novo.
+- Ponto do Nav some na própria aba Início.
+- A superfície do card não muda: fundo `B[50]`, borda `B[100]`, eyebrow e lista intactos nos quatro casos.
+
+### Divergências entre o briefing e o código (resolvidas com o Hugo nesta sessão)
+1. **`temAlteracaoPendente` não existe** e não precisa existir. O POST de `api/weekly-orders` sempre regrava `status='rascunho'` + `confirmed_at=null`, então "confirmado com alteração pendente" é um estado que o banco não permite. A derivação é status-based.
+2. **Rascunho sem nada a confirmar é um quarto caso** que a máquina de 3 estados não modela. Sem extras e sem troca não há pedido no banco, e `confirmCurrentOrder()` faz `if(!currentWeeklyOrder?.id) return` — "Confirmar pedido" seria botão morto e "Não confirmada" um alarme falso. **Decisão:** badge `Cesta da assinatura` em `sem.neutral`, sem botão.
+3. **Pós-corte não tem "próxima cesta" pra editar.** Na janela terça 12h → quinta, `postCurrentOrder` ainda usa a `delivery_date` travada e o servidor devolve `cutoff_passed`; o pedido velho só sai do GET na sexta. **Decisão:** o slot existe com o rótulo `Editar a próxima cesta`, desabilitado. A linha de status explica. Destravar de verdade é feature nova, fora do escopo.
+4. **A aba se chama `home`**, não `inicio` (derivada do pathname no `Layout`), e a condição do ponto não era só `status==='rascunho'` — tinha uma cláusula a mais (`extras>0 || composition!=null`) que foi preservada.
+5. **`sem.warning` não é o `ST.warning`** que já existe no App.jsx: aquele é calibrado pra fundo branco e serve 8 call-sites. Coexistem; nenhum foi migrado.
+6. **"Nenhum" nos quatro casos** quando não há extras (o briefing só citava no pós-corte). "R$ 0,00" em `value.committed` anunciaria uma cobrança.
+7. **Pós-corte sem confirmação:** os extras do rascunho continuam na lista mas **recuam pro cinza**, o total vira "Nenhum" e a nota nomeia quem ficou de fora. Deixar "R$ 24,00" em azul acima de um total "Nenhum" repetiria a contradição que o ticket veio consertar.
+
+### Fora de escopo, sinalizado
+- A tag `Trocado` continua aparecendo na lista pós-corte sem confirmação — a troca de composição também não entrou. A tabela do briefing só tratava dos extras.
+- Auditar `value.conditional` nas outras superfícies que mostram número antes do commit (Drawer, rodapé persistente, checkout de extras).
+
+### Validação
+Cinco cenários renderizados headless em 390×844 contra o dev server (Chrome CDP + sessão e fetch stubbados; zero requests escaparam pra rede): rascunho, rascunho-sem-alteração, confirmado, pós-corte sem e com confirmação prévia. Mais dois comportamentos dirigidos: editar quantidade em confirmado devolve o card a `Não confirmada` na mesma interação (1 POST), e o ponto do Nav some no Início e aparece no Cardápio.
+
+**Armadilha confirmada:** `npx vite build` local sai 0 mas o chunk **não contém** a copy nova — o `dist` local não serve de conferência. Validar pelo Preview da Vercel.
+
+Os 6 scripts de teste do repo seguem verdes e `npm run lint` fica idêntico ao baseline (32 problemas, 14 deles do `'process' is not defined` pré-existente no `api/`).
+
 ## Sessão 24/08/2026 — Evento de sandbox do Asaas fora de `asaas_webhook_events` + limpeza da linha órfã (PRs #83, #84, mergeados em `main`)
 
 O webhook de sandbox do Asaas aponta pro **mesmo endpoint** que o de produção. Até 24/08 qualquer evento que passasse na validação de token virava linha em `asaas_webhook_events` — inclusive os de teste. Uma cobrança de R$ 213,00 da assinatura de sandbox "Hugo Dev" (`cus_000008013448`, `sub_rvv4q1vwu9o4ksti`, cartão VISA de teste final 4444) apareceu no Financeiro do Backoffice como "Pagamento pra identificar", sem assinante vinculado e sem contraparte no painel de produção pra conferir. A assinatura gerava cobrança recorrente **mensal** — uma linha órfã nova por mês.
