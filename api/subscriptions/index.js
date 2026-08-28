@@ -5,7 +5,9 @@
  *   1. auth user (admin.createUser, sem senha, email_confirm:true)
  *   2. profile (user_id, nome, whatsapp, cpf)
  *   3. subscription (shape novo + double-write das colunas legadas)
- * e dispara e-mail pro Hugo. Os calculos monetarios sao feitos no servidor.
+ * e, best-effort, dispara e-mail pro Hugo e sincroniza o contato com o
+ * segmento da newsletter no Resend. Os calculos monetarios sao feitos no
+ * servidor.
  *
  * Precedencia de erro: EMAIL antes de CPF.
  *   - email ja registrado -> 409 { error: "email_exists" } (nada criado).
@@ -81,6 +83,78 @@ Acessar Asaas: https://www.asaas.com/
 ---
 Esta mensagem foi gerada automaticamente pelo portal Cora.
 `;
+
+// ─── Sync do contato com o Resend (segmento da newsletter de domingo) ───
+//
+// O segmento que recebe a newsletter era populado a mao. Toda semana com
+// ativacao corria o risco de assinante novo ficar de fora do envio, e o erro
+// e silencioso: ninguem reclama de um e-mail que nao recebeu.
+//
+// O id do segmento vive em env var porque muda por conta/ambiente. Ausente ->
+// o sync e pulado com warn (nunca derruba a criacao da assinatura).
+const RESEND_SEGMENT_ASSINANTES = process.env.RESEND_SEGMENT_ASSINANTES;
+
+// O Resend nao tem campo de nome completo, so firstName/lastName. Quebra no
+// primeiro espaco: "Claudio Otero Ascoli" -> "Claudio" + "Otero Ascoli".
+// Mesmo formato dos contatos que ja estavam no segmento, preenchidos a mao.
+// Nome de token unico fica sem lastName (undefined, nao string vazia: o SDK
+// omite a chave do payload em vez de gravar vazio).
+const partirNome = (nome) => {
+  const partes = String(nome || "").trim().split(/\s+/).filter(Boolean);
+  return { firstName: partes[0] || "", lastName: partes.slice(1).join(" ") || undefined };
+};
+
+/**
+ * Cria o contato no Resend ja dentro do segmento da newsletter.
+ *
+ * Best-effort, igual ao e-mail de boas-vindas: nada aqui pode derrubar a
+ * criacao da assinatura nem virar erro pro usuario. So loga e segue.
+ *
+ * ARMADILHA DO SDK: no resend v6 o campo e `segments: [{ id }]`. NAO existe
+ * `segmentIds`. Campo desconhecido no payload nao e rejeitado pela API, entao
+ * o nome errado cria o contato FORA do segmento e devolve sucesso — que e
+ * exatamente a falha silenciosa que este bloco existe pra matar.
+ *
+ * IDEMPOTENCIA sem casar string de erro: contato que ja existe faz o `create`
+ * falhar, e o ErrorResponse do Resend nao tem code proprio pra duplicata
+ * (`name` e um enum generico — cai em `validation_error`). Em vez de adivinhar
+ * pela mensagem, QUALQUER falha do create tenta o `segments.add`, que so tem
+ * como dar certo se o contato existir: duplicata vira sucesso, chave invalida
+ * continua sendo falha logada. O add tambem cobre "cancelou e voltou" —
+ * contato existente que saiu do segmento volta pra dentro, em vez de ficar
+ * fora da newsletter em silencio.
+ */
+async function syncContatoResend(email, nome) {
+  const segmentId = RESEND_SEGMENT_ASSINANTES;
+  if (!segmentId) {
+    console.warn("[subscriptions POST] resend sync pulado: RESEND_SEGMENT_ASSINANTES ausente");
+    return;
+  }
+  try {
+    // SDK Resend v4+ retorna { data, error } sem throw. Precisa checar .error
+    // explicitamente, senao falhas silenciosas passam batido.
+    const { firstName, lastName } = partirNome(nome);
+    const created = await resend.contacts.create({
+      email,
+      firstName,
+      lastName,
+      segments: [{ id: segmentId }],
+    });
+    if (!created?.error) {
+      console.log("[subscriptions POST] resend contact created", created?.data?.id);
+      return;
+    }
+    console.warn("[subscriptions POST] resend contact create failed, tentando segments.add", created.error);
+    const added = await resend.contacts.segments.add({ email, segmentId });
+    if (added?.error) {
+      console.error("[subscriptions POST] resend segments.add error", added.error);
+    } else {
+      console.log("[subscriptions POST] resend contact ja existia, adicionado ao segmento", email);
+    }
+  } catch (err) {
+    console.error("[subscriptions POST] resend contact throw", err);
+  }
+}
 
 export default async function handler(req, res) {
   // Frente D / D.4: PATCH altera a composicao da assinatura do usuario logado
@@ -295,6 +369,11 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error("[subscriptions POST] email throw", err);
   }
+
+  // 5. Contato no Resend + segmento da newsletter (best-effort, igual ao passo
+  // 4). Awaited de proposito: fire-and-forget em Vercel Function pode ser
+  // cortado quando a resposta sai.
+  await syncContatoResend(record.email, record.nome);
 
   return res.status(201).json({ subscription_id: insertedSub.id, status: insertedSub.status });
 }

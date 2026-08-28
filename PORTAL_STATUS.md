@@ -68,6 +68,51 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 <!-- STATUS_MANUAL_START -->
 
+## Sessão 28/08/2026 — Frente A: sync automático do assinante com o segmento da newsletter no Resend (PR aberta, ainda não mergeada)
+
+Briefing de 22/08, duas frentes independentes. **Só a Frente A foi feita nesta sessão** (decisão Hugo): ela resolve um problema que já aconteceu, a Frente B (deep link `/cardapio?add=slug`) é conversão e não bloqueia ninguém. A newsletter de domingo sai com o link normal do app.
+
+### O problema
+O segmento `8abed496-…` ("Assinantes — Conteúdo (D0 domingo)") era populado à mão. Em 22/08 quatro assinantes ativados no dia anterior (Marla, Eva, Claudio Otero Ascoli, Claudio Considera) não estavam nele e teriam ficado de fora do envio. Foram adicionados manualmente. Quebra toda semana com ativação, e o erro é silencioso: ninguém reclama de um e-mail que não recebeu.
+
+### O que entrou
+`api/subscriptions/index.js`, `scripts/test-resend-sync.mjs` (novo), `.env.local.example`, `package.json`. Sem migration, sem mudança de schema.
+- **Onde:** logo depois do e-mail de admin (passo 4), antes do `201`. Best-effort no mesmo padrão: qualquer falha loga e segue, a assinatura é criada normalmente. `await`ado de propósito — fire-and-forget em Vercel Function pode ser cortado quando a resposta sai.
+- **Env var:** `RESEND_SEGMENT_ASSINANTES`. Ausente = sync pulado com `warn`, nunca `throw` no import (diferente de `src/lib/resend.js`, que derruba a function sem `RESEND_API_KEY`).
+
+### Armadilha: `segmentIds` não existe no SDK v6 — e o erro passa por sucesso
+O briefing pedia `resend.contacts.create({ email, firstName, segmentIds: [ID] })`. **Essa assinatura não existe.** O repo tem `resend@6.12.3`, onde `CreateContactOptions` é `{ email, firstName, lastName, unsubscribed, properties, segments: [{ id }], topics }`.
+
+O que torna o erro caro: a API não rejeita campo desconhecido no payload. `segmentIds` criaria o contato **fora** do segmento e devolveria `{ data, error: null }` — ou seja, automatizaria exatamente a falha silenciosa que a frente existe pra matar, e ninguém descobriria até o domingo seguinte. Travado por dois casos de teste, ambos mutation-testados.
+
+### Idempotência sem casar string de erro
+Contato que já existe faz o `create` falhar, e o `ErrorResponse` do Resend **não tem code próprio pra duplicata** — `name` é um enum genérico (`validation_error`). Em vez de adivinhar pela mensagem (frágil a qualquer mudança de copy do Resend), **qualquer** falha do `create` tenta o `contacts.segments.add({ email, segmentId })`, que só tem como dar certo se o contato existir: duplicata vira sucesso, chave inválida continua sendo falha logada.
+
+Isso é um passo além do briefing (que pedia "trata como sucesso silencioso") e foi decisão do Hugo nesta sessão. O motivo: engolir o erro deixa um furo no cenário que o próprio briefing cita — quem cancelou e voltou tem contato existente que pode ter saído do segmento, e ficaria fora da newsletter em silêncio. O `add` reinsere.
+
+### firstName/lastName
+Quebra no primeiro espaço ("Claudio Otero Ascoli" → "Claudio" + "Otero Ascoli"), mesmo formato dos contatos que já estavam no segmento. Nome de token único vai com `lastName: undefined` (o SDK omite a chave) em vez de string vazia.
+
+### Validação
+11 casos em `npm run test:resend-sync`, **sem rede e sem Resend real**. Importar o módulo do endpoint puxaria `src/lib/resend.js` e instanciaria cliente de verdade; um teste que cria contato na conta de produção não é teste, é efeito colateral. A função é extraída do fonte e roda com um cliente dublê — mesma técnica de "validar copy de e-mail sem enviar". Cobre caminho feliz, shape do payload, duplicata → `add`, "cancelou e voltou", chave inválida, exceção de rede, env ausente/vazia, `partirNome`, e um caso de contrato contra o SDK **real** (construído offline) pra pegar remoção de método num upgrade futuro.
+
+Os outros 6 scripts de teste do repo seguem verdes. `npm run lint` continua com os mesmos erros pré-existentes de `'process' is not defined` (o eslint config não declara globals de Node pro `api/`); o commit soma **um** erro dessa mesma classe, na linha da env var nova.
+
+**Baseline pra conferência:** o segmento tinha **36 contatos** em 28/08, antes de qualquer ativação nova.
+
+### Pendências desta frente
+- [ ] Configurar `RESEND_SEGMENT_ASSINANTES=8abed496-6e80-47fa-90dc-63348f22d37b` na Vercel nos **três** ambientes (Hugo — Claude Code não tem acesso ao painel).
+- [ ] Teste ponta a ponta depois do merge: primeira ativação real deve levar o segmento de 36 pra 37 sem intervenção manual.
+
+### Fora de escopo, confirmado
+Remover contato do segmento no cancelamento; sincronizar os 36 contatos atuais (já corretos); régua de comunicação automatizada (D+1, D+3, reengajamento).
+
+### Frente B — não iniciada, com três achados do levantamento
+Fica pra próxima sessão. O levantamento do código já foi feito e apontou três coisas que o briefing não mapeou:
+1. **`resolveAuthIntent()` está duplicado** em `src/pages/AuthCallback.jsx` e `src/pages/LoginSent.jsx` (o passo de código OTP do PR #44). O briefing só cita o primeiro. Boa notícia: os dois fazem `navigate(destination)` e o react-router aceita o path com query inteiro, então **nenhum dos dois precisa mudar** — e o `Login.jsx` também não, já que repassa `location.state?.from` verbatim. A perda de query string acontece num ponto só: `src/auth/ProtectedRoute.jsx` (`location.pathname` → `location.pathname + location.search`).
+2. **`Cardapio` não recebe `currentExtras`** — sem isso não dá pra implementar o caso "item já está na cesta, não incrementa".
+3. **Race com perda de dados.** `weeklyOrders` começa `[]` e não tem flag de loading. Se o efeito do `?add=` disparar antes do GET resolver, `currentExtras` é `[]` e o `addExtraToCart` faz POST de uma cesta contendo só o item do deep link — **apagando os extras que a pessoa já tinha**. Precisa de um `weeklyOrdersLoaded` no App travando o efeito.
+
 ## Sessão 24/08/2026 — Evento de sandbox do Asaas fora de `asaas_webhook_events` + limpeza da linha órfã (PRs #83, #84, mergeados em `main`)
 
 O webhook de sandbox do Asaas aponta pro **mesmo endpoint** que o de produção. Até 24/08 qualquer evento que passasse na validação de token virava linha em `asaas_webhook_events` — inclusive os de teste. Uma cobrança de R$ 213,00 da assinatura de sandbox "Hugo Dev" (`cus_000008013448`, `sub_rvv4q1vwu9o4ksti`, cartão VISA de teste final 4444) apareceu no Financeiro do Backoffice como "Pagamento pra identificar", sem assinante vinculado e sem contraparte no painel de produção pra conferir. A assinatura gerava cobrança recorrente **mensal** — uma linha órfã nova por mês.

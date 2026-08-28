@@ -13,7 +13,8 @@
     "test:whatsapp": "node scripts/test-whatsapp.mjs",
     "test:extras": "node scripts/test-extras-precos.mjs",
     "test:cardapio": "node scripts/test-cardapio-semana.mjs",
-    "test:asaas": "node scripts/test-asaas-sandbox.mjs"
+    "test:asaas": "node scripts/test-asaas-sandbox.mjs",
+    "test:resend-sync": "node scripts/test-resend-sync.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "~2.105.3",
