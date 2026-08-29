@@ -68,6 +68,46 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 <!-- STATUS_MANUAL_START -->
 
+## Sessão 28/08/2026 — Card da Cesta: linha de status em rascunho + toast do Cardápio (PR #88, aberta, não mergeada)
+
+Começou como "o card não declara o estado" e terminou menor, depois que o diagnóstico mudou no meio.
+
+### O diagnóstico que caiu
+A hipótese inicial era que Julia e Dani olharam um card ambíguo e concluíram errado. **Não foi isso.** Elas não estavam em dúvida diante do card — não voltaram pra Home. A confusão nasce no **Cardápio**, no toast "Focaccia Genovesa adicionada à cesta", que soa como conclusão.
+
+Consequência: sinalização na Home não alcança o caso real. Continua valendo como higiene (o card era mesmo assimétrico — a microcopy de confirmado tinha ficado e a de rascunho não), mas higiene não justifica um sistema de cores semânticas novo no design system. **A correção de verdade é um rodapé persistente de pedido não confirmado, visível no Cardápio. Frente própria, não iniciada.**
+
+### O que entrou
+- **Linha de status em rascunho:** `Confirme até terça, 12h para esta entrega.` O card deixa de ser mudo quando há algo pendente. Rascunho sem nada a confirmar tem a sua: `Sem alterações esta semana...`
+- **"Confirmar pedido" acima do valor** — único desvio de layout em relação à `main`.
+- **Valor em rascunho fora do azul** (`W[700]`/16/600, rótulo `Extras, se você confirmar`). Azul = "será cobrado". **Inline, sem virar token nomeado.**
+- **Gate do ponto do Nav:** some na própria aba Início.
+- **Toast do Cardápio** (os dois call-sites, Home e Cardápio): `[Produto] adicionad[a/o]. Confirme seu pedido até terça.` Flexão por `produto.genero` preservada. É o único ponto do PR que toca onde o problema acontece.
+- **`?force_cutoff=true`** em `src/utils/cutoff.js` — inverso do `bypass_cutoff` que já existia, pra ver os estados pós-corte fora da janela real terça 12h → quinta. DEV ONLY, guardado por `typeof window`, inerte no backend. 7 asserts novos em `test:cutoff`, mutation-testados.
+- **Duas correções de contradição no pós-corte sem confirmação:** preços dos extras recuam pro cinza (estavam em azul ao lado de um total "Nenhum") e a nota nomeia os itens que ficaram de fora (sem ela o assinante descobre na quinta, na porta de casa).
+
+### O que foi removido depois do corte de escopo
+Badges de estado nos três casos (e o `EstadoBadge`), a faixa `warning-bg` na zona de ação, o objeto `sem` e o `value` em `tokens.js`, o ícone `lock`, e os rótulos/estados novos de pós-corte. **`src/tokens.js` voltou idêntico à `main`.** Confirmado e pós-corte voltaram ao comportamento da `main`, exceto pelas duas correções acima.
+
+### Divergências do briefing que sobreviveram ao corte
+1. **`temAlteracaoPendente` não existe** e não precisa: o POST de `api/weekly-orders` sempre regrava `status='rascunho'` + `confirmed_at=null`, então "confirmado com alteração pendente" é estado que o banco não permite.
+2. **A aba se chama `home`**, não `inicio`, e a condição do ponto tinha uma cláusula a mais (`extras>0 || composition!=null`), preservada.
+3. **Rascunho sem nada a confirmar** não ganha "Confirmar pedido": não há pedido no banco e `confirmCurrentOrder()` é no-op sem id.
+4. **"Nenhum" no lugar de `R$ 0,00`** nos casos sem extras. É o único ponto em que li além da letra do escopo revisado ("confirmado igual à main"): `R$ 0,00` sob "Extras, se você confirmar" lê como cobrança de zero.
+
+### Validação
+Cinco cenários headless em 390×844 contra o dev server (sessão e `fetch` stubbados, zero requests escaparam). Transição confirmado → rascunho dirigida: a linha de status vira `Confirme até terça, 12h...` na mesma interação, com 1 POST. Ponto do Nav: some no Início, aparece no Cardápio. Toast conferido nos dois call-sites com os dois gêneros, extraindo a copy do fonte sem importar o módulo.
+
+**Armadilha reconfirmada:** `vite build` local sai 0 mas o chunk **não contém** a copy nova. Conferir sempre pelo chunk do Preview da Vercel.
+
+Suíte de 6 scripts verde; `lint` idêntico ao baseline (32 problemas).
+
+### Pendências
+- [ ] Merge antes de **terça 01/09** — David Hertz recebe acesso e vai usar produção, não o Preview.
+- [ ] Frente própria: rodapé persistente de pedido não confirmado, visível no Cardápio.
+- [ ] Teste com a assinatura Hugo Dev (`ca733407-…`, hoje `paused`) contra produção — runbook conferido, com três correções registradas na conversa. Reativar e **pausar de volta antes de terça 12h**, senão vira entrega fantasma na semana 36.
+
+
 ## Sessão 24/08/2026 — Evento de sandbox do Asaas fora de `asaas_webhook_events` + limpeza da linha órfã (PRs #83, #84, mergeados em `main`)
 
 O webhook de sandbox do Asaas aponta pro **mesmo endpoint** que o de produção. Até 24/08 qualquer evento que passasse na validação de token virava linha em `asaas_webhook_events` — inclusive os de teste. Uma cobrança de R$ 213,00 da assinatura de sandbox "Hugo Dev" (`cus_000008013448`, `sub_rvv4q1vwu9o4ksti`, cartão VISA de teste final 4444) apareceu no Financeiro do Backoffice como "Pagamento pra identificar", sem assinante vinculado e sem contraparte no painel de produção pra conferir. A assinatura gerava cobrança recorrente **mensal** — uma linha órfã nova por mês.

@@ -78,6 +78,61 @@ try {
   console.error("✗ piso de lançamento", e.message);
 }
 
+// Overrides DEV-ONLY de query string (`bypass_cutoff` / `force_cutoff`).
+// PRE_CORTE e POS_CORTE sao pares fixos: mesma entrega, relogios dos dois lados
+// da terca 12h. Sem flag cada um cai no seu lado; com flag, inverte.
+const PRE_CORTE = ["2026-05-14", new Date("2026-05-12T14:59:00Z")];
+const POS_CORTE = ["2026-05-14", new Date("2026-05-12T15:01:00Z")];
+const comWindow = (search, fn) => {
+  const tinha = "window" in globalThis;
+  const antes = globalThis.window;
+  globalThis.window = { location: { search } };
+  try { return fn(); } finally { tinha ? (globalThis.window = antes) : delete globalThis.window; }
+};
+try {
+  // Sem `window` (o caso do backend, que importa este arquivo via
+  // api/_lib/cutoff.js): a query string nao existe e nenhuma flag alcanca o
+  // servidor. E o que impede um link com ?force_cutoff de virar bypass de
+  // validacao real no POST.
+  assert.equal(isPastCutoff(...PRE_CORTE), false, "server-side ignora flags (pre)");
+  assert.equal(isPastCutoff(...POS_CORTE), true, "server-side ignora flags (pos)");
+
+  // Com `window` e sem flag: comportamento normal, nada muda.
+  comWindow("", () => {
+    assert.equal(isPastCutoff(...PRE_CORTE), false, "sem flag, pre-corte segue pre");
+    assert.equal(isPastCutoff(...POS_CORTE), true, "sem flag, pos-corte segue pos");
+  });
+
+  // bypass_cutoff: forca pre-corte mesmo depois da terca 12h.
+  comWindow("?bypass_cutoff=true", () => {
+    assert.equal(isPastCutoff(...POS_CORTE), false, "bypass_cutoff inverte o pos-corte");
+  });
+
+  // force_cutoff: forca pos-corte mesmo antes da terca 12h.
+  comWindow("?force_cutoff=true", () => {
+    assert.equal(isPastCutoff(...PRE_CORTE), true, "force_cutoff inverte o pre-corte");
+    // Tambem vale sem deliveryDate (o caminho de quando nao ha weekly_order).
+    assert.equal(isPastCutoff(undefined, new Date("2026-05-12T10:00:00Z")), true, "force_cutoff sem deliveryDate");
+  });
+
+  // Valor diferente de "true" nao ativa nada — evita que ?force_cutoff=1 num
+  // link colado produza um estado que ninguem pediu.
+  comWindow("?force_cutoff=1", () => {
+    assert.equal(isPastCutoff(...PRE_CORTE), false, "force_cutoff=1 nao ativa");
+  });
+
+  // Os dois juntos: bypass ganha (na duvida, nao finge que o prazo acabou).
+  comWindow("?bypass_cutoff=true&force_cutoff=true", () => {
+    assert.equal(isPastCutoff(...POS_CORTE), false, "bypass ganha do force");
+    assert.equal(isPastCutoff(...PRE_CORTE), false, "bypass ganha do force (pre)");
+  });
+
+  console.log("✓ overrides de query string — bypass_cutoff/force_cutoff, inertes no servidor");
+} catch (e) {
+  failed += 1;
+  console.error("✗ overrides de query string", e.message);
+}
+
 if (failed > 0) {
   console.error(`\n${failed} caso(s) falharam.`);
   process.exit(1);

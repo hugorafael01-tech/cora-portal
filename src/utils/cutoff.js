@@ -7,6 +7,10 @@
  * Fonte de verdade compartilhada: o backend importa daqui via
  * `api/_lib/cutoff.js` (re-export thin).
  *
+ * Dois overrides DEV-ONLY por query string, simétricos e mutuamente
+ * exclusivos: `?bypass_cutoff=true` força o estado pré-corte, `?force_cutoff=true`
+ * força o pós-corte. Só existem no cliente (guardados por `window`).
+ *
  * - `isPastCutoff(deliveryDate, now)`: assinatura primária.
  *     deliveryDate = ISO YYYY-MM-DD (uma quinta-feira).
  *     `deliveryDate` é opcional pra preservar callers antigos do front
@@ -17,10 +21,25 @@
  */
 
 export function isPastCutoff(deliveryDate, now = new Date()) {
-  // DEV ONLY — permite testar fluxos pré-cutoff em qualquer horário.
-  // Server-side `window` é undefined, então o bypass não afeta o backend.
-  if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bypass_cutoff") === "true") {
-    return false;
+  // DEV ONLY — permite testar fluxos pré e pós-cutoff em qualquer horário.
+  // Server-side `window` é undefined, então nenhum dos dois afeta o backend:
+  // o servidor revalida o corte por conta própria em todo POST/confirmar.
+  //
+  // `force_cutoff` é o inverso do `bypass_cutoff`, e existe porque os estados
+  // pós-corte do card da Cesta (badge "Fechada", nota nomeando o extra que não
+  // entrou, ação desabilitada) só apareciam na janela real terça 12h → quinta.
+  //
+  // Com `force_cutoff` o cliente acha que passou do corte e o servidor não —
+  // divergência inofensiva porque o estado pós-corte não tem caminho de
+  // escrita: stepper oculto, "Editar" desabilitado, Drawer locked, CTAs do
+  // Cardápio disabled. Nenhum POST sai.
+  //
+  // Os dois juntos: `bypass` ganha. É a leitura conservadora — na dúvida, não
+  // finge que o prazo acabou.
+  if (typeof window !== "undefined") {
+    const flags = new URLSearchParams(window.location.search);
+    if (flags.get("bypass_cutoff") === "true") return false;
+    if (flags.get("force_cutoff") === "true") return true;
   }
   const dd = deliveryDate || nextEditableThursdayISO(now);
   const delivery = new Date(`${dd}T00:00:00Z`);

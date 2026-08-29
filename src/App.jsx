@@ -366,6 +366,11 @@ const ActionBtn=({children,loadingText,successText,onAction,onComplete,primary,d
 // Nav inferior. `inicioBadge` true mostra um dot brand-500 no canto superior
 // direito do ícone Início — indica `currentWeeklyOrder?.status === 'rascunho'`
 // (briefing 3.6 / wireframe v2 tela 1, 4, 6).
+//
+// Some na própria aba Início (gate no Layout, ago/26): na Home o card logo
+// acima já diz o mesmo, e melhor. Fora dela o ponto faz o que badge de nav faz
+// bem — chamar de volta pra Home. Não conta com ele pro caso que motivou a
+// frente: quem adiciona no Cardápio e não volta. Isso é do rodapé persistente.
 const Nav=({active,onNav,inicioBadge=false})=>{
   const items=[{id:"home",label:"INÍCIO",icon:ic.home},{id:"assinatura",label:"ASSINATURA",icon:ic.wheat},{id:"cardapio",label:"CARDÁPIO",icon:ic.utensils},{id:"perfil",label:"PERFIL",icon:ic.user}];
   return<div style={{display:"flex",justifyContent:"space-around",alignItems:"center",padding:"8px 0 12px",borderTop:`1px solid ${W[200]}`,background:"#FFF",position:"sticky",bottom:0,zIndex:10,minHeight:56}}>
@@ -1050,7 +1055,6 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
   const hasComposition=currentWeeklyOrder?.composition!=null;
   const hasExtras=currentExtras.length>0;
   const hasAlteration=hasComposition||hasExtras;
-  const isRascunho=currentWeeklyOrder?.status==="rascunho";
   const isConfirmado=currentWeeklyOrder?.status==="confirmado";
 
   // ─── Formatação de datas ───────────────────────────────────────────
@@ -1074,19 +1078,62 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
     return{id,nome:pao.nome,qty:q,tag:wasSwapped?"Trocado":"Assinatura"};
   }).filter(Boolean);
 
-  // ─── Microcopy condicional (Fase 2): só Confirmado + Cutoff ────────
-  // Briefing: Badge "Pedido não confirmado" + microcopy de rascunho saem
-  // (informação migra pro badge do Nav). Mantém pós-confirmação e pós-cutoff.
-  let microcopy=null;
-  if(cutoff&&!isConfirmado){
-    microcopy={text:"Prazo encerrado. Esta semana você recebe a cesta da assinatura. Pode editar a próxima.",color:W[500]};
-  } else if(isConfirmado&&currentWeeklyOrder?.confirmed_at){
-    microcopy={text:`Pedido confirmado em ${fmtDdMm(new Date(currentWeeklyOrder.confirmed_at))}.`,color:W[500]};
-  }
+  // O estado rascunho exibe linha de status; o Nav mostra o ponto fora da Home.
+  // Nenhum dos dois resolve o caso real: tres assinantes (ago/26) nao chegaram a
+  // desconfiar — adicionaram no Cardapio e nao voltaram pra Home. A correcao e um
+  // rodape persistente de pedido nao confirmado, frente propria.
 
   // Total dos extras (assinatura é "Incluso", não soma).
   const totalExtras=currentExtras.reduce((s,e)=>s+e.qty*Number(e.preco_unit),0);
-  const showConfirmar=isRascunho&&hasAlteration&&!cutoff;
+
+  const confirmadoEm=currentWeeklyOrder?.confirmed_at
+    ?fmtDdMm(new Date(currentWeeklyOrder.confirmed_at))
+    :null;
+
+  // Pós-corte sem confirmação: o rascunho não virou pedido, nada foi cobrado.
+  // Os extras seguem na lista (é o que a pessoa montou) mas recuam pro cinza e
+  // somem do total. "R$ 24,00" em azul ao lado de um total "Nenhum" e de uma
+  // nota dizendo que o item não entrou é contradição na cara.
+  const extraNaoEntrou=cutoff&&!isConfirmado;
+  const totalCobravel=extraNaoEntrou?0:totalExtras;
+  // Enumera em português: "A", "A e B", "A, B e C".
+  const listarNomes=(itens)=>itens.length===1
+    ?itens[0].nome
+    :`${itens.slice(0,-1).map(e=>e.nome).join(", ")} e ${itens[itens.length-1].nome}`;
+
+  // Azul = já é cobrança; rascunho é prévia e sai do azul. Inline de propósito:
+  // virar token nomeado obrigaria a auditar Drawer, rodapé e checkout, e essa
+  // decisão pertence à frente do carrinho persistente, não a este PR.
+  const VALOR_COBRADO={color:B[500],fontWeight:700,fontSize:18};
+  const VALOR_PREVIA={color:W[700],fontWeight:600,fontSize:16};
+
+  // Rascunho sem NADA a confirmar: não existe pedido no banco e
+  // confirmCurrentOrder() faz `if(!currentWeeklyOrder?.id) return` — um
+  // "Confirmar pedido" aqui seria botão morto.
+  const nadaAConfirmar=!cutoff&&!isConfirmado&&!hasAlteration;
+
+  // Precedência igual à da microcopy que existia antes: confirmado ganha do
+  // cutoff, então pós-corte com confirmação prévia segue dizendo que confirmou.
+  let estado;
+  if(isConfirmado){
+    estado={status:confirmadoEm?`Pedido confirmado em ${confirmadoEm}.`:null,
+      valorLabel:"Extras desta semana",valorStyle:VALOR_COBRADO,nota:null,confirmar:false};
+  } else if(cutoff){
+    estado={status:"Prazo encerrado. Esta semana você recebe a cesta da assinatura. Pode editar a próxima.",
+      valorLabel:"Extras desta semana",valorStyle:VALOR_COBRADO,
+      // Sem isto o assinante só descobre na quinta, na porta de casa.
+      nota:currentExtras.length
+        ?`${listarNomes(currentExtras)} ${currentExtras.length===1?"que estava no rascunho não entrou":"que estavam no rascunho não entraram"}. Você pode incluir na cesta da próxima quinta.`
+        :null,
+      confirmar:false};
+  } else if(nadaAConfirmar){
+    estado={status:"Sem alterações esta semana. Você recebe a cesta da assinatura na quinta.",
+      valorLabel:"Extras desta semana",valorStyle:VALOR_PREVIA,nota:null,confirmar:false};
+  } else {
+    estado={status:"Confirme até terça, 12h para esta entrega.",
+      valorLabel:"Extras, se você confirmar",valorStyle:VALOR_PREVIA,nota:null,confirmar:true};
+  }
+
   const editarDisabled=cutoff&&isConfirmado;
 
   // ─── Animação de remoção de extra ──────────────────────────────────
@@ -1132,7 +1179,7 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
       return;
     }
     const verb=(produto.genero||"m")==="f"?"adicionada":"adicionado";
-    pushToast(`${produto.nome} ${verb} à cesta.`);
+    pushToast(`${produto.nome} ${verb}. Confirme seu pedido até terça.`);
   };
 
   return<div style={{padding:"24px 16px 16px"}}>
@@ -1185,9 +1232,9 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
               padding:"10px 0",borderBottom:isLastGlobal?"none":`1px dashed ${B[100]}`,
               fontFamily:fb,fontSize:14,color:B[800],lineHeight:1.4,
             }}>
-              <div style={{flex:1}}>{e.qty}× {e.nome}</div>
+              <div style={{flex:1,color:extraNaoEntrou?W[500]:B[800]}}>{e.qty}× {e.nome}</div>
               <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <span style={{fontFamily:fb,fontWeight:600,fontSize:14,color:B[700],fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{fmt(Number(e.preco_unit)*e.qty)}</span>
+                <span style={{fontFamily:fb,fontWeight:600,fontSize:14,color:extraNaoEntrou?W[500]:B[700],fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{fmt(Number(e.preco_unit)*e.qty)}</span>
                 {!cutoff&&!isConfirmado&&<QtyStepper
                   qty={e.qty}
                   name={e.nome}
@@ -1202,43 +1249,52 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
         })}
       </div>
 
-      {/* Total — só extras (assinatura é "Incluso", coberta pelo plano). */}
-      <div style={{
-        display:"flex",justifyContent:"space-between",alignItems:"baseline",
-        padding:"12px 0 0",marginTop:6,borderTop:`1px solid ${B[100]}`,
-      }}>
-        <span style={{fontFamily:fb,fontSize:12,color:B[700]}}>Extras desta semana</span>
-        <span style={{fontFamily:fb,fontSize:18,fontWeight:700,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(totalExtras)}</span>
+      {/* ── Zona de ação ──
+          Único desvio da main: em rascunho o "Confirmar pedido" vem ANTES do
+          valor, pra quem bate o olho ler a ação antes de qualquer número. Nos
+          demais estados a ação é secundária e fecha o bloco.
+
+          A superfície do card não muda em estado nenhum — nem fundo, nem faixa. */}
+      <div style={{marginTop:6,paddingTop:12,borderTop:`1px solid ${B[100]}`}}>
+        {estado.confirmar&&<ActionBtn primary full
+          loadingText="Confirmando…"
+          successText="Confirmado ✓"
+          onAction={async()=>{await confirmCurrentOrder();}}
+          onComplete={()=>showToast(`Cesta confirmada. Entrega ${deliveryLabelShort}.`)}
+          ariaLabel="Confirmar pedido"
+          style={{marginBottom:12}}
+        >Confirmar pedido</ActionBtn>}
+
+        {/* Total — só extras (assinatura é "Incluso", coberta pelo plano).
+            Zero vira "Nenhum": "R$ 0,00" sob "Extras, se você confirmar" lê
+            como cobrança de zero, não como ausência de extra. */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10}}>
+          <span style={{fontFamily:fb,fontSize:12,color:B[700]}}>{estado.valorLabel}</span>
+          <span style={{
+            fontFamily:fb,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap",
+            ...(totalCobravel>0?estado.valorStyle:{color:W[500],fontWeight:600,fontSize:16}),
+          }}>{totalCobravel>0?fmt(totalCobravel):"Nenhum"}</span>
+        </div>
+
+        {estado.status&&<div style={{fontFamily:fb,fontSize:13,color:W[500],marginTop:8,lineHeight:1.5}}>{estado.status}</div>}
+        {estado.nota&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:6,lineHeight:1.5}}>{estado.nota}</div>}
+
+        {/* Editar cesta — link ghost dashed com ícone pencil (wireframe v2 tela 4). */}
+        <button onClick={()=>setDrawerOpen(true)} disabled={editarDisabled} className="press-scale" style={{
+          display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+          width:"100%",marginTop:10,padding:"8px 12px",
+          background:"transparent",border:`1px dashed ${B[100]}`,borderRadius:radii.md,
+          fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",
+          color:B[500],cursor:editarDisabled?"default":"pointer",
+          opacity:editarDisabled?0.4:1,transition:"all 150ms ease",minHeight:40,
+        }} onMouseEnter={e=>{if(!editarDisabled){e.currentTarget.style.background="#FFF";e.currentTarget.style.borderStyle="solid";}}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.borderStyle="dashed";}}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Editar cesta
+        </button>
       </div>
-
-      {/* Microcopy condicional: só pós-confirmação e pós-cutoff. */}
-      {microcopy&&<div style={{fontFamily:fb,fontSize:13,color:microcopy.color,marginTop:8,lineHeight:1.5}}>{microcopy.text}</div>}
-
-      {/* Confirmar pedido (mantido entre total e Editar cesta). */}
-      {showConfirmar&&<ActionBtn primary full
-        loadingText="Confirmando…"
-        successText="Confirmado ✓"
-        onAction={async()=>{await confirmCurrentOrder();}}
-        onComplete={()=>showToast(`Cesta confirmada. Entrega ${deliveryLabelShort}.`)}
-        ariaLabel="Confirmar pedido"
-        style={{marginTop:12}}
-      >Confirmar pedido</ActionBtn>}
-
-      {/* Editar cesta — link ghost dashed com ícone pencil (wireframe v2 tela 4). */}
-      <button onClick={()=>setDrawerOpen(true)} disabled={editarDisabled} className="press-scale" style={{
-        display:"flex",alignItems:"center",justifyContent:"center",gap:6,
-        width:"100%",marginTop:10,padding:"8px 12px",
-        background:"transparent",border:`1px dashed ${B[100]}`,borderRadius:radii.md,
-        fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",
-        color:B[500],cursor:editarDisabled?"default":"pointer",
-        opacity:editarDisabled?0.4:1,transition:"all 150ms ease",minHeight:40,
-      }} onMouseEnter={e=>{if(!editarDisabled){e.currentTarget.style.background="#FFF";e.currentTarget.style.borderStyle="solid";}}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.borderStyle="dashed";}}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-          <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-        </svg>
-        Editar cesta
-      </button>
     </Card>
 
     {/* Novidade hero — clique no CTA adiciona direto (sem modal de detalhes).
@@ -1770,7 +1826,7 @@ const Cardapio=({addExtraToCart,cutoff,pendingPayment,deliveryDate})=>{
       return;
     }
     const verb=(product.genero||"m")==="f"?"adicionada":"adicionado";
-    pushToast(`${product.nome} ${verb} à cesta.`);
+    pushToast(`${product.nome} ${verb}. Confirme seu pedido até terça.`);
   };
 
   // Especial da semana resolvido contra D.rotativos (onde mora a subCopy de
@@ -2146,6 +2202,8 @@ function Layout({pendingPayment,inicioBadge,onNav}){
   useEffect(()=>{mainRef.current?.scrollTo({top:0});window.scrollTo({top:0});},[location.pathname]);
   // Deriva aba ativa do pathname pra highlight do Nav.
   const active=location.pathname==="/"?"home":location.pathname.slice(1);
+  // Ver doc do Nav: o ponto só serve pra trazer de volta pra Home.
+  const showInicioBadge=inicioBadge&&active!=="home";
   return<div style={{fontFamily:fb,maxWidth:390,margin:"0 auto",background:W[50],minHeight:"100vh",display:"flex",flexDirection:"column",position:"relative"}}>
     <a href="#main-content" className="skip-link">Pular para o conteúdo</a>
     {/* Bloco sticky: logo + banner pendente. Banner integrado ao
@@ -2164,7 +2222,7 @@ function Layout({pendingPayment,inicioBadge,onNav}){
     {/* Footers fixos (OrderFooter/ConfirmedFooter) removidos no PR 2 Fase 1.
         Confirmação do pedido vai pro botão "Confirmar pedido" no card da Home
         e no EditarCarrinhoDrawer (Fase 2). */}
-    <Nav active={active} onNav={onNav} inicioBadge={inicioBadge}/>
+    <Nav active={active} onNav={onNav} inicioBadge={showInicioBadge}/>
     <style>{`
       *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
       body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior:none}
