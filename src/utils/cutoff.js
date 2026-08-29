@@ -49,6 +49,28 @@ export function isPastCutoff(deliveryDate, now = new Date()) {
   return now >= cutoff;
 }
 
+// Data civil em Brasilia (UTC-3 fixo desde 2019) de um instante qualquer.
+function brtDateISO(d) {
+  return new Date(d.getTime() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+// Terca do corte, antes das 12h: a barra de pedido nao confirmado troca
+// "Ate terca, 12h" por "Termina hoje, 12h". Sem contagem em minutos -- a
+// urgencia aqui e do dia, nao do relogio.
+//
+// Compara a data BRT, nao a UTC: 23h de segunda em Brasilia ja e terca em UTC,
+// e dizer "termina hoje" ali erraria por um dia inteiro. Nao le as flags de
+// dev de proposito -- `force_cutoff` ja esconde a barra por `isPastCutoff`,
+// e um "hoje" forcado nao teria o que testar.
+export function isCutoffToday(deliveryDate, now = new Date()) {
+  const dd = deliveryDate || nextEditableThursdayISO(now);
+  const cutoff = new Date(`${dd}T00:00:00Z`);
+  cutoff.setUTCDate(cutoff.getUTCDate() - 2);
+  cutoff.setUTCHours(15, 0, 0, 0);
+  if (now >= cutoff) return false;
+  return brtDateISO(now) === brtDateISO(cutoff);
+}
+
 export function isThursday(dateStr) {
   const d = new Date(`${dateStr}T00:00:00Z`);
   return d.getUTCDay() === 4;

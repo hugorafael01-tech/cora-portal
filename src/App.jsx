@@ -18,7 +18,7 @@ import ProductCard from "./components/ProductCard";
 import PendingPaymentBanner from "./components/PendingPaymentBanner";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import { useAuth } from "./auth/useAuth";
-import { isPastCutoff, nextEditableThursdayISO, nextSubscriptionChangeThursdayISO, LAUNCH_FIRST_DELIVERY } from "./utils/cutoff";
+import { isPastCutoff, isCutoffToday, nextEditableThursdayISO, nextSubscriptionChangeThursdayISO, LAUNCH_FIRST_DELIVERY } from "./utils/cutoff";
 import { haptic } from "./utils/haptic";
 import { getSettings, getSubscription, getWeeklyOrders, postWeeklyOrder, confirmWeeklyOrder, patchMySubscription } from "./utils/api";
 import { useSubscriptionContext } from "./auth/useSubscriptionContext";
@@ -209,8 +209,9 @@ const Toast=({msg,vis})=>vis?<div role="status" aria-live="polite" style={{posit
 // toast tem timer próprio de 3.5s.
 //
 // API: `useToastStack()` retorna `{ toasts, push }`. `push(message)` adiciona
-// um toast novo no topo. Renderizar `<ToastStack toasts={toasts}/>` perto do
-// rodapé da tela (acima do Nav).
+// um toast novo no topo. Desde ago/26 há um único stack, no Layout — as telas
+// recebem `pushToast` por prop em vez de manter cada uma o seu, senão dois
+// stacks disputariam a mesma faixa do rodapé.
 const TOAST_TTL_MS = 3500;
 const TOAST_STACK_MAX = 3;
 let __toastSeq = 0;
@@ -260,13 +261,16 @@ const useToastStack = () => {
 // "sobem" no topo com classes `stacked-1` / `stacked-2`.
 const TOAST_ACCENT = "#10B981";
 const TOAST_SUCCESS_BORDER = "#6EE7B7";
-const ToastStack = ({ toasts }) => {
+// `bottom` sobe pra 140 quando a OrderBar esta na tela: a barra ocupa 64px
+// logo acima do Nav, e o toast de "adicionado a cesta" (Cardapio) dispara
+// exatamente no clique que faz a barra aparecer -- os dois convivem.
+const ToastStack = ({ toasts, bottom = 76 }) => {
   if (!toasts?.length) return null;
   // Ordena do mais antigo (topo) ao mais novo (fundo) — DOM order.
   const last = toasts.length - 1;
   return (
     <div className="toast-stack" aria-live="polite" style={{
-      position:"fixed", left:16, right:16, bottom:72,
+      position:"fixed", left:16, right:16, bottom,
       maxWidth:358, margin:"0 auto",
       display:"flex", flexDirection:"column", gap:8, alignItems:"stretch",
       zIndex:60, pointerEvents:"none",
@@ -363,31 +367,95 @@ const ActionBtn=({children,loadingText,successText,onAction,onComplete,primary,d
 // O Modal de detalhes do produto saiu na Frente C item 3 (wireframe v2).
 // ProductCard agora expande inline; NovidadeCard adiciona direto sem modal.
 // QtyBtn local também sai junto (era usado pelo branch qty>0 do Modal).
-// Nav inferior. `inicioBadge` true mostra um dot brand-500 no canto superior
-// direito do ícone Início — indica `currentWeeklyOrder?.status === 'rascunho'`
-// (briefing 3.6 / wireframe v2 tela 1, 4, 6).
+// Nav inferior.
 //
-// Some na própria aba Início (gate no Layout, ago/26): na Home o card logo
-// acima já diz o mesmo, e melhor. Fora dela o ponto faz o que badge de nav faz
-// bem — chamar de volta pra Home. Não conta com ele pro caso que motivou a
-// frente: quem adiciona no Cardápio e não volta. Isso é do rodapé persistente.
-const Nav=({active,onNav,inicioBadge=false})=>{
+// O ponto no ícone Início saiu junto com a OrderBar (ago/26). Ele existia pra
+// chamar de volta pra Home e nunca foi visto por quem achava que já tinha
+// terminado — que é justamente o caso que motivou a frente. A barra cobre o
+// mesmo estado nas três abas sem card; manter os dois seria dois sinais pro
+// mesmo estado, e o menor perde e ensina a ignorar aviso.
+const Nav=({active,onNav})=>{
   const items=[{id:"home",label:"INÍCIO",icon:ic.home},{id:"assinatura",label:"ASSINATURA",icon:ic.wheat},{id:"cardapio",label:"CARDÁPIO",icon:ic.utensils},{id:"perfil",label:"PERFIL",icon:ic.user}];
-  return<div style={{display:"flex",justifyContent:"space-around",alignItems:"center",padding:"8px 0 12px",borderTop:`1px solid ${W[200]}`,background:"#FFF",position:"sticky",bottom:0,zIndex:10,minHeight:56}}>
+  return<div style={{display:"flex",justifyContent:"space-around",alignItems:"center",padding:"8px 0 12px",borderTop:`1px solid ${W[200]}`,background:"#FFF",minHeight:56}}>
     {items.map(it=>(
       <button key={it.id} aria-label={`Ir para ${it.label}`} onClick={()=>onNav(it.id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,border:"none",background:"none",cursor:"pointer",minWidth:56,minHeight:44,padding:"4px 0",position:"relative"}}>
-        <span style={{position:"relative",display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
-          <I d={it.icon} size={22} color={active===it.id?B[500]:W[400]}/>
-          {it.id==="home"&&inicioBadge&&<span aria-label="Você tem alterações na cesta" style={{
-            position:"absolute",top:-2,right:-4,
-            width:9,height:9,borderRadius:"50%",
-            background:B[500],boxShadow:"0 0 0 2px #FFF",
-          }}/>}
-        </span>
+        <I d={it.icon} size={22} color={active===it.id?B[500]:W[400]}/>
         <span style={{fontFamily:fd,fontSize:11,letterSpacing:"0.02em",textTransform:"uppercase",color:active===it.id?B[500]:W[400]}}>{it.label}</span>
       </button>
     ))}
   </div>;
+};
+
+// ─── ORDER BAR ───
+// Barra de pedido não confirmado. Mora no shell (Layout), como irmã de flex
+// logo acima do Nav, e só aparece FORA da Home — na Home o card da cesta já
+// diz o mesmo, e melhor.
+//
+// Por que existe: três assinantes (ago/26) acharam que tinham confirmado. Não
+// estavam em dúvida diante de um card ambíguo — adicionaram no Cardápio, leram
+// o toast como conclusão e nunca voltaram pra Home, onde fica o "Confirmar
+// pedido". O ponto no Nav não resolvia: ninguém que acha que terminou vai
+// procurar sinal na navegação.
+//
+// A barra NÃO confirma — ela abre o EditarCestaDrawer, que já confirma. Uma
+// segunda superfície de confirmação criaria três lugares (card, drawer, barra)
+// pra divergir na próxima mudança de copy ou de regra de corte.
+//
+// Não tem estado confirmado nem estado de erro. Ao confirmar, a barra sai da
+// tela — desaparecer é o recibo certo, e a mensagem quem dá é o toast do
+// Drawer. Erro pertence à tela onde a pessoa apertou o botão, que é o Drawer.
+//
+// Irmã de flex, não `position:fixed`: assim ela ocupa os próprios 64px acima do
+// Nav e nenhuma das quatro telas precisa de padding-bottom condicional. As
+// páginas já carregam paddingBottom próprio (12/16/80 conforme pendência), e
+// somar mais um caso a cada uma seria quatro lugares pra errar.
+const ORDER_BAR_HEIGHT=64;
+// `aria-live` só na primeira aparição da sessão: anuncia uma vez, não a cada
+// item que entra na cesta. Escopo de módulo de propósito — o estado é da
+// sessão, e o componente remonta a cada troca de aba.
+let __orderBarAnnounced=false;
+const OrderBar=({totalExtras,cutoffHoje,onOpen})=>{
+  const[hover,setHover]=useState(false);
+  const[announce]=useState(()=>{
+    if(__orderBarAnnounced) return false;
+    __orderBarAnnounced=true;
+    return true;
+  });
+  const prazo=cutoffHoje?"Termina hoje, 12h":"Até terça, 12h";
+  const valor=totalExtras>0?fmt(totalExtras):"Nenhum extra";
+  return<>
+    <button onClick={onOpen}
+      aria-label={`Falta confirmar seu pedido, ${cutoffHoje?"termina hoje 12h":"até terça 12h"}. Abrir cesta.`}
+      onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
+      style={{
+        flexShrink:0,width:"100%",height:ORDER_BAR_HEIGHT,
+        display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,
+        padding:"0 16px",textAlign:"left",cursor:"pointer",
+        // Hover preenche com #FFF — comportamento de card clicável do sistema.
+        // Sem sombra e sem transform: altitude por fundo + borda (regra do DS).
+        background:hover?"#FFF":B[50],
+        borderTop:`1.5px solid ${B[500]}`,borderBottom:`1px solid ${B[100]}`,
+        borderLeft:"none",borderRight:"none",
+        transition:"background 150ms ease",
+        animation:"fadeUp 260ms ease-out",
+      }}>
+      <span style={{display:"flex",flexDirection:"column",gap:2,minWidth:0}}>
+        <span style={{fontFamily:fb,fontSize:14,fontWeight:600,color:B[800],lineHeight:1.2}}>Falta confirmar seu pedido</span>
+        <span style={{fontFamily:fb,fontSize:13,lineHeight:1.2,whiteSpace:"nowrap",color:W[600]}}>
+          <span style={cutoffHoje?{color:ST.warning.t,fontWeight:600}:undefined}>{prazo}</span>
+          {" · "}
+          {/* W[700]/600 e não azul: azul quer dizer "será cobrado", e rascunho
+              ainda é prévia (regra fechada no PR #88). */}
+          <span style={{color:W[700],fontWeight:600,fontVariantNumeric:"tabular-nums"}}>{valor}</span>
+        </span>
+      </span>
+      <I d={ic.chev} size={20} color={B[500]}/>
+    </button>
+    {announce&&<div role="status" aria-live="polite" style={{
+      position:"absolute",width:1,height:1,padding:0,margin:-1,
+      overflow:"hidden",clip:"rect(0 0 0 0)",whiteSpace:"nowrap",border:0,
+    }}>Falta confirmar seu pedido.</div>}
+  </>;
 };
 
 // ─── NOVIDADE HERO ───
@@ -940,7 +1008,10 @@ const EditarCestaDrawer=({
           background:W[100],borderRadius:radii.md,
         }}>
           <span style={{fontFamily:fb,fontSize:13,color:W[700]}}>Total de extras desta semana</span>
-          <span style={{fontFamily:fb,fontSize:18,fontWeight:700,color:B[500],fontVariantNumeric:"tabular-nums"}}>{fmt(totalExtras)}</span>
+          {/* Azul = já é cobrança. Rascunho é prévia e sai do azul (regra do
+              PR #88); confirmado volta pro azul, porque aí vai pra fatura.
+              Flat em W[700] apagaria o total de um pedido já commitado. */}
+          <span style={{fontFamily:fb,fontSize:18,fontWeight:700,color:isConfirmado?B[500]:W[700],fontVariantNumeric:"tabular-nums"}}>{fmt(totalExtras)}</span>
         </div>}
 
         {/* Microcopy rodapé: lembrete de cobrança + cutoff (briefing 3.6) */}
@@ -1030,6 +1101,10 @@ const comPrecoDaSemana=(produto,precos)=>{
   return preco===undefined?produto:{...produto,precoNum:preco,preco:precoBRL(preco)};
 };
 
+// dd/mm curto — usado pelo label de entrega (App) e pela data de confirmação
+// (Home). Assinatura mantém a própria cópia local.
+const fmtDdMm=(dt)=>`${String(dt.getDate()).padStart(2,"0")}/${String(dt.getMonth()+1).padStart(2,"0")}`;
+
 // ─── HOME ───
 // Redesign Frente C item 1 (briefing 5):
 //  - Saudação temporal (sem flexão por gênero)
@@ -1037,11 +1112,11 @@ const comPrecoDaSemana=(produto,precos)=>{
 //    badge/microcopy condicional, botão "Editar carrinho" e "Confirmar pedido"
 //  - Novidade hero com sub-copy emocional e CTA "+ Adicionar à cesta — R$ X"
 //  - Estado "semana sem destaque" quando a semana não tem especial no mapa
-const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinaturaBaseline,cestaAtual,onSetCestaSemana,pendingPayment,currentWeeklyOrder,currentExtras,addExtraToCart,removeExtraFromCart,updateComposition,confirmCurrentOrder,deliveryDate})=>{
-  const[drawerOpen,setDrawerOpen]=useState(false);
-  const{toasts,push:pushToast}=useToastStack();
-  // `showToast` mantém a assinatura legacy pros callers existentes (ActionBtn
-  // do Confirmar, Drawer onConfirmedToast) — internamente vai pro stack.
+const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinaturaBaseline,cestaAtual,pendingPayment,currentWeeklyOrder,currentExtras,addExtraToCart,removeExtraFromCart,confirmCurrentOrder,deliveryDate,deliveryLabelFull,deliveryLabelShort,onOpenDrawer,pushToast})=>{
+  // Drawer, ToastStack e os labels de entrega subiram pro shell (ago/26): a
+  // OrderBar precisa abrir a cesta de qualquer aba, e o toast de confirmação
+  // tem que aparecer mesmo quando o Drawer foi aberto pelo Cardápio. A Home
+  // virou só mais um disparador.
   const showToast=(msg)=>pushToast(msg);
 
   const nome=userData?.nome?userData.nome.split(" ")[0]:D.nome;
@@ -1058,13 +1133,9 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
   const isConfirmado=currentWeeklyOrder?.status==="confirmado";
 
   // ─── Formatação de datas ───────────────────────────────────────────
-  // `deliveryDate` vem do App (fonte única) — a mesma data que resolve o menu
-  // da semana, aqui e no Cardápio.
-  // Parse com noon UTC pra evitar deriva BRT (UTC-3 ainda cai no mesmo dia)
-  const deliveryDateObj=new Date(`${deliveryDate}T12:00:00Z`);
-  const deliveryLabelFull=formatarDataEntrega(deliveryDateObj);
-  const fmtDdMm=(dt)=>`${String(dt.getDate()).padStart(2,"0")}/${String(dt.getMonth()+1).padStart(2,"0")}`;
-  const deliveryLabelShort=fmtDdMm(deliveryDateObj);
+  // `deliveryLabelFull`/`deliveryLabelShort` vêm do App junto com o Drawer, que
+  // usa os mesmos dois. `deliveryDate` continua chegando cru porque o menu da
+  // semana (`useCardapioSemana`) precisa da ISO.
 
   // ─── Lista de assinatura ───────────────────────────────────────────
   // 1 entry por pão da composição atual (com swap se houver).
@@ -1280,7 +1351,7 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
         {estado.nota&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:6,lineHeight:1.5}}>{estado.nota}</div>}
 
         {/* Editar cesta — link ghost dashed com ícone pencil (wireframe v2 tela 4). */}
-        <button onClick={()=>setDrawerOpen(true)} disabled={editarDisabled} className="press-scale" style={{
+        <button onClick={onOpenDrawer} disabled={editarDisabled} className="press-scale" style={{
           display:"flex",alignItems:"center",justifyContent:"center",gap:6,
           width:"100%",marginTop:10,padding:"8px 12px",
           background:"transparent",border:`1px dashed ${B[100]}`,borderRadius:radii.md,
@@ -1308,28 +1379,7 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
 
     <div onClick={()=>onNav("cardapio")} className="lk" style={{fontFamily:fb,fontSize:14,color:B[500],fontWeight:500,textAlign:"center",padding:"8px 0",cursor:"pointer"}}>→ Ver tudo no Cardápio</div>
 
-    {/* Drawer */}
-    {drawerOpen&&<EditarCestaDrawer
-      onClose={()=>setDrawerOpen(false)}
-      currentWeeklyOrder={currentWeeklyOrder}
-      currentExtras={currentExtras}
-      assinaturaQtds={assinaturaQtds}
-      assinaturaBaseline={assinaturaBaseline}
-      cestaAtual={cestaAtual}
-      onSetCestaSemana={onSetCestaSemana}
-      updateComposition={updateComposition}
-      removeExtraFromCart={removeExtraFromCart}
-      addExtraToCart={addExtraToCart}
-      confirmCurrentOrder={confirmCurrentOrder}
-      cutoff={cutoff}
-      pendingPayment={pendingPayment}
-      deliveryLabelFull={deliveryLabelFull}
-      deliveryLabelShort={deliveryLabelShort}
-      onNav={onNav}
-      onConfirmedToast={()=>showToast(`Cesta confirmada. Entrega ${deliveryLabelShort}.`)}
-    />}
-
-    <ToastStack toasts={toasts}/>
+    {/* Drawer e ToastStack agora moram no Layout — ver OrderBar. */}
   </div>;
 };
 
@@ -1338,8 +1388,14 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
 // • Fase 2: tela idle reorganizada (Plano atual + Convite + read-only blocks + microcopy WA)
 // • Fase 3: edição inline (card vira "Alterar plano" com QtyStepper + ev-block + footer)
 // O modal de confirmação + POST com AbortController vem na Fase 4.
-const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
+const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado,onEditingChange})=>{
   const[editing,setEditing]=useState(false);
+  // Publica o modo edição pro shell em vez de entregar a posse do estado: a
+  // OrderBar recolhe enquanto este card tem "Cancelar · Salvar alterações" no
+  // rodapé, porque duas ações primárias na mesma tela dividem a decisão.
+  // O cleanup cobre sair da aba no meio da edição — sem ele a barra ficaria
+  // recolhida no Cardápio depois de um "Alterar plano" abandonado.
+  useEffect(()=>{onEditingChange?.(editing);return()=>onEditingChange?.(false);},[editing,onEditingChange]);
   // Rascunho local durante a edição (composição em construção). Cancel descarta.
   // Reset feito explicitamente nos handlers (abrir/cancelar) — evita useEffect+setState.
   const[rascunho,setRascunho]=useState(()=>({...assinaturaQtds}));
@@ -1795,8 +1851,7 @@ const Assinatura=({hasPending,cutoff,subscription,assinaturaQtds,onAlterado})=>{
 //    src/config/menu.js, que exigia deploy pra mudar cardápio e divergia do que
 //    o servidor cobra. A ordem dos cards continua curada aqui embaixo.
 const CARDAPIO_PRODUCT_ORDER=["original","integral","focaccia","multigraos","brioche","ciabatta"];
-const Cardapio=({addExtraToCart,cutoff,pendingPayment,deliveryDate})=>{
-  const{toasts,push:pushToast}=useToastStack();
+const Cardapio=({addExtraToCart,cutoff,pendingPayment,deliveryDate,pushToast})=>{
   const lockedReason=pendingPayment?LOCK_REASON_PENDING:undefined;
 
   // Menu da semana da entrega corrente — mesma data que o pedido usa, então o
@@ -1869,7 +1924,6 @@ const Cardapio=({addExtraToCart,cutoff,pendingPayment,deliveryDate})=>{
       />
     ))}
 
-    <ToastStack toasts={toasts}/>
   </div>;
 };
 
@@ -2195,15 +2249,23 @@ const Perfil=({subscription,weeklyOrders=[],pendingPayment=false})=>{
 // Envolve as rotas autenticadas (/, /assinatura, /cardapio, /perfil).
 // PendingPaymentBanner + Nav ficam aqui pra persistirem entre trocas de aba.
 // Cross-dissolve preservado via key={location.pathname} no .tab-content.
-function Layout({pendingPayment,inicioBadge,onNav}){
+//
+// Desde ago/26 o shell também é dono do EditarCestaDrawer, do ToastStack e da
+// OrderBar. O Drawer morava na Home, e por isso a cesta só abria de lá; a barra
+// precisa abri-la das outras três abas. O ToastStack veio junto por
+// consequência — sem ele aqui, confirmar pelo Drawer aberto no Cardápio não
+// mostraria recibo nenhum.
+function Layout({pendingPayment,onNav,orderBar,drawer,toasts}){
   const location=useLocation();
   const mainRef=useRef(null);
   // Reset scroll ao trocar de rota (cobre window + main com overflow interno).
   useEffect(()=>{mainRef.current?.scrollTo({top:0});window.scrollTo({top:0});},[location.pathname]);
   // Deriva aba ativa do pathname pra highlight do Nav.
   const active=location.pathname==="/"?"home":location.pathname.slice(1);
-  // Ver doc do Nav: o ponto só serve pra trazer de volta pra Home.
-  const showInicioBadge=inicioBadge&&active!=="home";
+  // A barra some na Home (o card da cesta já diz o mesmo, e melhor), com o
+  // Drawer aberto (é o pai da ação) e no modo edição da Assinatura. Pós-corte e
+  // rascunho vazio já saem de `orderBar.pending`, no App.
+  const showOrderBar=orderBar.pending&&active!=="home"&&!drawer.open&&!orderBar.assinaturaEditing;
   return<div style={{fontFamily:fb,maxWidth:390,margin:"0 auto",background:W[50],minHeight:"100vh",display:"flex",flexDirection:"column",position:"relative"}}>
     <a href="#main-content" className="skip-link">Pular para o conteúdo</a>
     {/* Bloco sticky: logo + banner pendente. Banner integrado ao
@@ -2222,7 +2284,21 @@ function Layout({pendingPayment,inicioBadge,onNav}){
     {/* Footers fixos (OrderFooter/ConfirmedFooter) removidos no PR 2 Fase 1.
         Confirmação do pedido vai pro botão "Confirmar pedido" no card da Home
         e no EditarCarrinhoDrawer (Fase 2). */}
-    <Nav active={active} onNav={onNav} inicioBadge={showInicioBadge}/>
+    {/* Rodapé sticky único (OrderBar + Nav). O sticky era do Nav; subiu pro
+        wrapper porque a barra precisa pinar junto — como irmã de flex solta ela
+        ficava no fim do documento, fora da viewport, e só aparecia no fim da
+        rolagem (o shell é `minHeight:100vh`, não altura definida, então o main
+        cresce com o conteúdo em vez de rolar por dentro).
+        Sticky ocupa o próprio espaço no fluxo, então o rodapé não cobre o fim
+        do conteúdo e nenhuma das quatro telas precisa de padding-bottom.
+        A OrderBar vem antes do Nav no DOM = depois do conteúdo e antes da nav
+        na ordem de foco. */}
+    <div style={{position:"sticky",bottom:0,zIndex:10}}>
+      {showOrderBar&&<OrderBar totalExtras={orderBar.totalExtras} cutoffHoje={orderBar.cutoffHoje} onOpen={()=>drawer.setOpen(true)}/>}
+      <Nav active={active} onNav={onNav}/>
+    </div>
+    {drawer.open&&<EditarCestaDrawer {...drawer.props} onClose={()=>drawer.setOpen(false)}/>}
+    <ToastStack toasts={toasts} bottom={showOrderBar?76+ORDER_BAR_HEIGHT:76}/>
     <style>{`
       *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
       body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior:none}
@@ -2338,6 +2414,14 @@ export default function CoraPortal(){
   // 'closed-during-flow' = bateu o 409 a meio do onboarding (race C6).
   // O reason controla o banner persistente na CapacityWaitlist (Frente A — ajustes).
   const [waitlistReason, setWaitlistReason] = useState("splash");
+
+  // ─── Shell: cesta, toast e modo edição da Assinatura ───────────────
+  // Os três moram aqui porque o Layout precisa deles e o Layout é irmão das
+  // rotas, não pai de nenhuma delas em termos de estado.
+  const[drawerOpen,setDrawerOpen]=useState(false);
+  const{toasts,push:pushToast}=useToastStack();
+  // Sobe da Assinatura por callback (o card é quem sabe se está editando).
+  const[assinaturaEditing,setAssinaturaEditing]=useState(false);
   useEffect(() => {
     let cancelled = false;
     getSettings()
@@ -2605,7 +2689,35 @@ export default function CoraPortal(){
 
   // Fallback minimo enquanto chunks lazy carregam. Usa grafismo da marca.
   const lazyFallback=<div style={{position:"fixed",inset:0,background:W[50],display:"flex",alignItems:"center",justifyContent:"center"}}><img src="/images/grafismo_coracao.svg" alt="Cora" style={{width:48,height:48,opacity:0.6}}/></div>;
-  const inicioBadge=currentWeeklyOrder?.status==="rascunho"&&((currentWeeklyOrder?.extras?.length||0)>0||currentWeeklyOrder?.composition!=null);
+  // ─── OrderBar + Drawer no shell ────────────────────────────────────
+  // Rascunho com algo de fato a confirmar. A guarda de conteúdo é a mesma que o
+  // ponto do Nav usava antes de sair: rascunho vazio não tem o que confirmar
+  // (`confirmCurrentOrder` faz no-op sem id), e a barra viraria alvo morto.
+  // Pós-corte o rascunho foi descartado, então a barra também não aparece.
+  const rascunhoPendente=!cutoff&&currentWeeklyOrder?.status==="rascunho"
+    &&((currentWeeklyOrder?.extras?.length||0)>0||currentWeeklyOrder?.composition!=null);
+  const totalExtras=currentExtras.reduce((sum,e)=>sum+e.qty*Number(e.preco_unit),0);
+  // Parse com noon UTC pra evitar deriva BRT (UTC-3 ainda cai no mesmo dia).
+  const deliveryDateObj=new Date(`${deliveryDate}T12:00:00Z`);
+  const deliveryLabelFull=formatarDataEntrega(deliveryDateObj);
+  const deliveryLabelShort=fmtDdMm(deliveryDateObj);
+  const orderBar={
+    pending:rascunhoPendente,
+    totalExtras,
+    cutoffHoje:isCutoffToday(currentWeeklyOrder?.delivery_date),
+    assinaturaEditing,
+  };
+  const drawer={
+    open:drawerOpen,
+    setOpen:setDrawerOpen,
+    props:{
+      currentWeeklyOrder,currentExtras,assinaturaQtds,assinaturaBaseline,cestaAtual,
+      onSetCestaSemana:setCestaSemana,updateComposition,removeExtraFromCart,addExtraToCart,
+      confirmCurrentOrder,cutoff,pendingPayment,deliveryLabelFull,deliveryLabelShort,
+      onNav:handleNav,
+      onConfirmedToast:()=>pushToast(`Cesta confirmada. Entrega ${deliveryLabelShort}.`),
+    },
+  };
 
   return (
     <Suspense fallback={lazyFallback}>
@@ -2626,10 +2738,10 @@ export default function CoraPortal(){
             ProtectedRoute retorna <Outlet/>; o Layout fica aninhado e renderiza o
             proprio <Outlet/> com a pagina da rota. */}
         <Route element={<ProtectedRoute/>}>
-          <Route element={<Layout pendingPayment={pendingPayment} inicioBadge={inicioBadge} onNav={handleNav}/>}>
-            <Route path="/" element={<Home onNav={handleNav} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaAtual={cestaAtual} onSetCestaSemana={setCestaSemana} ehPrimeiroAcesso={ehPrimeiroAcesso} pendingPayment={pendingPayment} currentWeeklyOrder={currentWeeklyOrder} currentExtras={currentExtras} addExtraToCart={addExtraToCart} removeExtraFromCart={removeExtraFromCart} updateComposition={updateComposition} confirmCurrentOrder={confirmCurrentOrder} deliveryDate={deliveryDate}/>}/>
-            <Route path="/assinatura" element={<Assinatura hasPending={false} cutoff={cutoff} subscription={subscription} assinaturaQtds={assinaturaQtds} onAlterado={handleAlterarAssinatura}/>}/>
-            <Route path="/cardapio" element={<Cardapio addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment} deliveryDate={deliveryDate}/>}/>
+          <Route element={<Layout pendingPayment={pendingPayment} onNav={handleNav} orderBar={orderBar} drawer={drawer} toasts={toasts}/>}>
+            <Route path="/" element={<Home onNav={handleNav} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaAtual={cestaAtual} ehPrimeiroAcesso={ehPrimeiroAcesso} pendingPayment={pendingPayment} currentWeeklyOrder={currentWeeklyOrder} currentExtras={currentExtras} addExtraToCart={addExtraToCart} removeExtraFromCart={removeExtraFromCart} confirmCurrentOrder={confirmCurrentOrder} deliveryDate={deliveryDate} deliveryLabelFull={deliveryLabelFull} deliveryLabelShort={deliveryLabelShort} onOpenDrawer={()=>setDrawerOpen(true)} pushToast={pushToast}/>}/>
+            <Route path="/assinatura" element={<Assinatura hasPending={false} cutoff={cutoff} subscription={subscription} assinaturaQtds={assinaturaQtds} onAlterado={handleAlterarAssinatura} onEditingChange={setAssinaturaEditing}/>}/>
+            <Route path="/cardapio" element={<Cardapio addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment} deliveryDate={deliveryDate} pushToast={pushToast}/>}/>
             <Route path="/perfil" element={<Perfil subscription={subscription} weeklyOrders={weeklyOrders} pendingPayment={pendingPayment}/>}/>
           </Route>
         </Route>
