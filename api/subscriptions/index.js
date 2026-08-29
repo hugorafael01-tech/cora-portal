@@ -341,35 +341,79 @@ const PATCH_FIELDS =
 // (frente maior, fase 3). Sem este e-mail a divergencia fica silenciosa — foi o
 // que aconteceu em 25/08, cinco dias com o valor errado na cobranca. O e-mail
 // nao resolve a raiz; transforma erro invisivel em tarefa visivel pro Hugo.
-const buildPlanChangeEmailBody = ({ nome, email, compAnterior, valorAnterior, compNova, valorNovo }) => {
+//
+// O gatilho e o SINAL da diferenca de valor_mensal, nao "a composicao mudou",
+// porque a acao devida e diferente em cada caso (regra da Cora, 29/08 — a
+// assinatura e paga adiantada):
+//   delta = 0  troca de tipo sem mudar total -> nada a fazer, nao envia.
+//   delta > 0  aumento -> proporcional agora + entrega ja na quinta seguinte.
+//   delta < 0  reducao -> nao mexe no mes corrente; vale na renovacao.
+// Alerta que pede acao inexistente treina o leitor a ignorar o alerta.
+
+// Primeiro nome, pro corpo da reducao falar da assinante sem soar formal.
+const primeiroNome = (nome) => String(nome || "").trim().split(/\s+/)[0];
+
+// Cabecalho comum aos dois e-mails: quem mudou, de -> para, e o contato.
+const buildPlanDiffBlock = ({ verbo, nome, email, compAnterior, valorAnterior, compNova, valorNovo, sufixoDiferenca = "" }) => {
   const delta = valorNovo - valorAnterior;
   const diferenca = `${delta < 0 ? "-" : "+"}${fmtMoney(Math.abs(delta))}`;
-  return `${nome} alterou a composicao da assinatura no portal.
+  return `${nome} ${verbo} a composicao da assinatura no portal.
 
 DE:    ${compAnterior}  —  ${fmtMoney(valorAnterior)}
 PARA:  ${compNova}  —  ${fmtMoney(valorNovo)}
 
-Diferenca: ${diferenca} por mes
+Diferenca: ${diferenca} por mes${sufixoDiferenca}
 
 E-mail: ${email}
+`;
+};
 
+const RODAPE = `
+Esta mensagem foi gerada automaticamente pelo portal Cora.
+`;
+
+// AUMENTO: ha dinheiro a capturar e a assinatura precisa acompanhar. O passo 5
+// e o que foi esquecido no caso de 25/08 — sem ele o mes corrente sai a menor.
+const buildPlanIncreaseEmailBody = (dados) => `${buildPlanDiffBlock({ verbo: "alterou", ...dados })}
 ────────────────────────────────────────
 ACAO NECESSARIA — o Asaas NAO foi atualizado.
 
 1. Abrir a assinatura do cliente no Asaas
-2. Alterar o valor para ${fmtMoney(valorNovo)}
-3. Atualizar a descricao: "Assinatura ${compNova} por semana."
+2. Alterar o valor para ${fmtMoney(dados.valorNovo)}
+3. Atualizar a descricao: "Assinatura ${dados.compNova} por semana."
 4. Marcar para atualizar as cobrancas pendentes ja geradas
+5. Cobrar o proporcional do mes corrente pelos dias restantes
 
 As cobrancas sao geradas com antecedencia. Confira se a do proximo
 vencimento ja existe com o valor antigo.
 
 https://www.asaas.com/
 ────────────────────────────────────────
+${RODAPE}`;
 
-Esta mensagem foi gerada automaticamente pelo portal Cora.
-`;
-};
+// REDUCAO: nada a fazer no Asaas agora — mandar a lista de passos induziria ao
+// erro de reduzir a cobranca de um mes que a assinante ja pagou e vai receber.
+// O aviso do qty_* e a parte que importa: o portal ja gravou a composicao nova
+// e a producao le esse campo, entao a quinta sai errada sem correcao manual.
+// Esse paragrafo sai quando a regra de vigencia entrar (tarefa separada).
+const buildPlanReductionEmailBody = (dados) => `${buildPlanDiffBlock({ verbo: "reduziu", sufixoDiferenca: ", a partir da proxima renovacao.", ...dados })}
+────────────────────────────────────────
+NAO E PRECISO MEXER NO ASAAS AGORA.
+
+A assinatura e paga adiantada. A cobranca do mes corrente nao muda,
+e ${primeiroNome(dados.nome)} continua recebendo ${dados.compAnterior} ate o fim
+do mes. O novo valor passa a valer na renovacao seguinte.
+
+⚠️ ENQUANTO ISSO: o portal ja gravou a composicao nova em qty_*, e a
+producao le esse campo. Sem correcao manual, a quinta sai com
+${dados.compNova} em vez de ${dados.compAnterior}.
+
+Ate a regra de vigencia existir, desfazer a mao no banco e refazer
+na virada do mes.
+
+Vale entender por que reduziu — mudanca de comportamento e sinal.
+────────────────────────────────────────
+${RODAPE}`;
 
 async function handlePatchMine(req, res) {
   // ─── Identidade: deriva user_id do JWT (nao confia em id vindo do cliente) ───
@@ -454,30 +498,44 @@ async function handlePatchMine(req, res) {
   // A alteracao ja foi gravada e e legitima: se o e-mail falhar, o assinante
   // ainda recebe 200. So o caminho de mudanca real chega aqui — o no-op
   // (itensEqual) retornou la em cima e nao dispara nada.
-  try {
-    // SDK Resend v4+ retorna { data, error } sem throw. Precisa checar
-    // .error explicitamente, senao falhas silenciosas passam batido.
-    const result = await resend.emails.send({
-      from: process.env.EMAIL_FROM,
-      to: process.env.EMAIL_TO,
-      subject: `[Cora] Mudanca de plano — ${current.nome}`,
-      text: buildPlanChangeEmailBody({
-        nome: current.nome,
-        email: current.email,
-        // Composicao/valor anteriores saem de `current`, lido antes do update.
-        compAnterior: detalharItens(current.itens),
-        valorAnterior: current.valor_mensal,
-        compNova: detalharItens(updatePayload.itens),
-        valorNovo: valorMensal,
-      }),
-    });
-    if (result?.error) {
-      console.error("[subscriptions PATCH] email error", result.error);
-    } else {
-      console.log("[subscriptions PATCH] email sent", result?.data?.id);
+  //
+  // Number() explicito: valor_mensal e numeric no Postgres e pode voltar como
+  // string dependendo do caminho de serializacao. A subtracao coagiria sozinha,
+  // mas a comparacao com zero abaixo precisa de numero de verdade.
+  const deltaMensal = valorMensal - Number(current.valor_mensal);
+
+  // Nivel 1 — troca de tipo mantendo o total: nao ha valor a acertar nem
+  // cobranca a mexer, entao nao envia nada. Efeito colateral aceito: a
+  // descricao da assinatura no Asaas guarda a composicao antiga e fica
+  // desatualizada na fatura. E cosmetico; o valor continua correto.
+  if (deltaMensal !== 0) {
+    // Nivel 2 (aumento) e nivel 3 (reducao) pedem acoes opostas no Asaas.
+    const aumento = deltaMensal > 0;
+    try {
+      // SDK Resend v4+ retorna { data, error } sem throw. Precisa checar
+      // .error explicitamente, senao falhas silenciosas passam batido.
+      const result = await resend.emails.send({
+        from: process.env.EMAIL_FROM,
+        to: process.env.EMAIL_TO,
+        subject: `[Cora] ${aumento ? "Mudanca" : "Reducao"} de plano — ${current.nome}`,
+        text: (aumento ? buildPlanIncreaseEmailBody : buildPlanReductionEmailBody)({
+          nome: current.nome,
+          email: current.email,
+          // Composicao/valor anteriores saem de `current`, lido antes do update.
+          compAnterior: detalharItens(current.itens),
+          valorAnterior: Number(current.valor_mensal),
+          compNova: detalharItens(updatePayload.itens),
+          valorNovo: valorMensal,
+        }),
+      });
+      if (result?.error) {
+        console.error("[subscriptions PATCH] email error", result.error);
+      } else {
+        console.log("[subscriptions PATCH] email sent", result?.data?.id);
+      }
+    } catch (err) {
+      console.error("[subscriptions PATCH] email throw", err);
     }
-  } catch (err) {
-    console.error("[subscriptions PATCH] email throw", err);
   }
 
   return res.status(200).json(updated);
