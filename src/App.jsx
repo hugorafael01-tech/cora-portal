@@ -2276,7 +2276,14 @@ function Layout({pendingPayment,onNav,orderBar,drawer,toasts}){
       </div>
       <PendingPaymentBanner pendingPayment={pendingPayment}/>
     </div>
-    <main ref={mainRef} id="main-content" style={{flex:1,overflowY:"auto"}}>
+    {/* `minHeight:0` é o que faz o `flex:1` valer: sem ele o min-height:auto do
+        flexbox impede o main de encolher abaixo do conteúdo, o shell fica mais
+        alto que a viewport e qualquer coisa depois do main cai fora da tela.
+        O Nav só sobrevivia a isso por ser sticky. Com o minHeight:0 o main
+        volta a rolar por dentro (que é o que o `overflowY:auto` sempre quis
+        dizer) e o rodapé — OrderBar + Nav — fica sempre visível, sem precisar
+        de padding-bottom condicional em nenhuma das quatro telas. */}
+    <main ref={mainRef} id="main-content" style={{flex:1,minHeight:0,overflowY:"auto"}}>
       <div key={location.pathname} className="tab-content">
         <Outlet/>
       </div>
