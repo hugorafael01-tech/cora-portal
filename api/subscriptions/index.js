@@ -331,8 +331,45 @@ const itensEqual = (a, b) => {
 // Campos que o PATCH le/retorna: qty_* (shape novo) + itens/total_paes (legado,
 // pra idempotencia e double-write) + valores. SEM next_billing_* — recorte D.4:
 // o endpoint so persiste composicao; regra de cobranca/proporcional e fase 2.
+// nome/email entram pro alerta de mudanca de plano (buildPlanChangeEmailBody):
+// sao colunas da propria subscriptions, e o dono ja tem essa informacao sobre
+// si — o payload da resposta cresce, mas nao expoe nada de terceiros.
 const PATCH_FIELDS =
-  "id, status, itens, qty_total, qty_original, qty_integral, total_paes, valor_paes, valor_frete, valor_mensal";
+  "id, status, nome, email, itens, qty_total, qty_original, qty_integral, total_paes, valor_paes, valor_frete, valor_mensal";
+
+// Alerta operacional: o PATCH grava em subscriptions e NAO sincroniza o Asaas
+// (frente maior, fase 3). Sem este e-mail a divergencia fica silenciosa — foi o
+// que aconteceu em 25/08, cinco dias com o valor errado na cobranca. O e-mail
+// nao resolve a raiz; transforma erro invisivel em tarefa visivel pro Hugo.
+const buildPlanChangeEmailBody = ({ nome, email, compAnterior, valorAnterior, compNova, valorNovo }) => {
+  const delta = valorNovo - valorAnterior;
+  const diferenca = `${delta < 0 ? "-" : "+"}${fmtMoney(Math.abs(delta))}`;
+  return `${nome} alterou a composicao da assinatura no portal.
+
+DE:    ${compAnterior}  —  ${fmtMoney(valorAnterior)}
+PARA:  ${compNova}  —  ${fmtMoney(valorNovo)}
+
+Diferenca: ${diferenca} por mes
+
+E-mail: ${email}
+
+────────────────────────────────────────
+ACAO NECESSARIA — o Asaas NAO foi atualizado.
+
+1. Abrir a assinatura do cliente no Asaas
+2. Alterar o valor para ${fmtMoney(valorNovo)}
+3. Atualizar a descricao: "Assinatura ${compNova} por semana."
+4. Marcar para atualizar as cobrancas pendentes ja geradas
+
+As cobrancas sao geradas com antecedencia. Confira se a do proximo
+vencimento ja existe com o valor antigo.
+
+https://www.asaas.com/
+────────────────────────────────────────
+
+Esta mensagem foi gerada automaticamente pelo portal Cora.
+`;
+};
 
 async function handlePatchMine(req, res) {
   // ─── Identidade: deriva user_id do JWT (nao confia em id vindo do cliente) ───
@@ -411,6 +448,36 @@ async function handlePatchMine(req, res) {
   if (updateErr) {
     console.error("[subscriptions PATCH] update error", updateErr);
     return res.status(500).json({ error: "internal_error" });
+  }
+
+  // ─── Alerta pro Hugo (best-effort; falha nao bloqueia a resposta) ───
+  // A alteracao ja foi gravada e e legitima: se o e-mail falhar, o assinante
+  // ainda recebe 200. So o caminho de mudanca real chega aqui — o no-op
+  // (itensEqual) retornou la em cima e nao dispara nada.
+  try {
+    // SDK Resend v4+ retorna { data, error } sem throw. Precisa checar
+    // .error explicitamente, senao falhas silenciosas passam batido.
+    const result = await resend.emails.send({
+      from: process.env.EMAIL_FROM,
+      to: process.env.EMAIL_TO,
+      subject: `[Cora] Mudanca de plano — ${current.nome}`,
+      text: buildPlanChangeEmailBody({
+        nome: current.nome,
+        email: current.email,
+        // Composicao/valor anteriores saem de `current`, lido antes do update.
+        compAnterior: detalharItens(current.itens),
+        valorAnterior: current.valor_mensal,
+        compNova: detalharItens(updatePayload.itens),
+        valorNovo: valorMensal,
+      }),
+    });
+    if (result?.error) {
+      console.error("[subscriptions PATCH] email error", result.error);
+    } else {
+      console.log("[subscriptions PATCH] email sent", result?.data?.id);
+    }
+  } catch (err) {
+    console.error("[subscriptions PATCH] email throw", err);
   }
 
   return res.status(200).json(updated);
