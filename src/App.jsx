@@ -376,7 +376,7 @@ const ActionBtn=({children,loadingText,successText,onAction,onComplete,primary,d
 // mesmo estado, e o menor perde e ensina a ignorar aviso.
 const Nav=({active,onNav})=>{
   const items=[{id:"home",label:"INÍCIO",icon:ic.home},{id:"assinatura",label:"ASSINATURA",icon:ic.wheat},{id:"cardapio",label:"CARDÁPIO",icon:ic.utensils},{id:"perfil",label:"PERFIL",icon:ic.user}];
-  return<div style={{display:"flex",justifyContent:"space-around",alignItems:"center",padding:"8px 0 12px",borderTop:`1px solid ${W[200]}`,background:"#FFF",position:"sticky",bottom:0,zIndex:10,minHeight:56}}>
+  return<div style={{display:"flex",justifyContent:"space-around",alignItems:"center",padding:"8px 0 12px",borderTop:`1px solid ${W[200]}`,background:"#FFF",minHeight:56}}>
     {items.map(it=>(
       <button key={it.id} aria-label={`Ir para ${it.label}`} onClick={()=>onNav(it.id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,border:"none",background:"none",cursor:"pointer",minWidth:56,minHeight:44,padding:"4px 0",position:"relative"}}>
         <I d={it.icon} size={22} color={active===it.id?B[500]:W[400]}/>
@@ -2276,14 +2276,7 @@ function Layout({pendingPayment,onNav,orderBar,drawer,toasts}){
       </div>
       <PendingPaymentBanner pendingPayment={pendingPayment}/>
     </div>
-    {/* `minHeight:0` é o que faz o `flex:1` valer: sem ele o min-height:auto do
-        flexbox impede o main de encolher abaixo do conteúdo, o shell fica mais
-        alto que a viewport e qualquer coisa depois do main cai fora da tela.
-        O Nav só sobrevivia a isso por ser sticky. Com o minHeight:0 o main
-        volta a rolar por dentro (que é o que o `overflowY:auto` sempre quis
-        dizer) e o rodapé — OrderBar + Nav — fica sempre visível, sem precisar
-        de padding-bottom condicional em nenhuma das quatro telas. */}
-    <main ref={mainRef} id="main-content" style={{flex:1,minHeight:0,overflowY:"auto"}}>
+    <main ref={mainRef} id="main-content" style={{flex:1,overflowY:"auto"}}>
       <div key={location.pathname} className="tab-content">
         <Outlet/>
       </div>
@@ -2291,9 +2284,19 @@ function Layout({pendingPayment,onNav,orderBar,drawer,toasts}){
     {/* Footers fixos (OrderFooter/ConfirmedFooter) removidos no PR 2 Fase 1.
         Confirmação do pedido vai pro botão "Confirmar pedido" no card da Home
         e no EditarCarrinhoDrawer (Fase 2). */}
-    {/* Antes do Nav no DOM = depois do conteúdo e antes da nav na ordem de foco. */}
-    {showOrderBar&&<OrderBar totalExtras={orderBar.totalExtras} cutoffHoje={orderBar.cutoffHoje} onOpen={()=>drawer.setOpen(true)}/>}
-    <Nav active={active} onNav={onNav}/>
+    {/* Rodapé sticky único (OrderBar + Nav). O sticky era do Nav; subiu pro
+        wrapper porque a barra precisa pinar junto — como irmã de flex solta ela
+        ficava no fim do documento, fora da viewport, e só aparecia no fim da
+        rolagem (o shell é `minHeight:100vh`, não altura definida, então o main
+        cresce com o conteúdo em vez de rolar por dentro).
+        Sticky ocupa o próprio espaço no fluxo, então o rodapé não cobre o fim
+        do conteúdo e nenhuma das quatro telas precisa de padding-bottom.
+        A OrderBar vem antes do Nav no DOM = depois do conteúdo e antes da nav
+        na ordem de foco. */}
+    <div style={{position:"sticky",bottom:0,zIndex:10}}>
+      {showOrderBar&&<OrderBar totalExtras={orderBar.totalExtras} cutoffHoje={orderBar.cutoffHoje} onOpen={()=>drawer.setOpen(true)}/>}
+      <Nav active={active} onNav={onNav}/>
+    </div>
     {drawer.open&&<EditarCestaDrawer {...drawer.props} onClose={()=>drawer.setOpen(false)}/>}
     <ToastStack toasts={toasts} bottom={showOrderBar?76+ORDER_BAR_HEIGHT:76}/>
     <style>{`
