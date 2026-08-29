@@ -68,37 +68,45 @@ _Esta seção é editada manualmente durante sessões de trabalho. Claude Code n
 
 <!-- STATUS_MANUAL_START -->
 
-## Sessão 28/08/2026 — Card da Cesta declara o estado nos três (quatro) casos (PR aberta, não mergeada)
+## Sessão 28/08/2026 — Card da Cesta: linha de status em rascunho + toast do Cardápio (PR #88, aberta, não mergeada)
 
-O card falava quando o pedido estava confirmado e se calava quando não estava. Três assinantes, em duas semanas, olharam um rascunho e concluíram que tinham confirmado (Julia 2×, Dani 1×). A causa: um briefing anterior tirou do card o badge e a microcopy de rascunho migrando o aviso pro ponto de 9px do Nav, mas **deixou a microcopy de confirmado**. Ausência de sinal passou a significar "pendente", e ninguém lê ausência.
+Começou como "o card não declara o estado" e terminou menor, depois que o diagnóstico mudou no meio.
+
+### O diagnóstico que caiu
+A hipótese inicial era que Julia e Dani olharam um card ambíguo e concluíram errado. **Não foi isso.** Elas não estavam em dúvida diante do card — não voltaram pra Home. A confusão nasce no **Cardápio**, no toast "Focaccia Genovesa adicionada à cesta", que soa como conclusão.
+
+Consequência: sinalização na Home não alcança o caso real. Continua valendo como higiene (o card era mesmo assimétrico — a microcopy de confirmado tinha ficado e a de rascunho não), mas higiene não justifica um sistema de cores semânticas novo no design system. **A correção de verdade é um rodapé persistente de pedido não confirmado, visível no Cardápio. Frente própria, não iniciada.**
 
 ### O que entrou
-`src/tokens.js` (`sem` e `value`, objetos JS — não CSS custom properties, a migração segue adiada) e `src/App.jsx`. Sem migration, sem rota nova, sem mudança de schema.
-- Badge + linha de status **sempre** no cabeçalho do card, no mesmo lugar e com o mesmo peso.
-- Em rascunho, "Confirmar pedido" passa a vir **acima** do valor, dentro de um bloco com fundo `sem.warning`. O valor de rascunho sai do azul (`value.conditional`); azul agora significa "será cobrado".
-- Ícone `lock` novo (Lucide outline 1.5), `EstadoBadge` novo.
-- Ponto do Nav some na própria aba Início.
-- A superfície do card não muda: fundo `B[50]`, borda `B[100]`, eyebrow e lista intactos nos quatro casos.
+- **Linha de status em rascunho:** `Confirme até terça, 12h para esta entrega.` O card deixa de ser mudo quando há algo pendente. Rascunho sem nada a confirmar tem a sua: `Sem alterações esta semana...`
+- **"Confirmar pedido" acima do valor** — único desvio de layout em relação à `main`.
+- **Valor em rascunho fora do azul** (`W[700]`/16/600, rótulo `Extras, se você confirmar`). Azul = "será cobrado". **Inline, sem virar token nomeado.**
+- **Gate do ponto do Nav:** some na própria aba Início.
+- **Toast do Cardápio** (os dois call-sites, Home e Cardápio): `[Produto] adicionad[a/o]. Confirme seu pedido até terça.` Flexão por `produto.genero` preservada. É o único ponto do PR que toca onde o problema acontece.
+- **`?force_cutoff=true`** em `src/utils/cutoff.js` — inverso do `bypass_cutoff` que já existia, pra ver os estados pós-corte fora da janela real terça 12h → quinta. DEV ONLY, guardado por `typeof window`, inerte no backend. 7 asserts novos em `test:cutoff`, mutation-testados.
+- **Duas correções de contradição no pós-corte sem confirmação:** preços dos extras recuam pro cinza (estavam em azul ao lado de um total "Nenhum") e a nota nomeia os itens que ficaram de fora (sem ela o assinante descobre na quinta, na porta de casa).
 
-### Divergências entre o briefing e o código (resolvidas com o Hugo nesta sessão)
-1. **`temAlteracaoPendente` não existe** e não precisa existir. O POST de `api/weekly-orders` sempre regrava `status='rascunho'` + `confirmed_at=null`, então "confirmado com alteração pendente" é um estado que o banco não permite. A derivação é status-based.
-2. **Rascunho sem nada a confirmar é um quarto caso** que a máquina de 3 estados não modela. Sem extras e sem troca não há pedido no banco, e `confirmCurrentOrder()` faz `if(!currentWeeklyOrder?.id) return` — "Confirmar pedido" seria botão morto e "Não confirmada" um alarme falso. **Decisão:** badge `Cesta da assinatura` em `sem.neutral`, sem botão.
-3. **Pós-corte não tem "próxima cesta" pra editar.** Na janela terça 12h → quinta, `postCurrentOrder` ainda usa a `delivery_date` travada e o servidor devolve `cutoff_passed`; o pedido velho só sai do GET na sexta. **Decisão:** o slot existe com o rótulo `Editar a próxima cesta`, desabilitado. A linha de status explica. Destravar de verdade é feature nova, fora do escopo.
-4. **A aba se chama `home`**, não `inicio` (derivada do pathname no `Layout`), e a condição do ponto não era só `status==='rascunho'` — tinha uma cláusula a mais (`extras>0 || composition!=null`) que foi preservada.
-5. **`sem.warning` não é o `ST.warning`** que já existe no App.jsx: aquele é calibrado pra fundo branco e serve 8 call-sites. Coexistem; nenhum foi migrado.
-6. **"Nenhum" nos quatro casos** quando não há extras (o briefing só citava no pós-corte). "R$ 0,00" em `value.committed` anunciaria uma cobrança.
-7. **Pós-corte sem confirmação:** os extras do rascunho continuam na lista mas **recuam pro cinza**, o total vira "Nenhum" e a nota nomeia quem ficou de fora. Deixar "R$ 24,00" em azul acima de um total "Nenhum" repetiria a contradição que o ticket veio consertar.
+### O que foi removido depois do corte de escopo
+Badges de estado nos três casos (e o `EstadoBadge`), a faixa `warning-bg` na zona de ação, o objeto `sem` e o `value` em `tokens.js`, o ícone `lock`, e os rótulos/estados novos de pós-corte. **`src/tokens.js` voltou idêntico à `main`.** Confirmado e pós-corte voltaram ao comportamento da `main`, exceto pelas duas correções acima.
 
-### Fora de escopo, sinalizado
-- A tag `Trocado` continua aparecendo na lista pós-corte sem confirmação — a troca de composição também não entrou. A tabela do briefing só tratava dos extras.
-- Auditar `value.conditional` nas outras superfícies que mostram número antes do commit (Drawer, rodapé persistente, checkout de extras).
+### Divergências do briefing que sobreviveram ao corte
+1. **`temAlteracaoPendente` não existe** e não precisa: o POST de `api/weekly-orders` sempre regrava `status='rascunho'` + `confirmed_at=null`, então "confirmado com alteração pendente" é estado que o banco não permite.
+2. **A aba se chama `home`**, não `inicio`, e a condição do ponto tinha uma cláusula a mais (`extras>0 || composition!=null`), preservada.
+3. **Rascunho sem nada a confirmar** não ganha "Confirmar pedido": não há pedido no banco e `confirmCurrentOrder()` é no-op sem id.
+4. **"Nenhum" no lugar de `R$ 0,00`** nos casos sem extras. É o único ponto em que li além da letra do escopo revisado ("confirmado igual à main"): `R$ 0,00` sob "Extras, se você confirmar" lê como cobrança de zero.
 
 ### Validação
-Cinco cenários renderizados headless em 390×844 contra o dev server (Chrome CDP + sessão e fetch stubbados; zero requests escaparam pra rede): rascunho, rascunho-sem-alteração, confirmado, pós-corte sem e com confirmação prévia. Mais dois comportamentos dirigidos: editar quantidade em confirmado devolve o card a `Não confirmada` na mesma interação (1 POST), e o ponto do Nav some no Início e aparece no Cardápio.
+Cinco cenários headless em 390×844 contra o dev server (sessão e `fetch` stubbados, zero requests escaparam). Transição confirmado → rascunho dirigida: a linha de status vira `Confirme até terça, 12h...` na mesma interação, com 1 POST. Ponto do Nav: some no Início, aparece no Cardápio. Toast conferido nos dois call-sites com os dois gêneros, extraindo a copy do fonte sem importar o módulo.
 
-**Armadilha confirmada:** `npx vite build` local sai 0 mas o chunk **não contém** a copy nova — o `dist` local não serve de conferência. Validar pelo Preview da Vercel.
+**Armadilha reconfirmada:** `vite build` local sai 0 mas o chunk **não contém** a copy nova. Conferir sempre pelo chunk do Preview da Vercel.
 
-Os 6 scripts de teste do repo seguem verdes e `npm run lint` fica idêntico ao baseline (32 problemas, 14 deles do `'process' is not defined` pré-existente no `api/`).
+Suíte de 6 scripts verde; `lint` idêntico ao baseline (32 problemas).
+
+### Pendências
+- [ ] Merge antes de **terça 01/09** — David Hertz recebe acesso e vai usar produção, não o Preview.
+- [ ] Frente própria: rodapé persistente de pedido não confirmado, visível no Cardápio.
+- [ ] Teste com a assinatura Hugo Dev (`ca733407-…`, hoje `paused`) contra produção — runbook conferido, com três correções registradas na conversa. Reativar e **pausar de volta antes de terça 12h**, senão vira entrega fantasma na semana 36.
+
 
 ## Sessão 24/08/2026 — Evento de sandbox do Asaas fora de `asaas_webhook_events` + limpeza da linha órfã (PRs #83, #84, mergeados em `main`)
 

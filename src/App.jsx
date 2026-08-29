@@ -25,7 +25,7 @@ import { useSubscriptionContext } from "./auth/useSubscriptionContext";
 import { supabase } from "./lib/supabase";
 import { CORA_WHATSAPP } from "./config/contact";
 import { useCardapioSemana } from "./hooks/useCardapioSemana";
-import { B, W, fd, fb, fmt, radii, sem, value as valor } from "./tokens";
+import { B, W, fd, fb, fmt, radii } from "./tokens";
 
 // `?reset=true`: encerra a sessao Supabase (a fonte de verdade agora e o DB, nao
 // ha mais snapshot localStorage) e remove o param da URL. Top-level (fora do
@@ -114,7 +114,6 @@ const ic={
   user:<><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
   clock:<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
   check:<><polyline points="20 6 9 17 4 12"/></>,
-  lock:<><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>,
   chev:<><polyline points="9 18 15 12 9 6"/></>,
   chevDown:<><polyline points="6 9 12 15 18 9"/></>,
   users:<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
@@ -134,23 +133,6 @@ const ProductThumb=({src,w=56,h=48,alt="",style:es})=><img src={src} alt={alt} l
 
 // ─── SHARED COMPONENTS ───
 const Card=({children,style,onClick,ariaLabel})=>{const[h,setH]=useState(false);return<div role={onClick?"button":undefined} aria-label={ariaLabel} onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} style={{background:W[100],border:`1px solid ${h&&onClick?W[300]:W[200]}`,borderRadius:radii.lg,padding:16,transition:"border-color 150ms ease",...style}}>{children}</div>;};
-// Badge de estado do card da Cesta. Forma unica nos tres estados: bullet 7px
-// + icone + Montagu Slab 600/12, radii.xs, borda 1px na cor semantica.
-//
-// Separado do `Badge` acima de proposito: aquele le a paleta `ST` (calibrada
-// pra fundo branco, peso 500) e ja serve 4 outras telas. Trocar a paleta dele
-// mexeria em tudo isso pra ganhar um badge.
-const EstadoBadge=({label,tone,icon})=><span style={{
-  display:"inline-flex",alignItems:"center",gap:6,flexShrink:0,
-  fontFamily:fb,fontSize:12,fontWeight:600,lineHeight:1.2,color:tone.text,
-  background:tone.bg,border:`1px solid ${tone.border}`,
-  borderRadius:radii.xs,padding:"3px 8px",
-}}>
-  <span aria-hidden="true" style={{width:7,height:7,borderRadius:radii.full,background:tone.text,flexShrink:0}}/>
-  <I d={icon} size={14} color={tone.text}/>
-  {label}
-</span>;
-
 const SL=({t})=><div style={{fontFamily:fd,fontSize:15,textTransform:"uppercase",color:W[500],letterSpacing:"0.04em",marginBottom:8,lineHeight:1}}>{t}</div>;
 const Badge=({label,type="success"})=>{const s=ST[type]||ST.success;return<span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:12,fontWeight:500,fontFamily:fb,padding:"4px 10px",borderRadius:radii.xs,background:s.bg,color:s.t,border:`1px solid ${s.b}`}}><span style={{fontSize:8}}>●</span>{label}</span>;};
 // `ghost`: button transparente (warm-600 → warm-100 on hover, sem border). Compartilhado por
@@ -385,10 +367,10 @@ const ActionBtn=({children,loadingText,successText,onAction,onComplete,primary,d
 // direito do ícone Início — indica `currentWeeklyOrder?.status === 'rascunho'`
 // (briefing 3.6 / wireframe v2 tela 1, 4, 6).
 //
-// Some na própria aba Início (gate no Layout, ago/26): com o card da Cesta
-// voltando a declarar o estado, o ponto deixou de ser o aviso e passou a fazer
-// só o que badge de nav faz bem — chamar de volta pra Home a partir de outra
-// aba. Na Home é redundante com um card que diz a mesma coisa melhor.
+// Some na própria aba Início (gate no Layout, ago/26): na Home o card logo
+// acima já diz o mesmo, e melhor. Fora dela o ponto faz o que badge de nav faz
+// bem — chamar de volta pra Home. Não conta com ele pro caso que motivou a
+// frente: quem adiciona no Cardápio e não volta. Isso é do rodapé persistente.
 const Nav=({active,onNav,inicioBadge=false})=>{
   const items=[{id:"home",label:"INÍCIO",icon:ic.home},{id:"assinatura",label:"ASSINATURA",icon:ic.wheat},{id:"cardapio",label:"CARDÁPIO",icon:ic.utensils},{id:"perfil",label:"PERFIL",icon:ic.user}];
   return<div style={{display:"flex",justifyContent:"space-around",alignItems:"center",padding:"8px 0 12px",borderTop:`1px solid ${W[200]}`,background:"#FFF",position:"sticky",bottom:0,zIndex:10,minHeight:56}}>
@@ -1096,15 +1078,10 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
     return{id,nome:pao.nome,qty:q,tag:wasSwapped?"Trocado":"Assinatura"};
   }).filter(Boolean);
 
-  // ─── Estado declarado do card ──────────────────────────────────────
-  // Os três estados sempre exibem badge + linha de status. Ausência de sinal
-  // não pode significar "pendente" — três assinantes leram rascunho como
-  // confirmado em duas semanas (ago/26). O badge do Nav é reforço, não o
-  // único portador do aviso.
-  //
-  // Não existe "confirmado com alteração pendente": o POST de
-  // api/weekly-orders sempre regrava status='rascunho' e confirmed_at=null,
-  // então qualquer edição já devolve o card a rascunho por si só.
+  // O estado rascunho exibe linha de status; o Nav mostra o ponto fora da Home.
+  // Nenhum dos dois resolve o caso real: tres assinantes (ago/26) nao chegaram a
+  // desconfiar — adicionaram no Cardapio e nao voltaram pra Home. A correcao e um
+  // rodape persistente de pedido nao confirmado, frente propria.
 
   // Total dos extras (assinatura é "Incluso", não soma).
   const totalExtras=currentExtras.reduce((s,e)=>s+e.qty*Number(e.preco_unit),0);
@@ -1112,78 +1089,52 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
   const confirmadoEm=currentWeeklyOrder?.confirmed_at
     ?fmtDdMm(new Date(currentWeeklyOrder.confirmed_at))
     :null;
-  // Pós-corte SEM confirmação: o rascunho não virou pedido, nada foi cobrado.
-  // Os extras continuam na lista (é o que a pessoa montou) mas somem do total,
-  // e a nota nomeia quem ficou de fora — dizer "R$ 45,00" em azul aqui seria
-  // anunciar uma cobrança que não existe.
-  const extraNaoEntrou=cutoff&&!confirmadoEm;
-  const extrasPerdidos=extraNaoEntrou?currentExtras:[];
+
+  // Pós-corte sem confirmação: o rascunho não virou pedido, nada foi cobrado.
+  // Os extras seguem na lista (é o que a pessoa montou) mas recuam pro cinza e
+  // somem do total. "R$ 24,00" em azul ao lado de um total "Nenhum" e de uma
+  // nota dizendo que o item não entrou é contradição na cara.
+  const extraNaoEntrou=cutoff&&!isConfirmado;
   const totalCobravel=extraNaoEntrou?0:totalExtras;
   // Enumera em português: "A", "A e B", "A, B e C".
   const listarNomes=(itens)=>itens.length===1
     ?itens[0].nome
     :`${itens.slice(0,-1).map(e=>e.nome).join(", ")} e ${itens[itens.length-1].nome}`;
 
-  // Quarto caso que a máquina de 3 estados não cobre: rascunho sem NADA a
-  // confirmar (sem extras, sem troca). Aqui não há pedido no banco, e
+  // Azul = já é cobrança; rascunho é prévia e sai do azul. Inline de propósito:
+  // virar token nomeado obrigaria a auditar Drawer, rodapé e checkout, e essa
+  // decisão pertence à frente do carrinho persistente, não a este PR.
+  const VALOR_COBRADO={color:B[500],fontWeight:700,fontSize:18};
+  const VALOR_PREVIA={color:W[700],fontWeight:600,fontSize:16};
+
+  // Rascunho sem NADA a confirmar: não existe pedido no banco e
   // confirmCurrentOrder() faz `if(!currentWeeklyOrder?.id) return` — um
-  // "Confirmar pedido" seria botão morto, e "Não confirmada" um alarme falso
-  // sobre uma cesta que chega igual de qualquer jeito. Decisão do Hugo
-  // (ago/26): badge neutro declarando o que de fato vai ser entregue.
+  // "Confirmar pedido" aqui seria botão morto.
   const nadaAConfirmar=!cutoff&&!isConfirmado&&!hasAlteration;
 
-  // `acao`: "editar" abre o Drawer; "proxima" é o slot pós-corte, presente e
-  // desabilitado — na janela terça 12h → quinta não existe cesta seguinte pra
-  // editar (postCurrentOrder ainda usa a delivery_date travada e o servidor
-  // devolve cutoff_passed). A linha de status já explica o porquê.
+  // Precedência igual à da microcopy que existia antes: confirmado ganha do
+  // cutoff, então pós-corte com confirmação prévia segue dizendo que confirmou.
   let estado;
-  if(cutoff&&confirmadoEm){
-    estado={
-      badge:"Confirmada",tone:sem.brand,icon:ic.check,
-      status:`Pedido confirmado em ${confirmadoEm}. Prazo encerrado — alterações valem a partir da próxima semana.`,
-      valorLabel:"Extras desta semana",valorStyle:valor.committed,
-      nota:null,acao:"proxima",confirmar:false,
-    };
+  if(isConfirmado){
+    estado={status:confirmadoEm?`Pedido confirmado em ${confirmadoEm}.`:null,
+      valorLabel:"Extras desta semana",valorStyle:VALOR_COBRADO,nota:null,confirmar:false};
   } else if(cutoff){
-    estado={
-      badge:"Fechada",tone:sem.neutral,icon:ic.lock,
-      status:"Prazo encerrado. Esta semana você recebe a cesta da assinatura.",
-      valorLabel:"Extras desta semana",valorStyle:valor.committed,
-      nota:extrasPerdidos.length
-        ?`${listarNomes(extrasPerdidos)} ${extrasPerdidos.length===1?"que estava no rascunho não entrou":"que estavam no rascunho não entraram"}. Você pode incluir na cesta da próxima quinta.`
+    estado={status:"Prazo encerrado. Esta semana você recebe a cesta da assinatura. Pode editar a próxima.",
+      valorLabel:"Extras desta semana",valorStyle:VALOR_COBRADO,
+      // Sem isto o assinante só descobre na quinta, na porta de casa.
+      nota:currentExtras.length
+        ?`${listarNomes(currentExtras)} ${currentExtras.length===1?"que estava no rascunho não entrou":"que estavam no rascunho não entraram"}. Você pode incluir na cesta da próxima quinta.`
         :null,
-      acao:"proxima",confirmar:false,
-    };
-  } else if(isConfirmado){
-    estado={
-      badge:"Confirmada",tone:sem.brand,icon:ic.check,
-      status:confirmadoEm
-        ?`Pedido confirmado em ${confirmadoEm}. Dá para mudar até terça, 12h.`
-        :"Pedido confirmado. Dá para mudar até terça, 12h.",
-      valorLabel:"Extras desta semana",valorStyle:valor.committed,
-      // Só faz sentido havendo o que cobrar: confirmar uma troca de pães sem
-      // extras não gera linha nenhuma na fatura.
-      nota:totalExtras>0?"Entram na sua próxima fatura.":null,
-      acao:"editar",confirmar:false,
-    };
+      confirmar:false};
   } else if(nadaAConfirmar){
-    estado={
-      badge:"Cesta da assinatura",tone:sem.neutral,icon:ic.wheat,
-      status:"Sem alterações esta semana. Você recebe a cesta da assinatura na quinta.",
-      valorLabel:"Extras desta semana",valorStyle:valor.conditional,
-      nota:null,acao:"editar",confirmar:false,
-    };
+    estado={status:"Sem alterações esta semana. Você recebe a cesta da assinatura na quinta.",
+      valorLabel:"Extras desta semana",valorStyle:VALOR_PREVIA,nota:null,confirmar:false};
   } else {
-    estado={
-      badge:"Não confirmada",tone:sem.warning,icon:ic.clock,
-      status:"Confirme até terça, 12h para esta entrega.",
-      valorLabel:"Extras, se você confirmar",valorStyle:valor.conditional,
-      nota:null,acao:"editar",confirmar:true,
-    };
+    estado={status:"Confirme até terça, 12h para esta entrega.",
+      valorLabel:"Extras, se você confirmar",valorStyle:VALOR_PREVIA,nota:null,confirmar:true};
   }
 
-  const editarDisabled=estado.acao==="proxima";
-  const editarLabel=editarDisabled?"Editar a próxima cesta":"Editar cesta";
+  const editarDisabled=cutoff&&isConfirmado;
 
   // ─── Animação de remoção de extra ──────────────────────────────────
   // Quando user clica `-` em qty=1: marca o id em `removing`, aguarda 200ms
@@ -1228,7 +1179,7 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
       return;
     }
     const verb=(produto.genero||"m")==="f"?"adicionada":"adicionado";
-    pushToast(`${produto.nome} ${verb} à cesta.`);
+    pushToast(`${produto.nome} ${verb}. Confirme seu pedido até terça.`);
   };
 
   return<div style={{padding:"24px 16px 16px"}}>
@@ -1240,17 +1191,10 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
 
     {/* Card da Cesta — fundo brand-50, lista com separadores dashed,
         linhas de assinatura "Incluso" + extras com [- N +] (wireframe v2 tela 4). */}
-    <Card style={{marginBottom:16,padding:20,background:B[50],border:`1px solid ${B[100]}`,borderRadius:radii.lg}} ariaLabel={`Cesta da semana: ${deliveryLabelFull} — ${estado.badge}`}>
-      {/* Cabeçalho: eyebrow + badge de estado na mesma linha, título da
-          entrega, linha de status. Badge e linha aparecem nos quatro casos,
-          sempre aqui: "mesmo lugar, mesmo peso" é o que tira do card a
-          possibilidade de comunicar por ausência. */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap",marginBottom:4}}>
-        <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:B[600]}}>Sua cesta desta semana</div>
-        <EstadoBadge label={estado.badge} tone={estado.tone} icon={estado.icon}/>
-      </div>
-      <div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:B[800],lineHeight:1.3}}>Entrega {deliveryLabelFull}</div>
-      <div style={{fontFamily:fb,fontSize:13,color:W[600],lineHeight:1.5,margin:"4px 0 10px"}}>{estado.status}</div>
+    <Card style={{marginBottom:16,padding:20,background:B[50],border:`1px solid ${B[100]}`,borderRadius:radii.lg}} ariaLabel={`Cesta da semana: ${deliveryLabelFull}`}>
+      {/* Cabeçalho: label pequeno + título da entrega */}
+      <div style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:B[600],marginBottom:4}}>Sua cesta desta semana</div>
+      <div style={{fontFamily:fb,fontSize:16,fontWeight:600,color:B[800],lineHeight:1.3,marginBottom:10}}>Entrega {deliveryLabelFull}</div>
 
       {/* Lista — assinatura primeiro, extras depois. Rows separadas por dashed
           border, exceto a última (evita fio duplo com o sólido do total: a
@@ -1306,19 +1250,12 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
       </div>
 
       {/* ── Zona de ação ──
-          Em rascunho o botão vem ANTES do valor: quem bate o olho lê
-          "Confirmar pedido" antes de qualquer número. É a inversão de
-          hierarquia central do briefing de ago/26. Nos demais casos a ação é
-          secundária e fecha o bloco.
+          Único desvio da main: em rascunho o "Confirmar pedido" vem ANTES do
+          valor, pra quem bate o olho ler a ação antes de qualquer número. Nos
+          demais estados a ação é secundária e fecha o bloco.
 
-          Em rascunho o bloco também ganha fundo — a mudança de estado nunca
-          toca a superfície do card, só esta zona muda de cor. */}
-      <div style={estado.confirmar?{
-        marginTop:12,padding:12,
-        background:sem.warning.bg,border:`1px solid ${sem.warning.border}`,borderRadius:radii.md,
-      }:{
-        marginTop:12,paddingTop:12,borderTop:`1px solid ${W[200]}`,
-      }}>
+          A superfície do card não muda em estado nenhum — nem fundo, nem faixa. */}
+      <div style={{marginTop:6,paddingTop:12,borderTop:`1px solid ${B[100]}`}}>
         {estado.confirmar&&<ActionBtn primary full
           loadingText="Confirmando…"
           successText="Confirmado ✓"
@@ -1328,8 +1265,9 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
           style={{marginBottom:12}}
         >Confirmar pedido</ActionBtn>}
 
-        {/* Sumline — só extras (assinatura é "Incluso", coberta pelo plano).
-            Zero vira "Nenhum": "R$ 0,00" em azul anunciaria uma cobrança. */}
+        {/* Total — só extras (assinatura é "Incluso", coberta pelo plano).
+            Zero vira "Nenhum": "R$ 0,00" sob "Extras, se você confirmar" lê
+            como cobrança de zero, não como ausência de extra. */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10}}>
           <span style={{fontFamily:fb,fontSize:12,color:B[700]}}>{estado.valorLabel}</span>
           <span style={{
@@ -1338,37 +1276,24 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
           }}>{totalCobravel>0?fmt(totalCobravel):"Nenhum"}</span>
         </div>
 
+        {estado.status&&<div style={{fontFamily:fb,fontSize:13,color:W[500],marginTop:8,lineHeight:1.5}}>{estado.status}</div>}
         {estado.nota&&<div style={{fontFamily:fb,fontSize:12,color:W[500],marginTop:6,lineHeight:1.5}}>{estado.nota}</div>}
 
-        {/* Ação secundária. Em rascunho recua pra texto puro — com um primary
-            logo acima, dois botões desenhados brigariam pela mesma leitura. */}
-        {estado.confirmar
-          ?<button onClick={()=>setDrawerOpen(true)} className="lk press-scale" style={{
-            display:"flex",alignItems:"center",justifyContent:"center",gap:6,
-            width:"100%",marginTop:4,padding:"8px 12px",minHeight:44,
-            background:"transparent",border:"none",
-            fontFamily:fb,fontSize:14,fontWeight:500,color:B[500],cursor:"pointer",
-          }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-            {editarLabel}
-          </button>
-          :<button onClick={()=>setDrawerOpen(true)} disabled={editarDisabled} className="press-scale" style={{
-            display:"flex",alignItems:"center",justifyContent:"center",gap:6,
-            width:"100%",marginTop:10,padding:"8px 12px",
-            background:"transparent",border:`1px dashed ${B[100]}`,borderRadius:radii.md,
-            fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",
-            color:B[500],cursor:editarDisabled?"default":"pointer",
-            opacity:editarDisabled?0.4:1,transition:"all 150ms ease",minHeight:44,
-          }} onMouseEnter={e=>{if(!editarDisabled){e.currentTarget.style.background="#FFF";e.currentTarget.style.borderStyle="solid";}}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.borderStyle="dashed";}}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-            {editarLabel}
-          </button>}
+        {/* Editar cesta — link ghost dashed com ícone pencil (wireframe v2 tela 4). */}
+        <button onClick={()=>setDrawerOpen(true)} disabled={editarDisabled} className="press-scale" style={{
+          display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+          width:"100%",marginTop:10,padding:"8px 12px",
+          background:"transparent",border:`1px dashed ${B[100]}`,borderRadius:radii.md,
+          fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",
+          color:B[500],cursor:editarDisabled?"default":"pointer",
+          opacity:editarDisabled?0.4:1,transition:"all 150ms ease",minHeight:40,
+        }} onMouseEnter={e=>{if(!editarDisabled){e.currentTarget.style.background="#FFF";e.currentTarget.style.borderStyle="solid";}}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.borderStyle="dashed";}}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Editar cesta
+        </button>
       </div>
     </Card>
 
@@ -1901,7 +1826,7 @@ const Cardapio=({addExtraToCart,cutoff,pendingPayment,deliveryDate})=>{
       return;
     }
     const verb=(product.genero||"m")==="f"?"adicionada":"adicionado";
-    pushToast(`${product.nome} ${verb} à cesta.`);
+    pushToast(`${product.nome} ${verb}. Confirme seu pedido até terça.`);
   };
 
   // Especial da semana resolvido contra D.rotativos (onde mora a subCopy de

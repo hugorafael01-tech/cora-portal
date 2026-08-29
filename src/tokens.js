@@ -14,31 +14,6 @@ export const W = {
   400:"#A8A49C", 500:"#7A766E", 600:"#5C5850", 700:"#3D3A34", 800:"#2A2723",
 };
 
-// ─── SEMÂNTICOS ───
-// Sinalização de estado do card da Cesta. Calibrados para o fundo B[50] do
-// card — por isso NÃO reaproveitam o `ST` de App.jsx, que é calibrado pra
-// fundo branco/warm e segue valendo nos call-sites dele.
-//
-// O badge de confirmado usa Azul Cora, não verde: verde não existe na paleta
-// da marca e entraria só pra dizer "ok". O fundo branco sobre o card B[50] já
-// dá o contraste.
-export const sem = {
-  warning: { bg:"#FBF3E4", border:"#E6D5AE", text:"#7A5B18" }, // rascunho
-  brand:   { bg:"#FFFFFF", border:B[200],    text:B[600]    }, // confirmado
-  neutral: { bg:W[100],    border:W[300],    text:W[600]    }, // pós-corte
-};
-
-// ─── VALOR FINANCEIRO ───
-// O azul passa a significar "será cobrado". Valor condicional sai dele.
-//
-// Auditoria pendente (fora do escopo do briefing de ago/26): `conditional`
-// vale pra qualquer superfície que mostre número antes do commit — Drawer
-// "Editar cesta", rodapé persistente, checkout de extras.
-export const value = {
-  committed:   { color:B[500], fontWeight:700, fontSize:18 }, // vai ser cobrado
-  conditional: { color:W[700], fontWeight:600, fontSize:16 }, // prévia
-};
-
 // ─── TIPOGRAFIA ───
 // Famílias:
 //   fd — display (headings, caps). League Gothic.
