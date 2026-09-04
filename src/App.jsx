@@ -425,7 +425,7 @@ const OrderBar=({totalExtras,cutoffHoje,onOpen})=>{
   const valor=totalExtras>0?fmt(totalExtras):"Nenhum extra";
   return<>
     <button onClick={onOpen}
-      aria-label={`Falta confirmar seu pedido, ${cutoffHoje?"termina hoje 12h":"até terça 12h"}. Abrir cesta.`}
+      aria-label={`Falta confirmar sua cesta, ${cutoffHoje?"termina hoje 12h":"até terça 12h"}. Abrir cesta.`}
       onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
       style={{
         flexShrink:0,width:"100%",height:ORDER_BAR_HEIGHT,
@@ -440,7 +440,7 @@ const OrderBar=({totalExtras,cutoffHoje,onOpen})=>{
         animation:"fadeUp 260ms ease-out",
       }}>
       <span style={{display:"flex",flexDirection:"column",gap:2,minWidth:0}}>
-        <span style={{fontFamily:fb,fontSize:14,fontWeight:600,color:B[800],lineHeight:1.2}}>Falta confirmar seu pedido</span>
+        <span style={{fontFamily:fb,fontSize:14,fontWeight:600,color:B[800],lineHeight:1.2}}>Falta confirmar sua cesta</span>
         <span style={{fontFamily:fb,fontSize:13,lineHeight:1.2,whiteSpace:"nowrap",color:W[600]}}>
           <span style={cutoffHoje?{color:ST.warning.t,fontWeight:600}:undefined}>{prazo}</span>
           {" · "}
@@ -454,7 +454,7 @@ const OrderBar=({totalExtras,cutoffHoje,onOpen})=>{
     {announce&&<div role="status" aria-live="polite" style={{
       position:"absolute",width:1,height:1,padding:0,margin:-1,
       overflow:"hidden",clip:"rect(0 0 0 0)",whiteSpace:"nowrap",border:0,
-    }}>Falta confirmar seu pedido.</div>}
+    }}>Falta confirmar sua cesta.</div>}
   </>;
 };
 
