@@ -613,6 +613,7 @@ const EditarCestaDrawer=({
   addExtraToCart,
   confirmCurrentOrder,
   cutoff,
+  rascunhoDescartado,
   pendingPayment,
   deliveryLabelFull,
   deliveryLabelShort,
@@ -819,7 +820,10 @@ const EditarCestaDrawer=({
           <div style={{padding:"4px 0"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
               <span style={{fontFamily:fd,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",color:W[500],lineHeight:1}}>Sua assinatura</span>
-              {hasAlteration&&<span style={{
+              {/* Pos-corte sem confirmacao a troca foi descartada junto com o
+                  resto do rascunho: o badge afirmaria uma alteracao que nao vai
+                  acontecer, ao lado de uma composicao que ja voltou ao padrao. */}
+              {hasAlteration&&!rascunhoDescartado&&<span style={{
                 display:"inline-flex",alignItems:"center",gap:4,
                 padding:"3px 8px",borderRadius:radii.xs,
                 background:ST.warning.bg,border:`1px solid ${ST.warning.b}`,color:ST.warning.t,
@@ -1112,7 +1116,7 @@ const fmtDdMm=(dt)=>`${String(dt.getDate()).padStart(2,"0")}/${String(dt.getMont
 //    badge/microcopy condicional, botão "Editar carrinho" e "Confirmar pedido"
 //  - Novidade hero com sub-copy emocional e CTA "+ Adicionar à cesta — R$ X"
 //  - Estado "semana sem destaque" quando a semana não tem especial no mapa
-const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinaturaBaseline,cestaAtual,pendingPayment,currentWeeklyOrder,currentExtras,addExtraToCart,removeExtraFromCart,confirmCurrentOrder,deliveryDate,deliveryLabelFull,deliveryLabelShort,onOpenDrawer,pushToast})=>{
+const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,rascunhoDescartado,assinaturaQtds,assinaturaBaseline,cestaAtual,pendingPayment,currentWeeklyOrder,currentExtras,addExtraToCart,removeExtraFromCart,confirmCurrentOrder,deliveryDate,deliveryLabelFull,deliveryLabelShort,onOpenDrawer,pushToast})=>{
   // Drawer, ToastStack e os labels de entrega subiram pro shell (ago/26): a
   // OrderBar precisa abrir a cesta de qualquer aba, e o toast de confirmação
   // tem que aparecer mesmo quando o Drawer foi aberto pelo Cardápio. A Home
@@ -1145,7 +1149,12 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
     const pao=D.pães.find(p=>p.id===id);
     if(!pao) return null;
     const baselineQty=baselineQtds?.[id]||0;
-    const wasSwapped=hasComposition&&baselineQty!==q;
+    // A troca so vale se o pedido foi confirmado. Pos-corte sem confirmacao o
+    // rascunho foi descartado e a linha volta a ser "Assinatura" — que e o que a
+    // pessoa recebe. A guarda nao e redundante com `cestaAtual` ja no baseline:
+    // `baselineQtds` e o baseline do INICIO do ciclo, e um aumento no meio do
+    // ciclo faz `q` divergir dele sem que exista troca nenhuma.
+    const wasSwapped=hasComposition&&!rascunhoDescartado&&baselineQty!==q;
     return{id,nome:pao.nome,qty:q,tag:wasSwapped?"Trocado":"Assinatura"};
   }).filter(Boolean);
 
@@ -1164,9 +1173,9 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
   // Pós-corte sem confirmação: o rascunho não virou pedido, nada foi cobrado.
   // Os extras seguem na lista (é o que a pessoa montou) mas recuam pro cinza e
   // somem do total. "R$ 24,00" em azul ao lado de um total "Nenhum" e de uma
-  // nota dizendo que o item não entrou é contradição na cara.
-  const extraNaoEntrou=cutoff&&!isConfirmado;
-  const totalCobravel=extraNaoEntrou?0:totalExtras;
+  // nota dizendo que o item não entrou é contradição na cara. O booleano vem do
+  // App: é o mesmo que decide a composição exibida acima.
+  const totalCobravel=rascunhoDescartado?0:totalExtras;
   // Enumera em português: "A", "A e B", "A, B e C".
   const listarNomes=(itens)=>itens.length===1
     ?itens[0].nome
@@ -1303,9 +1312,9 @@ const Home=({onNav,userData,isFirstVisit,onSeen,cutoff,assinaturaQtds,assinatura
               padding:"10px 0",borderBottom:isLastGlobal?"none":`1px dashed ${B[100]}`,
               fontFamily:fb,fontSize:14,color:B[800],lineHeight:1.4,
             }}>
-              <div style={{flex:1,color:extraNaoEntrou?W[500]:B[800]}}>{e.qty}× {e.nome}</div>
+              <div style={{flex:1,color:rascunhoDescartado?W[500]:B[800]}}>{e.qty}× {e.nome}</div>
               <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <span style={{fontFamily:fb,fontWeight:600,fontSize:14,color:extraNaoEntrou?W[500]:B[700],fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{fmt(Number(e.preco_unit)*e.qty)}</span>
+                <span style={{fontFamily:fb,fontWeight:600,fontSize:14,color:rascunhoDescartado?W[500]:B[700],fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{fmt(Number(e.preco_unit)*e.qty)}</span>
                 {!cutoff&&!isConfirmado&&<QtyStepper
                   qty={e.qty}
                   name={e.nome}
@@ -2492,12 +2501,6 @@ export default function CoraPortal(){
   // Alteracao pendente de Assinatura (reducao valem so no proximo ciclo).
   // Aumento e troca valem imediatamente (cobra proporcional ou sem custo).
   const reducaoPendente=historicoCicloAtual?.tipo==="reducao";
-  // Cesta que chega NESTA semana:
-  //   - com swap: cestaSemana
-  //   - com reducao pendente: baseline (cliente continua recebendo o que ja pagou)
-  //   - caso contrario: assinaturaQtds (aumento/troca ja valem)
-  const cestaAtual=cestaSemana??(reducaoPendente?assinaturaBaseline:assinaturaQtds);
-
   // ─── Carrinho persistido: pedido atual, cutoff por delivery_date ───
   const currentWeeklyOrder = weeklyOrders[0] || null;
   const currentExtras = currentWeeklyOrder?.extras || [];
@@ -2506,6 +2509,21 @@ export default function CoraPortal(){
   // semana (Home + Cardápio). Mesma expressão que postCurrentOrder usa pro
   // payload; lá ela fica no clique, aqui no render.
   const deliveryDate = currentWeeklyOrder?.delivery_date || nextEditableThursdayISO();
+
+  // Pos-corte sem confirmacao o rascunho inteiro foi descartado: a entrega cai
+  // no baseline puro da assinatura, sem extras. O Drawer ja aplicava a regra por
+  // conta propria (`referenceCompNorm`); aqui ela vira fonte unica e Home e
+  // Drawer consomem o mesmo booleano em vez de cada um recalcular o seu.
+  const rascunhoDescartado = cutoff && currentWeeklyOrder?.status !== "confirmado";
+
+  // Cesta que chega NESTA semana:
+  //   - com swap: cestaSemana
+  //   - com rascunho descartado no corte: cestaSemana e ignorado. A troca nao
+  //     valeu, e a lista tem que mostrar o que a pessoa vai receber — antes ela
+  //     exibia a composicao do rascunho e contradizia a propria linha de status
+  //   - com reducao pendente: baseline (cliente continua recebendo o que ja pagou)
+  //   - caso contrario: assinaturaQtds (aumento/troca ja valem)
+  const cestaAtual=(rascunhoDescartado?null:cestaSemana)??(reducaoPendente?assinaturaBaseline:assinaturaQtds);
 
   // Hidrata cestaSemana a partir da composicao persistida do pedido da semana
   // (task 86e1na332). Sem isso, apos o F5 a composicao trocada da semana some e
@@ -2713,7 +2731,7 @@ export default function CoraPortal(){
     props:{
       currentWeeklyOrder,currentExtras,assinaturaQtds,assinaturaBaseline,cestaAtual,
       onSetCestaSemana:setCestaSemana,updateComposition,removeExtraFromCart,addExtraToCart,
-      confirmCurrentOrder,cutoff,pendingPayment,deliveryLabelFull,deliveryLabelShort,
+      confirmCurrentOrder,cutoff,rascunhoDescartado,pendingPayment,deliveryLabelFull,deliveryLabelShort,
       onNav:handleNav,
       onConfirmedToast:()=>pushToast(`Cesta confirmada. Entrega ${deliveryLabelShort}.`),
     },
@@ -2739,7 +2757,7 @@ export default function CoraPortal(){
             proprio <Outlet/> com a pagina da rota. */}
         <Route element={<ProtectedRoute/>}>
           <Route element={<Layout pendingPayment={pendingPayment} onNav={handleNav} orderBar={orderBar} drawer={drawer} toasts={toasts}/>}>
-            <Route path="/" element={<Home onNav={handleNav} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaAtual={cestaAtual} ehPrimeiroAcesso={ehPrimeiroAcesso} pendingPayment={pendingPayment} currentWeeklyOrder={currentWeeklyOrder} currentExtras={currentExtras} addExtraToCart={addExtraToCart} removeExtraFromCart={removeExtraFromCart} confirmCurrentOrder={confirmCurrentOrder} deliveryDate={deliveryDate} deliveryLabelFull={deliveryLabelFull} deliveryLabelShort={deliveryLabelShort} onOpenDrawer={()=>setDrawerOpen(true)} pushToast={pushToast}/>}/>
+            <Route path="/" element={<Home onNav={handleNav} userData={userData} isFirstVisit={isFirstVisit} onSeen={()=>setIsFirstVisit(false)} cutoff={cutoff} rascunhoDescartado={rascunhoDescartado} assinaturaQtds={assinaturaQtds} assinaturaBaseline={assinaturaBaseline} cestaAtual={cestaAtual} ehPrimeiroAcesso={ehPrimeiroAcesso} pendingPayment={pendingPayment} currentWeeklyOrder={currentWeeklyOrder} currentExtras={currentExtras} addExtraToCart={addExtraToCart} removeExtraFromCart={removeExtraFromCart} confirmCurrentOrder={confirmCurrentOrder} deliveryDate={deliveryDate} deliveryLabelFull={deliveryLabelFull} deliveryLabelShort={deliveryLabelShort} onOpenDrawer={()=>setDrawerOpen(true)} pushToast={pushToast}/>}/>
             <Route path="/assinatura" element={<Assinatura hasPending={false} cutoff={cutoff} subscription={subscription} assinaturaQtds={assinaturaQtds} onAlterado={handleAlterarAssinatura} onEditingChange={setAssinaturaEditing}/>}/>
             <Route path="/cardapio" element={<Cardapio addExtraToCart={addExtraToCart} cutoff={cutoff} pendingPayment={pendingPayment} deliveryDate={deliveryDate} pushToast={pushToast}/>}/>
             <Route path="/perfil" element={<Perfil subscription={subscription} weeklyOrders={weeklyOrders} pendingPayment={pendingPayment}/>}/>
