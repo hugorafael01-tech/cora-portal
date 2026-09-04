@@ -425,7 +425,7 @@ const OrderBar=({totalExtras,cutoffHoje,onOpen})=>{
   const valor=totalExtras>0?fmt(totalExtras):"Nenhum extra";
   return<>
     <button onClick={onOpen}
-      aria-label={`Falta confirmar sua cesta, ${cutoffHoje?"termina hoje 12h":"até terça 12h"}. Abrir cesta.`}
+      aria-label={`Falta confirmar sua cesta, ${cutoffHoje?"termina hoje 12h":"até terça 12h"}. Abrir para editar.`}
       onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
       style={{
         flexShrink:0,width:"100%",height:ORDER_BAR_HEIGHT,
