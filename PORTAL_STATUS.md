@@ -63,6 +63,25 @@ Nenhum encontrado _(1 falso positivo: "TODOS" em comentário de api/asaas/vincul
 
 ---
 
+## Gêmeo da prévia de cobrança (Fase 3, bloco A — 05/09/2026)
+
+`api/_lib/previa.js` é **cópia** de `cora-backoffice/src/lib/previa.ts`. A geração de cobranças da Fase 3 roda aqui, e o servidor não pode confiar no total que veio do browser — é a razão da fase. Por isso a mesma conta vive nos dois repos.
+
+**Não evolua este arquivo sozinho.** O que amarra os dois lados é `api/_lib/previa.golden.json`, o mesmo arquivo commitado nos dois, com uma entrada rica e a saída esperada. As regras são testadas no backoffice, onde há vitest; aqui não há uma segunda suíte de propósito (suíte espelhada em estilo diferente vira duas coisas a manter, e elas divergem).
+
+`npm run test:previa` afirma a travessia e sai com **exit 1** quando diverge. Conferido por sabotagem antes de fechar o bloco. Ele compara as mensagens **texto a texto**, não só os códigos: é o que pega diferença de `toLocaleString` entre o ICU do browser e o do serverless.
+
+**Ordem quando uma regra muda:**
+
+1. muda `src/lib/previa.ts` no backoffice e os testes de regra de lá
+2. `npm run golden` no backoffice
+3. copia `previa.golden.json` para `api/_lib/`
+4. `npm run test:previa` aqui
+
+Se o teste falhar, **não conserte o gêmeo para passar** — descubra qual dos dois lados mudou.
+
+A conciliação da Fase 4 faz a versão runtime dessa mesma comparação e bloqueia a geração quando os gêmeos discordam.
+
 ## Pendências não-código
 _Esta seção é editada manualmente durante sessões de trabalho. Claude Code não sobrescreve daqui pra baixo._
 
