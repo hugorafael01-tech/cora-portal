@@ -23,7 +23,7 @@
  */
 import { supabaseAdmin } from "../../../src/lib/supabase-admin.js";
 import { withCors } from "../../_lib/cors.js";
-import { statusPatchForEvent } from "../../_lib/asaas-status.js";
+import { refleteStatus } from "../../_lib/asaas-reflexo.js";
 
 // Guarda de UUID antes de bater na coluna uuid (licao do fix do webhook: valor
 // nao-uuid no .eq faz o PostgREST devolver 400 cru). Mesma regex do webhook.
@@ -71,17 +71,34 @@ async function reconcileCustomerEvents(subscriptionId, customerId) {
 
     // (d) Reflete status pelo mais recente. Tipo nao-tratado -> patch null -> nao
     //     mexe no payment_status (mas b/c ja rodaram). last_payment_at = received_at.
+    //
+    // Usa a MESMA refleteStatus do webhook desde 05/09. Antes este caminho
+    // tinha o proprio `.eq("id", subscriptionId)`, e o alargamento pro grupo de
+    // pagador so pegou o webhook — ficavam dois caminhos refletindo status e so
+    // um alcancando o grupo. Vincular a Aldina reconciliava os pagamentos dela
+    // e deixava a Fernanda pra tras, exatamente o bug que o alargamento veio
+    // corrigir, entrando pela outra porta.
     let paymentStatus = null;
+    let reconciliadas = [];
     if (latest) {
-      const patch = statusPatchForEvent(latest.event_type, latest.received_at);
+      // paymentAtIso e o received_at do evento (a data real do pagamento), e
+      // nao now(): a reconciliacao olha pra tras. Essa e a unica diferenca
+      // entre este caminho e o do webhook.
+      const { patch, atualizadas } = await refleteStatus(supabaseAdmin, {
+        subscriptionId,
+        eventType: latest.event_type,
+        paymentAtIso: latest.received_at,
+      });
       if (patch) {
-        const { error: updErr } = await supabaseAdmin
-          .from("subscriptions")
-          .update(patch)
-          .eq("id", subscriptionId);
-        if (updErr) throw updErr;
         paymentStatus = patch.payment_status;
+        reconciliadas = atualizadas;
       }
+    }
+    if (reconciliadas.length > 1) {
+      console.log("[asaas/vincular] reconciliacao alcancou o grupo", {
+        pagador: subscriptionId,
+        atualizadas: reconciliadas,
+      });
     }
     return { ok: true, paymentStatus };
   } catch (err) {

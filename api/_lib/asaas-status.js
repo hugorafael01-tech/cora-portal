@@ -1,10 +1,16 @@
 /**
  * Mapeamento event_type (Asaas) -> patch de payment_status na subscription.
  *
- * Fonte de verdade UNICA, usada por dois lugares:
- *   - api/webhooks/asaas: reflete o status quando um evento chega (passa now()).
+ * Fonte de verdade UNICA do mapa evento -> status. Desde 05/09 quem chama isto
+ * e SO o _lib/asaas-reflexo.js, que aplica o patch no banco. Os dois caminhos
+ * que refletem status passam por la:
+ *   - api/webhooks/asaas: evento que chega (passa now()).
  *   - api/asaas/vincular: reconcilia eventos passados ao vincular (passa o
- *     received_at do evento mais recente — a data real do pagamento, nao a do clique).
+ *     received_at do evento mais recente — a data real do pagamento, nao a do
+ *     clique).
+ * Nenhum dos dois monta o patch nem escreve na subscription por conta propria:
+ * quando isso acontecia, o alargamento pro grupo de pagador pegou so um deles.
+ * Ha teste guardando essa propriedade (scripts/test-reflexo.mjs).
  *
  * Regra (decisao Hugo): cartao tem RECEIVED so ~32 dias apos o CONFIRMED; Pix vai
  * direto a RECEIVED. Demais tipos sao registrados sem mexer no status ('pendente'

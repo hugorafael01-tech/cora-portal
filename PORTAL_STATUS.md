@@ -69,6 +69,10 @@ Com a cobrança única por pagador (Fase 3), uma cobrança cobre mais de uma ass
 
 A resolução e o reflexo saíram do handler para **`api/_lib/asaas-reflexo.js`**, testáveis com client mockado (`npm run test:reflexo`). O handler não ganhou lógica nova, só passou a chamar as duas funções.
 
+**São DOIS os caminhos que refletem status, e os dois passam por lá.** Além do webhook, o `/api/asaas/vincular` reconcilia eventos passados ao vincular um cliente (`reconcileCustomerEvents`) — ele tinha o próprio `.eq("id", subscriptionId)` e ficou de fora do alargamento na primeira versão. Vincular a Aldina reconciliava os pagamentos dela e deixava a Fernanda para trás: o mesmo bug entrando pela outra porta. A única diferença entre os dois caminhos é o `paymentAtIso` — o webhook passa `now()`, a reconciliação passa o `received_at` do evento, que é a data real do pagamento.
+
+Um teste guarda essa propriedade lendo os dois arquivos e afirmando que **nenhum deles monta o patch de status sozinho**. Se um terceiro caminho aparecer, ou se alguém inlinear o update de novo, ele quebra.
+
 **As duas propriedades que fazem isto ser seguro**, e que são afirmadas em teste, não só descritas:
 
 - **Estritamente aditivo.** O conjunto de linhas tocadas só cresce. Das 44 assinaturas do banco, **42 não têm `pagador_subscription_id`** e para elas o filtro casa exatamente o que o `.eq("id")` casava. Os 2 pares são Fernanda → Aldina e Maria Helena → Sabina.
