@@ -63,6 +63,35 @@ Nenhum encontrado _(1 falso positivo: "TODOS" em comentário de api/asaas/vincul
 
 ---
 
+## Geração de cobranças por API (Fase 3, bloco B — 05/09/2026)
+
+`POST /api/cobrancas/gerar`. Cria **uma cobrança por pagador** no Asaas e materializa **N linhas em `faturas`**, uma por assinatura do grupo, todas com o mesmo `asaas_payment_id`.
+
+**Primeira chamada de saída da casa.** Até aqui o Asaas só falava com a Cora por webhook.
+
+| arquivo | papel |
+|---|---|
+| `api/_lib/asaas.js` | cliente da API. Base do **sandbox** por padrão; produção exige escrever a URL no env de propósito |
+| `api/_lib/geracao.js` | lógica pura: `billingType`, descrição, linhas de fatura, e o **plano de cada grupo** |
+| `api/_lib/geracao-runner.js` | a sequência, compartilhada pelo endpoint e pelo script de sandbox |
+| `api/cobrancas/gerar/index.js` | só a porta: método, JWT admin, `admin_users`, tradução pra HTTP |
+
+**A ordem, e ela importa:** recalcula a prévia no servidor com o gêmeo → insere as N faturas como `pendente` **antes** de qualquer chamada → `POST /v3/payments` com o valor recalculado → grava o retorno nas N faturas. Falhou o insert pela constraint, **não chama**.
+
+**A regra que manda em tudo:** a chamada usa **sempre o valor recém-recalculado**, nunca o gravado numa fatura pendente. Fatura pendente com valor divergente **bloqueia**. O caso que isso previne é um retry cobrar um valor velho: sairia certo na tela e errado no boleto, e ninguém confere o boleto de novo.
+
+**Retry:** fatura com `asaas_payment_id` é pulada; pendente sem ele refaz só a chamada, sem reinserir. Grupo meio-gerado bloqueia.
+
+`externalReference` é o **uuid puro** do pagador — valor composto falharia o `UUID_RE` do webhook e cairia no fallback fraco.
+
+### O ciclo em sandbox ainda não rodou, e por quê
+
+`scripts/gera-sandbox.mjs` (`npm run gera:sandbox`) escreve em `faturas` de **produção**, autorizado por escrito com condições, todas implementadas: recusa rodar com `faturas` não-vazia, limpeza em `try/finally`, verificação de volta a zero, e falha alta com exit ≠ 0 se a limpeza falhar.
+
+**Ele se recusa a rodar enquanto a 0046 não for aplicada** — guarda que entrou depois da descoberta, não estava na lista original. Sem a 0046 o `asaas_payment_id` ainda é UNIQUE, e as duas faturas do grupo da Aldina dividem o mesmo id: a segunda violaria a constraint **depois** de a cobrança já existir no Asaas. Cobrança criada e não registrada é o pior estado possível.
+
+Verificado em 05/09: a guarda dispara, exit 2, e a sonda que ela usa não deixa resíduo.
+
 ## Reflexo de status alcança o grupo de pagador (05/09/2026)
 
 Com a cobrança única por pagador (Fase 3), uma cobrança cobre mais de uma assinatura. Até 05/09 o webhook refletia status só na linha que casou (`.eq("id", subscriptionId)`) — quando a Aldina pagasse, a Fernanda continuaria marcada como não paga, e apareceria como "paguei e o sistema não viu" no primeiro ciclo.
