@@ -84,13 +84,34 @@ Nenhum encontrado _(1 falso positivo: "TODOS" em comentário de api/asaas/vincul
 
 `externalReference` é o **uuid puro** do pagador — valor composto falharia o `UUID_RE` do webhook e cairia no fallback fraco.
 
-### O ciclo em sandbox ainda não rodou, e por quê
+### O ciclo em sandbox rodou (05/09/2026)
 
 `scripts/gera-sandbox.mjs` (`npm run gera:sandbox`) escreve em `faturas` de **produção**, autorizado por escrito com condições, todas implementadas: recusa rodar com `faturas` não-vazia, limpeza em `try/finally`, verificação de volta a zero, e falha alta com exit ≠ 0 se a limpeza falhar.
 
-**Ele se recusa a rodar enquanto a 0046 não for aplicada** — guarda que entrou depois da descoberta, não estava na lista original. Sem a 0046 o `asaas_payment_id` ainda é UNIQUE, e as duas faturas do grupo da Aldina dividem o mesmo id: a segunda violaria a constraint **depois** de a cobrança já existir no Asaas. Cobrança criada e não registrada é o pior estado possível.
+Depois de a 0046 e a 0047 serem aplicadas, o ciclo passou contra o período real 2026-10:
 
-Verificado em 05/09: a guarda dispara, exit 2, e a sonda que ela usa não deixa resíduo.
+| pagador | valor | cobrança | faturas |
+|---|---|---|---|
+| Aldina + Fernanda | R$ 278,00 | `pay_izyk19g6978ydrkh` | 2 linhas, mesmo `asaas_payment_id` |
+| Abdala Farah | R$ 167,00 | `pay_8c9t0wni0rzrhgvz` | 1 linha |
+
+Descrição emitida: `Outubro: assinatura Aldina + Fernanda` e `Outubro: assinatura Abdala Farah`. `externalReference` saiu como uuid puro do pagador. Vencimento 2026-10-08 nas duas. `faturas` voltou a zero.
+
+**Linha digitável e Pix nunca vêm na criação.** Provado no sandbox: a resposta do `POST /payments` não traz `identificationField` nem payload de Pix, e o `GET /payments/{id}` também não. Os dois só existem em `/identificationField` e `/pixQrCode` — as duas chamadas extras de `dadosDePagamento` são necessárias, não redundância.
+
+**Pix só sai para quem está como `boleto_pix`.** `BOLETO` puro não tem QR no Asaas, então o grupo da Aldina gravou linha digitável e `pix_payload` nulo — comportamento correto do código, mas hoje **Aldina e Fernanda são as duas únicas** assinaturas marcadas `boleto` (contra 25 em `boleto_pix`). Se a marcação foi engano, elas ficam sem Pix no primeiro ciclo. Pendência de conferência do Hugo, não de código.
+
+### As duas guardas que a realidade acrescentou
+
+Nenhuma das duas estava na lista original; as duas vieram de descobertas ao rodar.
+
+**Guarda 0 — a 0046 precisa estar aplicada.** Sem ela o `asaas_payment_id` ainda é UNIQUE, e as duas faturas do grupo da Aldina dividem o mesmo id: a segunda violaria a constraint **depois** de a cobrança já existir no Asaas. Verificada em 05/09 antes de a migration ser aplicada: dispara, exit 2, sem resíduo.
+
+A sonda dessa guarda escreve duas linhas de mentira e as apaga — **PostgREST não tem transação**, então o "desfaz" é um delete comum. Ele roda em `finally`, e falha alto se ele mesmo falhar: delete que só roda no caminho feliz não desfaz nada se o insert estourar no meio. O período de fantasia da sonda entra junto na limpeza do fim, e `tocouATabela` liga **antes** dela, não antes da geração.
+
+**Guarda 4 — cliente de sandbox sem `cpfCnpj`.** A primeira execução real falhou com `400: necessário preencher o CPF ou CNPJ do cliente` — e falhou **depois** de inserir as faturas, porque o Asaas só valida isso no `POST /payments`. Só não deixou lixo porque a limpeza do `finally` existe. Agora duas chamadas `GET /customers/{id}` conferem antes de qualquer escrita.
+
+**Produção não corre esse risco:** os boletos de hoje são emitidos, e o Asaas não emite boleto sem CPF no cliente. O buraco era dos clientes do sandbox, criados só com nome e e-mail; foram preenchidos com CPF sintético válido, não com o CPF real de ninguém.
 
 ## Reflexo de status alcança o grupo de pagador (05/09/2026)
 

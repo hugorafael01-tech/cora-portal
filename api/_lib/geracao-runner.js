@@ -51,8 +51,13 @@ function subconjuntoSandbox() {
   return cru ? new Set(cru.split(",").map((s) => s.trim()).filter(Boolean)) : null;
 }
 
-/** Mapa subscription_id -> cliente do sandbox. Vazio = usa o do banco. */
-function mapaDeClientes() {
+/**
+ * Mapa subscription_id -> cliente do sandbox. Vazio = usa o do banco.
+ * Exportado para a guarda 4 do gera-sandbox conferir os mesmos clientes que a
+ * geracao vai usar — se ela lesse o env por conta propria, poderia conferir um
+ * conjunto e a geracao chamar outro.
+ */
+export function mapaDeClientes() {
   const cru = (process.env.ASAAS_SANDBOX_CUSTOMER_MAP || "").trim();
   if (!cru) return new Map();
   try {

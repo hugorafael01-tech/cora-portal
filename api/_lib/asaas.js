@@ -74,6 +74,15 @@ async function chamar(caminho, { method = "GET", body, timeoutMs = 20000 } = {})
   }
 }
 
+/**
+ * GET /v3/customers/{id}. So leitura. Existe para a checagem previa do script de
+ * sandbox: o Asaas exige cpfCnpj NO CLIENTE para emitir boleto/Pix, e descobrir
+ * isso pelo 400 do POST /payments custa caro — as faturas ja foram inseridas.
+ */
+export async function buscaCliente(customerId) {
+  return chamar(`/customers/${encodeURIComponent(customerId)}`);
+}
+
 /** POST /v3/payments. Devolve o pagamento criado. */
 export async function criarPagamento(corpo) {
   return chamar("/payments", { method: "POST", body: corpo });
