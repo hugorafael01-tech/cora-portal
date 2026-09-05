@@ -14,6 +14,12 @@
  * mudou. A ordem certa e sempre: muda no backoffice, `npm run golden` la, copia
  * o JSON pra ca, roda isto.
  *
+ * O HASH IMPRESSO ABAIXO e o ponto cego que sobrava: como cada lado afirma
+ * contra a PROPRIA copia do fixture, regenerar de um lado so deixa os dois
+ * verdes enquanto ja divergiram. O hash nao impede — torna visivel. Os dois
+ * testes imprimem o mesmo numero quando estao em sincronia, e por isso **o
+ * fixture viaja com o gemeo, no MESMO PR.**
+ *
  * Uso: `node scripts/test-previa.mjs` (ou `npm run test:previa`).
  * Exit 0 em sucesso, 1 em falha.
  */
@@ -35,6 +41,27 @@ function montaPrecos(cru) {
   return precos;
 }
 
+/**
+ * cyrb53, gemea de `hashGolden` em cora-backoffice/src/lib/previaGolden.ts.
+ * Nao e criptografica e nem precisa ser: o que se quer e um numero que muda
+ * quando o conteudo muda e que da o MESMO resultado nos dois runtimes. Se as
+ * duas implementacoes divergirem, os hashes divergem e o alarme dispara sem
+ * motivo — que e o lado seguro de errar.
+ */
+function hashGolden(conteudo) {
+  const texto = JSON.stringify(conteudo);
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for (let i = 0; i < texto.length; i++) {
+    const ch = texto.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(14, "0");
+}
+
 const entrada = { ...golden.entrada, precos: montaPrecos(golden.entrada.precos) };
 const saida = montaPrevia(entrada, golden.periodoReferencia);
 
@@ -51,6 +78,19 @@ function checa(nome, fn) {
 }
 
 console.log("gemeo da previa — travessia contra o golden");
+console.log(`  golden hash: ${golden.hash}`);
+console.log("  (tem que bater com o que o vitest do backoffice imprime)\n");
+
+checa("o hash do fixture confere com o conteudo", () => {
+  assert.equal(
+    hashGolden({
+      periodoReferencia: golden.periodoReferencia,
+      entrada: golden.entrada,
+      saida: golden.saida,
+    }),
+    golden.hash,
+  );
+});
 
 // A afirmacao que importa. As demais existem so pra que uma falha diga ONDE
 // divergiu, em vez de despejar dois objetos grandes lado a lado.

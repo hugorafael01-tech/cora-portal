@@ -80,7 +80,15 @@ Nenhum encontrado _(1 falso positivo: "TODOS" em comentário de api/asaas/vincul
 
 Se o teste falhar, **não conserte o gêmeo para passar** — descubra qual dos dois lados mudou.
 
-A conciliação da Fase 4 faz a versão runtime dessa mesma comparação e bloqueia a geração quando os gêmeos discordam.
+**O hash fecha o ponto cego (05/09).** Como cada lado afirma contra a própria cópia do fixture, regenerar de um lado só deixava os **dois verdes enquanto já divergiam**. O JSON tem um campo `hash` e os dois testes o imprimem em toda rodada:
+
+```
+  golden hash: 0b47b856f1beaf
+```
+
+Os dois lados imprimem o mesmo número quando estão em sincronia. Cada um ainda confere que o hash bate com o conteúdo, o que pega edição à mão. **Por isso o fixture viaja com o gêmeo, no mesmo PR** — a regra de espelhamento vale para o JSON tanto quanto para o `previa.js`.
+
+A conciliação da Fase 4 faz a versão runtime dessa comparação e bloqueia a geração quando os gêmeos discordam — mas comparando **conjunto de pagadores, valores e códigos de alerta, nunca o texto das mensagens**. Copy é apresentação: uma vírgula não pode bloquear cobrança real, e o risco de `toLocaleString` que o golden pegou deve morrer como teste vermelho, não como cobrança travada.
 
 ## Pendências não-código
 _Esta seção é editada manualmente durante sessões de trabalho. Claude Code não sobrescreve daqui pra baixo._
