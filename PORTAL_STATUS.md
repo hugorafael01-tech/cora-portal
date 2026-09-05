@@ -63,6 +63,25 @@ Nenhum encontrado _(1 falso positivo: "TODOS" em comentário de api/asaas/vincul
 
 ---
 
+## Reflexo de status alcança o grupo de pagador (05/09/2026)
+
+Com a cobrança única por pagador (Fase 3), uma cobrança cobre mais de uma assinatura. Até 05/09 o webhook refletia status só na linha que casou (`.eq("id", subscriptionId)`) — quando a Aldina pagasse, a Fernanda continuaria marcada como não paga, e apareceria como "paguei e o sistema não viu" no primeiro ciclo.
+
+A resolução e o reflexo saíram do handler para **`api/_lib/asaas-reflexo.js`**, testáveis com client mockado (`npm run test:reflexo`). O handler não ganhou lógica nova, só passou a chamar as duas funções.
+
+**São DOIS os caminhos que refletem status, e os dois passam por lá.** Além do webhook, o `/api/asaas/vincular` reconcilia eventos passados ao vincular um cliente (`reconcileCustomerEvents`) — ele tinha o próprio `.eq("id", subscriptionId)` e ficou de fora do alargamento na primeira versão. Vincular a Aldina reconciliava os pagamentos dela e deixava a Fernanda para trás: o mesmo bug entrando pela outra porta. A única diferença entre os dois caminhos é o `paymentAtIso` — o webhook passa `now()`, a reconciliação passa o `received_at` do evento, que é a data real do pagamento.
+
+Um teste guarda essa propriedade lendo os dois arquivos e afirmando que **nenhum deles monta o patch de status sozinho**. Se um terceiro caminho aparecer, ou se alguém inlinear o update de novo, ele quebra.
+
+**As duas propriedades que fazem isto ser seguro**, e que são afirmadas em teste, não só descritas:
+
+- **Estritamente aditivo.** O conjunto de linhas tocadas só cresce. Das 44 assinaturas do banco, **42 não têm `pagador_subscription_id`** e para elas o filtro casa exatamente o que o `.eq("id")` casava. Os 2 pares são Fernanda → Aldina e Maria Helena → Sabina.
+- **Uma direção só.** Pagamento que resolve para X atualiza X e quem aponta para X como pagadora. **Nunca o contrário** — um pagamento avulso na linha de um dependente não pode marcar o pagador como em dia, porque ele não pagou nada.
+
+**O que isto deliberadamente NÃO resolve:** no par Sabina / Maria Helena o cliente do Asaas está na linha da **dependente**, então o pagamento resolve para ela e não sobe para a Sabina — subir seria a direção proibida. Resolve-se na migração do cartão, movendo o `asaas_customer_id` para a linha da Sabina (ver `BACKOFFICE_STATUS`).
+
+**Por que não há teste ponta a ponta:** `ehEventoSandbox` descarta evento de sandbox antes de persistir (responde 200 com `ignored: "sandbox"`), então o ciclo gerar → pagar → refletir não existe por lá. Cobrir isso exigiria payload sintético com URLs de produção contra um banco descartável, e a decisão (Hugo, 05/09) foi cortar: compra pouco e custa um branch de banco.
+
 ## Gêmeo da prévia de cobrança (Fase 3, bloco A — 05/09/2026)
 
 `api/_lib/previa.js` é **cópia** de `cora-backoffice/src/lib/previa.ts`. A geração de cobranças da Fase 3 roda aqui, e o servidor não pode confiar no total que veio do browser — é a razão da fase. Por isso a mesma conta vive nos dois repos.

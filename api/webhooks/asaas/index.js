@@ -26,15 +26,8 @@
  * so node-side). Cliente nunca escreve em asaas_webhook_events.
  */
 import { supabaseAdmin } from "../../../src/lib/supabase-admin.js";
-import { statusPatchForEvent } from "../../_lib/asaas-status.js";
+import { refleteStatus, resolveSubscription } from "../../_lib/asaas-reflexo.js";
 import { ehEventoSandbox } from "../../_lib/asaas-sandbox.js";
-
-// subscriptions.id e uuid. external_reference vem digitado a mao no painel Asaas
-// (fase 1), entao pode nao ser um uuid valido. Sem essa guarda, o PostgREST rejeita
-// a busca por id com 400 ("invalid input syntax for type uuid"), o que cairia como
-// FALHA de reflexo (processed_at null) em vez de "nao casou". Regex generica basta
-// pra evitar o 400 antes do .eq por id.
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function handler(req, res) {
   // ─── 1. Metodo ───
@@ -139,30 +132,13 @@ export default async function handler(req, res) {
 
   try {
     // ─── 4a. Resolve a subscription ───
-    // Caminho principal: external_reference = id (uuid) da subscription da Cora.
-    // So busca por id se for um uuid valido — um valor nao-uuid nao casa por id e
-    // so daria 400 no PostgREST; pula direto pro fallback (vira "nao casou", nao
-    // "falha"). Com isso o throw abaixo so dispara por erro REAL de query.
-    if (externalReference && UUID_RE.test(externalReference)) {
-      const { data: sub, error: subErr } = await supabaseAdmin
-        .from("subscriptions")
-        .select("id")
-        .eq("id", externalReference)
-        .maybeSingle();
-      if (subErr) throw subErr;
-      if (sub) subscriptionId = sub.id;
-    }
-
-    // Fallback: por asaas_customer_id (pode nao estar preenchido no Alpha).
-    if (!subscriptionId && asaasCustomerId) {
-      const { data: sub, error: subErr } = await supabaseAdmin
-        .from("subscriptions")
-        .select("id")
-        .eq("asaas_customer_id", asaasCustomerId)
-        .maybeSingle();
-      if (subErr) throw subErr;
-      if (sub) subscriptionId = sub.id;
-    }
+    // A resolucao e o reflexo moram em _lib/asaas-reflexo.js desde 05/09: com a
+    // cobranca unica por pagador o reflexo passou a alcancar mais de uma linha,
+    // e isso precisa de teste (scripts/test-reflexo.mjs, com client mockado).
+    subscriptionId = await resolveSubscription(supabaseAdmin, {
+      externalReference,
+      asaasCustomerId,
+    });
 
     if (!subscriptionId) {
       // Nao casou: NAO e erro. O evento fica salvo com subscription_id null e
@@ -173,15 +149,24 @@ export default async function handler(req, res) {
       });
     } else {
       // ─── 4b. Reflexo de status (so se casou E o tipo e tratado) ───
-      const patch = statusPatchForEvent(eventType, nowIso);
-      if (patch) {
-        const { error: updErr } = await supabaseAdmin
-          .from("subscriptions")
-          .update(patch)
-          .eq("id", subscriptionId);
-        if (updErr) throw updErr;
+      // Alcanca a assinatura que casou E quem aponta pra ela como pagadora:
+      // uma cobranca cobre o grupo inteiro, entao o pagamento vale por todas.
+      // Estritamente aditivo e numa direcao so — o racional completo esta no
+      // cabecalho do _lib/asaas-reflexo.js.
+      const { patch, atualizadas } = await refleteStatus(supabaseAdmin, {
+        subscriptionId,
+        eventType,
+        paymentAtIso: nowIso,
+      });
+      // Loga quando o reflexo passou de uma linha: e o sinal de que o
+      // agrupamento por pagador funcionou, e o primeiro lugar onde olhar se
+      // alguem reclamar de "paguei e o sistema nao viu".
+      if (patch && atualizadas.length > 1) {
+        console.log("[asaas webhook] reflexo alcancou o grupo", asaasEventId, {
+          pagador: subscriptionId,
+          atualizadas,
+        });
       }
-      // Tipo nao-tratado (PAYMENT_CREATED, etc.): casou mas nao mexe no status.
     }
   } catch (err) {
     // Falha de resolucao/reflexo: loga e segue. processed_at fica null.
