@@ -14,7 +14,8 @@
     "test:extras": "node scripts/test-extras-precos.mjs",
     "test:cardapio": "node scripts/test-cardapio-semana.mjs",
     "test:asaas": "node scripts/test-asaas-sandbox.mjs",
-    "test:previa": "node scripts/test-previa.mjs"
+    "test:previa": "node scripts/test-previa.mjs",
+    "test:reflexo": "node scripts/test-reflexo.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "~2.105.3",
