@@ -15,7 +15,9 @@
     "test:cardapio": "node scripts/test-cardapio-semana.mjs",
     "test:asaas": "node scripts/test-asaas-sandbox.mjs",
     "test:previa": "node scripts/test-previa.mjs",
-    "test:reflexo": "node scripts/test-reflexo.mjs"
+    "test:reflexo": "node scripts/test-reflexo.mjs",
+    "test:geracao": "node scripts/test-geracao.mjs",
+    "gera:sandbox": "node --env-file=.env.local scripts/gera-sandbox.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "~2.105.3",
